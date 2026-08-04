@@ -30,8 +30,8 @@
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-08-04-polar-lsm-router-design.md": {
-    "mtime": 1785881201.0475788,
-    "ast_hash": "2787bf7a7d937872610939ef5e349eed",
+    "mtime": 1785881543.4070365,
+    "ast_hash": "3b96ce466a6edb27cd69111361743cee",
     "semantic_hash": ""
   },
   "experiments/codec_bench/README.md": {
@@ -40,18 +40,18 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1785881512.3530293,
-    "ast_hash": "7284e90e0ba31a4a9b37304408c2235e",
+    "mtime": 1785881605.4062746,
+    "ast_hash": "5672ae74c48ae9cfc0e75d499f871aa0",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-08-04-polar-codec-format-foundation.md": {
-    "mtime": 1785881512.3535576,
-    "ast_hash": "5b49535fb1776e0b9b4b1a8b442fed3f",
+    "mtime": 1785881543.4081125,
+    "ast_hash": "650a60e4b9f94cf554e82d98fa687a7d",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-08-04-polar-v1-implementation-spec.md": {
-    "mtime": 1785881201.048019,
-    "ast_hash": "2c64f12c64a343d4549504afdce28104",
+    "mtime": 1785881543.4076324,
+    "ast_hash": "d05c9fdc3b48030eb95d13121e88ac49",
     "semantic_hash": ""
   },
   "graphify-out/memory/query_20260804_194859_what_tech_stack_should_polarlsm_plus_polarrouter_u.md": {

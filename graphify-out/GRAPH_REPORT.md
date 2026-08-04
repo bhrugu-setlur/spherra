@@ -1,13 +1,18 @@
 # Graph Report - spherra  (2026-08-04)
 
 ## Corpus Check
-- 15 files · ~20,276 words
+- 15 files · ~20,294 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
 - 200 nodes · 368 edges · 12 communities (11 shown, 1 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 2 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `c055ee14`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - PolarLSM + PolarRouter Approved Production Design

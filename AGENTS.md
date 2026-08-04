@@ -139,6 +139,7 @@ Last updated: 2026-08-04.
 - Product name selected as **Spherra**; repository directory, public command, planned crate prefix, documentation, and prototype namespace use the new identity.
 - Initial documentation and prototype baseline is version-controlled on `main` with `origin` set to `https://github.com/bhrugusetlur-art/spherra.git`.
 - Root `.gitignore` excludes OS files, Python bytecode, build/fuzz output, and local Graphify runtime/cache/backup artifacts from version control.
+- Graphify post-commit/post-checkout hooks are installed locally, and `.gitattributes` registers the Graphify merge driver for `graphify-out/graph.json`.
 - R7 production architecture approved by Codex and Claude Opus; the later Spherra naming amendment changes no behavior.
 - Rust-first technology stack approved by Codex and Claude Opus.
 - C++20 scalar layout/access experiment comparing recursive angles and direct int4.
@@ -150,6 +151,7 @@ Last updated: 2026-08-04.
 
 - `README.md`
 - `.gitignore`
+- `.gitattributes`
 - `docs/superpowers/specs/2026-08-04-polar-lsm-router-design.md`
 - `docs/superpowers/specs/2026-08-04-polar-v1-implementation-spec.md`
 - `docs/superpowers/plans/2026-08-04-polar-codec-format-foundation.md`
