@@ -1,0 +1,15 @@
+[package]
+name = "spherra-bench"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+spherra-domain = { path = "../spherra-domain" }
+spherra-codec = { path = "../spherra-codec" }
+spherra-format = { path = "../spherra-format" }
+spherra-testkit = { path = "../spherra-testkit" }
