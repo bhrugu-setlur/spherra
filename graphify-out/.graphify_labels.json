@@ -1,0 +1,14 @@
+{
+  "0": "PolarLSM + PolarRouter Approved Production Design",
+  "1": "bench.cpp",
+  "2": "accuracy.py",
+  "3": "codec_test.cpp",
+  "4": "codec.cpp",
+  "5": "Spherra v1 implementation specification",
+  "6": "AccuracyTest",
+  "7": "Spherra project guide",
+  "8": "Spherra polar codec and format foundation implementation plan",
+  "9": "Q: What tech stack should PolarLSM plus PolarRouter use?",
+  "10": "Q: yes do that. also set up a comprehensive AGENTS.md that acts as the project guide. AGENTS.md should be set up so that any agent that reads it has an excellent understanding of the project, whats been done, what still needs t be done, what the next step is. there should be a rule in agents.md which states that agents must keep agents.md up to date. also make sure the graphify project graph stays up to date always",
+  "11": "Q: What should I name this project? Generate prospects across mythic, infrastructure, and AI-native styles with Claude."
+}

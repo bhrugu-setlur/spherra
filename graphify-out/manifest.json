@@ -1,0 +1,77 @@
+{
+  "experiments/codec_bench/accuracy.py": {
+    "mtime": 1785870481.9104533,
+    "ast_hash": "ecf039dcdec3ea8d1b338bc45d3847f3",
+    "semantic_hash": "ecf039dcdec3ea8d1b338bc45d3847f3"
+  },
+  "experiments/codec_bench/accuracy_test.py": {
+    "mtime": 1785870430.1554217,
+    "ast_hash": "0c00dab9ff9e6112a08e3de59f373643",
+    "semantic_hash": "0c00dab9ff9e6112a08e3de59f373643"
+  },
+  "experiments/codec_bench/bench.cpp": {
+    "mtime": 1785880161.2016687,
+    "ast_hash": "34439c5ca0a18e1c5cac7438e8f383e7",
+    "semantic_hash": ""
+  },
+  "experiments/codec_bench/codec.cpp": {
+    "mtime": 1785880161.2003193,
+    "ast_hash": "4ab02ef72704ca96ea7b8da8dc1145fb",
+    "semantic_hash": ""
+  },
+  "experiments/codec_bench/codec.hpp": {
+    "mtime": 1785880161.1996844,
+    "ast_hash": "84fc44eabe69eb8a7ca892f279a6a09f",
+    "semantic_hash": ""
+  },
+  "experiments/codec_bench/codec_test.cpp": {
+    "mtime": 1785880161.201073,
+    "ast_hash": "c457fe33aa191401bf167fbdbfb0ea2d",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-08-04-polar-lsm-router-design.md": {
+    "mtime": 1785881201.0475788,
+    "ast_hash": "2787bf7a7d937872610939ef5e349eed",
+    "semantic_hash": ""
+  },
+  "experiments/codec_bench/README.md": {
+    "mtime": 1785880726.5083447,
+    "ast_hash": "249ee2453b7a2ec8ea8fe57e2904900d",
+    "semantic_hash": ""
+  },
+  "AGENTS.md": {
+    "mtime": 1785881512.3530293,
+    "ast_hash": "7284e90e0ba31a4a9b37304408c2235e",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/plans/2026-08-04-polar-codec-format-foundation.md": {
+    "mtime": 1785881512.3535576,
+    "ast_hash": "5b49535fb1776e0b9b4b1a8b442fed3f",
+    "semantic_hash": ""
+  },
+  "docs/superpowers/specs/2026-08-04-polar-v1-implementation-spec.md": {
+    "mtime": 1785881201.048019,
+    "ast_hash": "2c64f12c64a343d4549504afdce28104",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260804_194859_what_tech_stack_should_polarlsm_plus_polarrouter_u.md": {
+    "mtime": 1785872939.472851,
+    "ast_hash": "c3e6925297cdc06be21913ffabc88445",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260804_205821_yes_do_that__also_set_up_a_comprehensive_agents_md.md": {
+    "mtime": 1785877101.6541348,
+    "ast_hash": "b4423e8bfeddb9e7c78769f8c8dcef13",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1785880149.9088297,
+    "ast_hash": "30818a249ba8424f773e1b4341844dff",
+    "semantic_hash": ""
+  },
+  "graphify-out/memory/query_20260804_214225_what_should_i_name_this_project__generate_prospect.md": {
+    "mtime": 1785879745.2828038,
+    "ast_hash": "f9f8d48ff1e52ad0c1ac86a5d155d643",
+    "semantic_hash": ""
+  }
+}
