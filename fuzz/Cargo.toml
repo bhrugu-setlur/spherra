@@ -1,0 +1,30 @@
+[workspace]
+
+[package]
+name = "spherra-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+arbitrary = { version = "1", features = ["derive"] }
+libfuzzer-sys = "0.4"
+spherra-codec = { path = "../crates/spherra-codec" }
+spherra-format = { path = "../crates/spherra-format" }
+
+[[bin]]
+name = "format_open"
+path = "fuzz_targets/format_open.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "bound_soundness"
+path = "fuzz_targets/bound_soundness.rs"
+test = false
+doc = false
+bench = false

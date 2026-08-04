@@ -126,7 +126,7 @@ tools/build_scifact_corpus.py
 - Create: six root-workspace crate manifests plus the isolated fuzz manifest and minimal sources listed above
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: Verify the initialized Git repository and absence of a Rust workspace**
+- [x] **Step 1: Verify the initialized Git repository and absence of a Rust workspace**
 
 Run:
 
@@ -141,7 +141,7 @@ command -v rustup || true
 
 Expected: Git is on `main`, `origin` matches the private Spherra repository, no Rust workspace exists, and Homebrew prints its path. Rustup may be absent in the starting environment. If the observed workspace differs, update this plan and `AGENTS.md` before continuing.
 
-- [ ] **Step 2: Verify the connected remote**
+- [x] **Step 2: Verify the connected remote**
 
 Run:
 
@@ -152,22 +152,22 @@ GIT_TERMINAL_PROMPT=0 git ls-remote origin
 
 Expected: `origin` uses `https://github.com/bhrugusetlur-art/spherra.git` for fetch and push, and `ls-remote` succeeds. Do not alter or replace the configured remote during this step.
 
-- [ ] **Step 3: Install and pin the stable Rust toolchain components**
+- [x] **Step 3: Install and pin the stable Rust toolchain components**
 
 Run:
 
 ```bash
 if ! command -v rustup >/dev/null 2>&1; then
-  brew install rustup-init
-  rustup-init -y --no-modify-path --default-toolchain none
-  export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
+  brew install rustup
+  export PATH="$(brew --prefix rustup)/bin:$PATH"
 fi
+export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
 rustup toolchain install 1.88.0 --profile minimal --component rustfmt --component clippy
 rustup toolchain install nightly-2025-06-26 --profile minimal
 rustc +1.88.0 --version
 rustc +nightly-2025-06-26 --version
 cargo +1.88.0 install cargo-nextest --version 0.9.114 --locked
-cargo +nightly-2025-06-26 install cargo-fuzz --version 0.13.2 --locked
+cargo +nightly-2025-06-26 install cargo-fuzz --version 0.13.2 --locked --ignore-rust-version
 cargo +1.88.0 install cargo-deny --version 0.20.2 --locked
 ```
 
@@ -182,7 +182,9 @@ components = ["rustfmt", "clippy"]
 
 Expected: both compilers and all three Cargo subcommands report versions. Versions cargo-nextest 0.9.114, cargo-fuzz 0.13.2, and cargo-deny 0.20.2 were verified as published on crates.io on 2026-08-04. Record all tool versions in the first benchmark result; compiler versions are evidence metadata, not durable-format identities.
 
-- [ ] **Step 4: Create the root workspace manifest**
+Tooling-only reproducibility amendment (2026-08-04): Homebrew's current keg-only `rustup` formula no longer provides `rustup-init`, and does not add `~/.cargo/bin` to a non-login shell. The revised bootstrap commands above use the installed formula directly and explicitly expose Cargo's bin directory. The locked dependency graph for `cargo-fuzz 0.13.2` resolves `cargo-platform 0.3.3`, which currently declares Rust 1.91 while the required nightly reports Rust 1.90.0-nightly. Retain the exact approved cargo-fuzz and nightly versions and use Cargo's `--ignore-rust-version`; record both the unamended command's exit 101 and the successful fallback. This does not alter architecture, dependencies in the root workspace, fuzz target behavior, or any durable-format decision.
+
+- [x] **Step 4: Create the root workspace manifest**
 
 Create `Cargo.toml`:
 
@@ -229,7 +231,7 @@ pedantic = "allow"
 
 The root policy denies unsafe code. Libraries use `#![deny(unsafe_code)]`, not `forbid`, so a later milestone can permit unsafe only inside a named audited SIMD or mmap module after its differential/lifecycle tests exist. M1 uses positional reads and contains no unsafe exception.
 
-- [ ] **Step 5: Create focused crates and dependency direction**
+- [x] **Step 5: Create focused crates and dependency direction**
 
 Use package names matching their directories. Every manifest inherits workspace edition, license, rust-version, and lints. Dependency rules:
 
@@ -257,7 +259,7 @@ fuzz_target!(|data: &[u8]| {
 
 Tasks 6 and 7 replace the smoke bodies with their soundness/parser properties. The root workspace excludes `fuzz`, so fuzz dependencies do not enter normal workspace resolution.
 
-- [ ] **Step 6: Create `.gitignore`**
+- [x] **Step 6: Create `.gitignore`**
 
 ```gitignore
 /target/
@@ -278,7 +280,7 @@ __pycache__/
 
 Do not ignore the root or fuzz `Cargo.lock`, `fuzz/corpus/` regression seeds, benchmark schemas, golden fixtures, raw result JSON selected as project evidence, `AGENTS.md`, or the tracked Graphify graph/report/manifest/memory.
 
-- [ ] **Step 7: Add and run the explicit dependency-policy check**
+- [x] **Step 7: Add and run the explicit dependency-policy check**
 
 Create `scripts/check_dependency_policy.py`. It loads `cargo metadata --format-version 1`, selects workspace packages whose names begin with `spherra-`, inspects direct normal/build dependencies, and constructs its allowed set exactly like this:
 
@@ -310,7 +312,7 @@ python3 scripts/check_dependency_policy.py
 
 Expected: `dependency policy passed`.
 
-- [ ] **Step 8: Resolve and lock dependencies**
+- [x] **Step 8: Resolve and lock dependencies**
 
 Run:
 
@@ -322,13 +324,14 @@ cargo tree --workspace --locked
 
 Expected: all workspace members resolve, `Cargo.lock` exists, and no lower-level crate depends on `spherra-bench` or `spherra-testkit` outside dev-dependencies.
 
-- [ ] **Step 9: Add local CI and dependency policy**
+- [x] **Step 9: Add local CI and dependency policy**
 
 Create `deny.toml` permitting Apache-2.0, MIT, BSD-2-Clause, BSD-3-Clause, ISC, Unicode-3.0, and Zlib licenses, denying unknown registries/sources. Create `scripts/ci.sh` as the single local CI entry point:
 
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
+export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --all-features --locked
 cargo nextest run --workspace --all-features --locked --no-tests=pass
@@ -337,9 +340,11 @@ python3 scripts/check_dependency_policy.py
 cargo deny check licenses bans sources
 ```
 
+The dependency-policy script resolves `cargo` from `PATH` first, then from `${CARGO_HOME:-$HOME/.cargo}/bin` with a clear error if neither exists. This and the local-CI path export preserve the literal gate commands on Homebrew's keg-only Rust installation.
+
 Create `.github/workflows/ci.yml` that checks out the repository, installs Rust 1.88.0 with rustfmt/clippy, restores Cargo caches, installs cargo-nextest 0.9.114 and cargo-deny 0.20.2, and runs `bash scripts/ci.sh`. Run `cargo deny check advisories` as a separately labeled security job whose advisory-database timestamp is recorded; it is not part of mathematical/storage reproducibility. Long fuzzing and performance measurements remain local recorded gates because hosted runners do not represent the M1 Pro target.
 
-- [ ] **Step 10: Run the empty-workspace quality gate**
+- [x] **Step 10: Run the empty-workspace quality gate**
 
 Run:
 
@@ -350,11 +355,11 @@ cargo test --workspace --all-features --locked
 
 Expected: both commands exit 0.
 
-- [ ] **Step 11: Update living project state and Graphify**
+- [x] **Step 11: Update living project state and Graphify**
 
 Update `AGENTS.md` to mark Git/workspace bootstrap complete and Task 2 as next. Run the mandatory Graphify refresh and query `Rust workspace codec format foundation`.
 
-- [ ] **Step 12: Commit the bootstrap**
+- [x] **Step 12: Commit the bootstrap**
 
 Run:
 
