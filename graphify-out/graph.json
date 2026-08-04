@@ -4,180 +4,15 @@
   "graph": {},
   "nodes": [
     {
-      "label": "accuracy.py",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "accuracy.py",
-      "id": "experiments_codec_bench_accuracy"
-    },
-    {
-      "label": "ScalarCodec",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L11",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "scalarcodec",
-      "id": "experiments_codec_bench_accuracy_scalarcodec"
-    },
-    {
-      "label": "normalize()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L16",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "normalize()",
-      "id": "experiments_codec_bench_accuracy_normalize"
-    },
-    {
       "label": "ndarray",
       "file_type": "code",
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
       "community": 6,
-      "community_name": "accuracy.py",
+      "community_name": "Python Accuracy Experiment",
       "norm_label": "ndarray",
       "id": "ndarray"
-    },
-    {
-      "label": "to_hyperspherical()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L22",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "to_hyperspherical()",
-      "id": "experiments_codec_bench_accuracy_to_hyperspherical"
-    },
-    {
-      "label": "from_hyperspherical()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L38",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "from_hyperspherical()",
-      "id": "experiments_codec_bench_accuracy_from_hyperspherical"
-    },
-    {
-      "label": "fit_scalar_codec()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L52",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "fit_scalar_codec()",
-      "id": "experiments_codec_bench_accuracy_fit_scalar_codec"
-    },
-    {
-      "label": "encode_scalar()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L75",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "encode_scalar()",
-      "id": "experiments_codec_bench_accuracy_encode_scalar"
-    },
-    {
-      "label": "decode_scalar()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L86",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "decode_scalar()",
-      "id": "experiments_codec_bench_accuracy_decode_scalar"
-    },
-    {
-      "label": "topk_indices()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L95",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "topk_indices()",
-      "id": "experiments_codec_bench_accuracy_topk_indices"
-    },
-    {
-      "label": "recall_at_k()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L102",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "recall_at_k()",
-      "id": "experiments_codec_bench_accuracy_recall_at_k"
-    },
-    {
-      "label": "make_dataset()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L111",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "make_dataset()",
-      "id": "experiments_codec_bench_accuracy_make_dataset"
-    },
-    {
-      "label": "score_decoded_corpus()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L140",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "score_decoded_corpus()",
-      "id": "experiments_codec_bench_accuracy_score_decoded_corpus"
-    },
-    {
-      "label": "reconstruction_metrics()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L148",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "reconstruction_metrics()",
-      "id": "experiments_codec_bench_accuracy_reconstruction_metrics"
-    },
-    {
-      "label": "cone_metrics()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L157",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "cone_metrics()",
-      "id": "experiments_codec_bench_accuracy_cone_metrics"
-    },
-    {
-      "label": "evaluate()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L177",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "evaluate()",
-      "id": "experiments_codec_bench_accuracy_evaluate"
     },
     {
       "label": "Namespace",
@@ -186,97 +21,9 @@
       "source_location": "",
       "_origin": "ast",
       "community": 6,
-      "community_name": "accuracy.py",
+      "community_name": "Python Accuracy Experiment",
       "norm_label": "namespace",
       "id": "namespace"
-    },
-    {
-      "label": "main()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L233",
-      "_origin": "ast",
-      "community": 6,
-      "community_name": "accuracy.py",
-      "norm_label": "main()",
-      "id": "experiments_codec_bench_accuracy_main"
-    },
-    {
-      "label": "accuracy_test.py",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 8,
-      "community_name": "AccuracyTest",
-      "norm_label": "accuracy_test.py",
-      "id": "experiments_codec_bench_accuracy_test"
-    },
-    {
-      "label": "AccuracyTest",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L8",
-      "_origin": "ast",
-      "community": 8,
-      "community_name": "AccuracyTest",
-      "norm_label": "accuracytest",
-      "id": "experiments_codec_bench_accuracy_test_accuracytest"
-    },
-    {
-      "label": ".test_hyperspherical_round_trip()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L9",
-      "_origin": "ast",
-      "community": 8,
-      "community_name": "AccuracyTest",
-      "norm_label": ".test_hyperspherical_round_trip()",
-      "id": "experiments_codec_bench_accuracy_test_accuracytest_test_hyperspherical_round_trip"
-    },
-    {
-      "label": ".test_scalar_codec_reconstructs_bin_means()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L26",
-      "_origin": "ast",
-      "community": 8,
-      "community_name": "AccuracyTest",
-      "norm_label": ".test_scalar_codec_reconstructs_bin_means()",
-      "id": "experiments_codec_bench_accuracy_test_accuracytest_test_scalar_codec_reconstructs_bin_means"
-    },
-    {
-      "label": ".test_recall_at_k_uses_exact_neighbor_ids()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L38",
-      "_origin": "ast",
-      "community": 8,
-      "community_name": "AccuracyTest",
-      "norm_label": ".test_recall_at_k_uses_exact_neighbor_ids()",
-      "id": "experiments_codec_bench_accuracy_test_accuracytest_test_recall_at_k_uses_exact_neighbor_ids"
-    },
-    {
-      "label": ".test_correlated_dataset_uses_supplied_projection()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L44",
-      "_origin": "ast",
-      "community": 8,
-      "community_name": "AccuracyTest",
-      "norm_label": ".test_correlated_dataset_uses_supplied_projection()",
-      "id": "experiments_codec_bench_accuracy_test_accuracytest_test_correlated_dataset_uses_supplied_projection"
-    },
-    {
-      "label": ".test_approximate_scores_keep_query_high_precision()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L59",
-      "_origin": "ast",
-      "community": 8,
-      "community_name": "AccuracyTest",
-      "norm_label": ".test_approximate_scores_keep_query_high_precision()",
-      "id": "experiments_codec_bench_accuracy_test_accuracytest_test_approximate_scores_keep_query_high_precision"
     },
     {
       "label": "size_t",
@@ -285,7 +32,7 @@
       "source_location": "",
       "_origin": "ast",
       "community": 5,
-      "community_name": "bench.cpp",
+      "community_name": "C++ Benchmark Harness",
       "norm_label": "size_t",
       "id": "experiments_codec_bench_bench_cpp_size_t"
     },
@@ -296,7 +43,7 @@
       "source_location": "",
       "_origin": "ast",
       "community": 5,
-      "community_name": "bench.cpp",
+      "community_name": "C++ Benchmark Harness",
       "norm_label": "function",
       "id": "function"
     },
@@ -307,7 +54,7 @@
       "source_location": "",
       "_origin": "ast",
       "community": 5,
-      "community_name": "bench.cpp",
+      "community_name": "C++ Benchmark Harness",
       "norm_label": "vector",
       "id": "experiments_codec_bench_bench_cpp_vector"
     },
@@ -318,7 +65,7 @@
       "source_location": "",
       "_origin": "ast",
       "community": 5,
-      "community_name": "bench.cpp",
+      "community_name": "C++ Benchmark Harness",
       "norm_label": "mt19937",
       "id": "mt19937"
     },
@@ -329,7 +76,7 @@
       "source_location": "",
       "_origin": "ast",
       "community": 5,
-      "community_name": "bench.cpp",
+      "community_name": "C++ Benchmark Harness",
       "norm_label": "uint8_t",
       "id": "experiments_codec_bench_bench_cpp_uint8_t"
     },
@@ -340,7 +87,7 @@
       "source_location": "",
       "_origin": "ast",
       "community": 5,
-      "community_name": "bench.cpp",
+      "community_name": "C++ Benchmark Harness",
       "norm_label": "string_view",
       "id": "string_view"
     },
@@ -351,7 +98,7 @@
       "source_location": "",
       "_origin": "ast",
       "community": 0,
-      "community_name": "codec.cpp",
+      "community_name": "C++ Codec Kernels",
       "norm_label": "size_t",
       "id": "experiments_codec_bench_codec_cpp_size_t"
     },
@@ -362,7 +109,7 @@
       "source_location": "",
       "_origin": "ast",
       "community": 0,
-      "community_name": "codec.cpp",
+      "community_name": "C++ Codec Kernels",
       "norm_label": "uint8_t",
       "id": "experiments_codec_bench_codec_cpp_uint8_t"
     },
@@ -373,7 +120,7 @@
       "source_location": "",
       "_origin": "ast",
       "community": 0,
-      "community_name": "codec.cpp",
+      "community_name": "C++ Codec Kernels",
       "norm_label": "vector",
       "id": "experiments_codec_bench_codec_cpp_vector"
     },
@@ -384,7 +131,7 @@
       "source_location": "",
       "_origin": "ast",
       "community": 0,
-      "community_name": "codec.cpp",
+      "community_name": "C++ Codec Kernels",
       "norm_label": "span",
       "id": "span"
     },
@@ -395,7 +142,7 @@
       "source_location": "",
       "_origin": "ast",
       "community": 0,
-      "community_name": "codec.cpp",
+      "community_name": "C++ Codec Kernels",
       "norm_label": "size_t",
       "id": "experiments_codec_bench_codec_hpp_size_t"
     },
@@ -405,8 +152,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 7,
-      "community_name": "codec_test.cpp",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
       "norm_label": "vector",
       "id": "experiments_codec_bench_codec_hpp_vector"
     },
@@ -417,7 +164,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "agents.md",
       "id": "agents"
     },
@@ -428,7 +175,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "spherra project guide",
       "id": "agents_spherra_project_guide"
     },
@@ -439,7 +186,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "mandatory living-document rule",
       "id": "agents_mandatory_living_document_rule"
     },
@@ -450,7 +197,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "start here",
       "id": "agents_start_here"
     },
@@ -461,7 +208,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "project in one paragraph",
       "id": "agents_project_in_one_paragraph"
     },
@@ -472,7 +219,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "naming contract",
       "id": "agents_naming_contract"
     },
@@ -483,7 +230,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "product and hardware contract",
       "id": "agents_product_and_hardware_contract"
     },
@@ -494,7 +241,7 @@
       "source_location": "L52",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "frozen architecture decisions",
       "id": "agents_frozen_architecture_decisions"
     },
@@ -505,7 +252,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "vector representation and scoring",
       "id": "agents_vector_representation_and_scoring"
     },
@@ -516,7 +263,7 @@
       "source_location": "L73",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "storage, truth, and visibility",
       "id": "agents_storage_truth_and_visibility"
     },
@@ -527,7 +274,7 @@
       "source_location": "L87",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "query and indexing",
       "id": "agents_query_and_indexing"
     },
@@ -538,7 +285,7 @@
       "source_location": "L98",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "provisional, benchmark-selected decisions",
       "id": "agents_provisional_benchmark_selected_decisions"
     },
@@ -549,7 +296,7 @@
       "source_location": "L113",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "approved technology stack",
       "id": "agents_approved_technology_stack"
     },
@@ -560,7 +307,7 @@
       "source_location": "L133",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "toolchain bootstrap note",
       "id": "agents_toolchain_bootstrap_note"
     },
@@ -571,7 +318,7 @@
       "source_location": "L138",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "current repository state",
       "id": "agents_current_repository_state"
     },
@@ -582,7 +329,7 @@
       "source_location": "L142",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "completed",
       "id": "agents_completed"
     },
@@ -593,7 +340,7 @@
       "source_location": "L156",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "existing artifacts",
       "id": "agents_existing_artifacts"
     },
@@ -604,7 +351,7 @@
       "source_location": "L179",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "not implemented",
       "id": "agents_not_implemented"
     },
@@ -615,7 +362,7 @@
       "source_location": "L193",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "current status and next step",
       "id": "agents_current_status_and_next_step"
     },
@@ -626,7 +373,7 @@
       "source_location": "L207",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "required development workflow",
       "id": "agents_required_development_workflow"
     },
@@ -637,7 +384,7 @@
       "source_location": "L209",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "before work",
       "id": "agents_before_work"
     },
@@ -648,7 +395,7 @@
       "source_location": "L222",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "during work",
       "id": "agents_during_work"
     },
@@ -659,7 +406,7 @@
       "source_location": "L233",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "after every project change",
       "id": "agents_after_every_project_change"
     },
@@ -670,7 +417,7 @@
       "source_location": "L256",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "verification commands available now",
       "id": "agents_verification_commands_available_now"
     },
@@ -681,7 +428,7 @@
       "source_location": "L282",
       "_origin": "ast",
       "community": 2,
-      "community_name": "Spherra project guide",
+      "community_name": "Project Guide Policy",
       "norm_label": "definition of done for any task",
       "id": "agents_definition_of_done_for_any_task"
     },
@@ -692,7 +439,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "readme.md",
       "id": "readme"
     },
@@ -703,7 +450,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "spherra",
       "id": "readme_spherra"
     },
@@ -714,7 +461,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "architecture at a glance",
       "id": "readme_architecture_at_a_glance"
     },
@@ -725,7 +472,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "current target",
       "id": "readme_current_target"
     },
@@ -736,7 +483,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "start here",
       "id": "readme_start_here"
     },
@@ -747,7 +494,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "2026-08-04-polar-codec-format-foundation.md",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation"
     },
@@ -758,7 +505,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "spherra polar codec and format foundation implementation plan",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_spherra_polar_codec_and_format_foundation_implementation_plan"
     },
@@ -769,7 +516,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "scope and exit gate",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_scope_and_exit_gate"
     },
@@ -780,7 +527,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "planned file map",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_planned_file_map"
     },
@@ -791,7 +538,7 @@
       "source_location": "L114",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "task 1: establish version control and the pinned rust workspace",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_1_establish_version_control_and_the_pinned_rust_workspace"
     },
@@ -802,7 +549,7 @@
       "source_location": "L376",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "task 2: encode domain invariants before codec code",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_2_encode_domain_invariants_before_codec_code"
     },
@@ -813,7 +560,7 @@
       "source_location": "L472",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "task 3: implement the exact scalar transform oracle",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_3_implement_the_exact_scalar_transform_oracle"
     },
@@ -824,7 +571,7 @@
       "source_location": "L556",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "task 4: implement direct-int4 and tiled_soa_32",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_4_implement_direct_int4_and_tiled_soa_32"
     },
@@ -835,7 +582,7 @@
       "source_location": "L615",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "task 5: implement pq96x8 residual refinement",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_5_implement_pq96x8_residual_refinement"
     },
@@ -846,7 +593,7 @@
       "source_location": "L698",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "task 6: implement fixed-point scoring and certified bounds",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_6_implement_fixed_point_scoring_and_certified_bounds"
     },
@@ -857,7 +604,7 @@
       "source_location": "L779",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "task 7: define the versioned segment foundation and checked reader",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_7_define_the_versioned_segment_foundation_and_checked_reader"
     },
@@ -868,7 +615,7 @@
       "source_location": "L866",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "task 8: build reproducible corpus, exact-oracle, and measurement tooling",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_8_build_reproducible_corpus_exact_oracle_and_measurement_tooling"
     },
@@ -879,7 +626,7 @@
       "source_location": "L957",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "task 9: re-run historical evidence and execute the complete m1 gate",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_9_re_run_historical_evidence_and_execute_the_complete_m1_gate"
     },
@@ -890,7 +637,7 @@
       "source_location": "L1053",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "plan self-review record",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_plan_self_review_record"
     },
@@ -901,7 +648,7 @@
       "source_location": "L1061",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "approval record",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_approval_record"
     },
@@ -912,7 +659,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 4,
-      "community_name": "Spherra polar codec and format foundation implementation plan",
+      "community_name": "Codec Foundation Plan",
       "norm_label": "2026-08-04-polar-v1-implementation-spec.md",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec"
     },
@@ -923,7 +670,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "spherra v1 implementation specification",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_spherra_v1_implementation_specification"
     },
@@ -934,7 +681,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "1. purpose and authority",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_1_purpose_and_authority"
     },
@@ -945,7 +692,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "2. starting state",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_2_starting_state"
     },
@@ -956,7 +703,7 @@
       "source_location": "L34",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "3. fixed implementation constraints",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_3_fixed_implementation_constraints"
     },
@@ -967,7 +714,7 @@
       "source_location": "L56",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "4. implementation strategy",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_4_implementation_strategy"
     },
@@ -978,7 +725,7 @@
       "source_location": "L70",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "5. workspace and dependency boundaries",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_5_workspace_and_dependency_boundaries"
     },
@@ -989,7 +736,7 @@
       "source_location": "L120",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "6. stable project-owned interfaces",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_6_stable_project_owned_interfaces"
     },
@@ -1000,7 +747,7 @@
       "source_location": "L122",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "6.1 codec boundary",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_6_1_codec_boundary"
     },
@@ -1011,7 +758,7 @@
       "source_location": "L135",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "6.2 durable-format boundary",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_6_2_durable_format_boundary"
     },
@@ -1022,7 +769,7 @@
       "source_location": "L155",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "6.3 consensus and apply boundary",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_6_3_consensus_and_apply_boundary"
     },
@@ -1033,7 +780,7 @@
       "source_location": "L171",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "6.4 segment and manifest boundary",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_6_4_segment_and_manifest_boundary"
     },
@@ -1044,7 +791,7 @@
       "source_location": "L185",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "6.5 certified-score definition",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_6_5_certified_score_definition"
     },
@@ -1055,7 +802,7 @@
       "source_location": "L208",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "6.6 query-source boundary",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_6_6_query_source_boundary"
     },
@@ -1066,7 +813,7 @@
       "source_location": "L214",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "6.7 resource-governor boundary",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_6_7_resource_governor_boundary"
     },
@@ -1077,7 +824,7 @@
       "source_location": "L218",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "7. milestones",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_7_milestones"
     },
@@ -1088,7 +835,7 @@
       "source_location": "L220",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "m0: repository and measurement bootstrap",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_m0_repository_and_measurement_bootstrap"
     },
@@ -1099,7 +846,7 @@
       "source_location": "L238",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "m1: scalar codec and durable-format foundation",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_m1_scalar_codec_and_durable_format_foundation"
     },
@@ -1110,7 +857,7 @@
       "source_location": "L263",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "m2: one-member raft and immediate-visibility vertical slice",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_m2_one_member_raft_and_immediate_visibility_vertical_slice"
     },
@@ -1121,7 +868,7 @@
       "source_location": "L300",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "m3: filtered single-node query engine and service",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_m3_filtered_single_node_query_engine_and_service"
     },
@@ -1132,7 +879,7 @@
       "source_location": "L318",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "m4: multi-node logical and physical replication",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_m4_multi_node_logical_and_physical_replication"
     },
@@ -1143,7 +890,7 @@
       "source_location": "L334",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "m5: multi-vshard polarrouter",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_m5_multi_vshard_polarrouter"
     },
@@ -1154,7 +901,7 @@
       "source_location": "L349",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "m6: benchmark-gated cell-local hnsw",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_m6_benchmark_gated_cell_local_hnsw"
     },
@@ -1165,7 +912,7 @@
       "source_location": "L368",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "m7: production hardening and billion-scale operations",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_m7_production_hardening_and_billion_scale_operations"
     },
@@ -1176,7 +923,7 @@
       "source_location": "L372",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "8. verification architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_8_verification_architecture"
     },
@@ -1187,7 +934,7 @@
       "source_location": "L407",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "9. deferred work and non-goals for m0-m1",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_9_deferred_work_and_non_goals_for_m0_m1"
     },
@@ -1198,7 +945,7 @@
       "source_location": "L420",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "10. status and document maintenance",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_10_status_and_document_maintenance"
     },
@@ -1209,7 +956,7 @@
       "source_location": "L431",
       "_origin": "ast",
       "community": 1,
-      "community_name": "Spherra v1 implementation specification",
+      "community_name": "V1 Implementation Spec",
       "norm_label": "11. approval record",
       "id": "docs_superpowers_specs_2026_08_04_polar_v1_implementation_spec_11_approval_record"
     },
@@ -1220,7 +967,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 11,
-      "community_name": "Q: What tech stack should PolarLSM plus PolarRouter use?",
+      "community_name": "Tech Stack Query",
       "norm_label": "query_20260804_194859_what_tech_stack_should_polarlsm_plus_polarrouter_u.md",
       "id": "graphify_out_memory_query_20260804_194859_what_tech_stack_should_polarlsm_plus_polarrouter_u"
     },
@@ -1231,7 +978,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "community": 11,
-      "community_name": "Q: What tech stack should PolarLSM plus PolarRouter use?",
+      "community_name": "Tech Stack Query",
       "norm_label": "q: what tech stack should polarlsm plus polarrouter use?",
       "id": "graphify_out_memory_query_20260804_194859_what_tech_stack_should_polarlsm_plus_polarrouter_u_q_what_tech_stack_should_polarlsm_plus_polarrouter_use"
     },
@@ -1242,7 +989,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "community": 11,
-      "community_name": "Q: What tech stack should PolarLSM plus PolarRouter use?",
+      "community_name": "Tech Stack Query",
       "norm_label": "answer",
       "id": "graphify_out_memory_query_20260804_194859_what_tech_stack_should_polarlsm_plus_polarrouter_u_answer"
     },
@@ -1253,7 +1000,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "community": 11,
-      "community_name": "Q: What tech stack should PolarLSM plus PolarRouter use?",
+      "community_name": "Tech Stack Query",
       "norm_label": "outcome",
       "id": "graphify_out_memory_query_20260804_194859_what_tech_stack_should_polarlsm_plus_polarrouter_u_outcome"
     },
@@ -1264,7 +1011,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 10,
-      "community_name": "Q: yes do that. also set up a comprehensive AGENTS.md that acts as the project guide. AGENTS.md should be set up so that any agent that reads it has an excellent understanding of the project, whats been done, what still needs t be done, what the next step is. there should be a rule in agents.md which states that agents must keep agents.md up to date. also make sure the graphify project graph stays up to date always",
+      "community_name": "Project Guide Request",
       "norm_label": "query_20260804_205821_yes_do_that__also_set_up_a_comprehensive_agents_md.md",
       "id": "graphify_out_memory_query_20260804_205821_yes_do_that_also_set_up_a_comprehensive_agents_md"
     },
@@ -1275,7 +1022,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "community": 10,
-      "community_name": "Q: yes do that. also set up a comprehensive AGENTS.md that acts as the project guide. AGENTS.md should be set up so that any agent that reads it has an excellent understanding of the project, whats been done, what still needs t be done, what the next step is. there should be a rule in agents.md which states that agents must keep agents.md up to date. also make sure the graphify project graph stays up to date always",
+      "community_name": "Project Guide Request",
       "norm_label": "q: yes do that. also set up a comprehensive agents.md that acts as the project guide. agents.md should be set up so that any agent that reads it has an excellent understanding of the project, whats been done, what still needs t be done, what the next step is. there should be a rule in agents.md which states that agents must keep agents.md up to date. also make sure the graphify project graph stays up to date always",
       "id": "graphify_out_memory_query_20260804_205821_yes_do_that_also_set_up_a_comprehensive_agents_md_q_yes_do_that_also_set_up_a_comprehensive_agents_md_that_acts_as_the_project_guide_agents_md_should_be_set_up_so_that_any_agent_that_reads_it_has_an_excellent_understanding_of_the_project_whats_been_done_what_still_needs_t_be_done_what_the_next_step_is_there_should_be_a_rule_in_agents_md_which_states_that_agents_must_keep_agents_md_up_to_date_also_make_sure_the_graphify_project_graph_stays_up_to_date_always"
     },
@@ -1286,7 +1033,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "community": 10,
-      "community_name": "Q: yes do that. also set up a comprehensive AGENTS.md that acts as the project guide. AGENTS.md should be set up so that any agent that reads it has an excellent understanding of the project, whats been done, what still needs t be done, what the next step is. there should be a rule in agents.md which states that agents must keep agents.md up to date. also make sure the graphify project graph stays up to date always",
+      "community_name": "Project Guide Request",
       "norm_label": "answer",
       "id": "graphify_out_memory_query_20260804_205821_yes_do_that_also_set_up_a_comprehensive_agents_md_answer"
     },
@@ -1297,7 +1044,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "community": 10,
-      "community_name": "Q: yes do that. also set up a comprehensive AGENTS.md that acts as the project guide. AGENTS.md should be set up so that any agent that reads it has an excellent understanding of the project, whats been done, what still needs t be done, what the next step is. there should be a rule in agents.md which states that agents must keep agents.md up to date. also make sure the graphify project graph stays up to date always",
+      "community_name": "Project Guide Request",
       "norm_label": "outcome",
       "id": "graphify_out_memory_query_20260804_205821_yes_do_that_also_set_up_a_comprehensive_agents_md_outcome"
     },
@@ -1308,7 +1055,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "community": 10,
-      "community_name": "Q: yes do that. also set up a comprehensive AGENTS.md that acts as the project guide. AGENTS.md should be set up so that any agent that reads it has an excellent understanding of the project, whats been done, what still needs t be done, what the next step is. there should be a rule in agents.md which states that agents must keep agents.md up to date. also make sure the graphify project graph stays up to date always",
+      "community_name": "Project Guide Request",
       "norm_label": "source nodes",
       "id": "graphify_out_memory_query_20260804_205821_yes_do_that_also_set_up_a_comprehensive_agents_md_source_nodes"
     },
@@ -1319,7 +1066,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 12,
-      "community_name": "Q: What should I name this project? Generate prospects across mythic, infrastructure, and AI-native styles with Claude.",
+      "community_name": "Naming Query",
       "norm_label": "query_20260804_214225_what_should_i_name_this_project__generate_prospect.md",
       "id": "graphify_out_memory_query_20260804_214225_what_should_i_name_this_project_generate_prospect"
     },
@@ -1330,7 +1077,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "community": 12,
-      "community_name": "Q: What should I name this project? Generate prospects across mythic, infrastructure, and AI-native styles with Claude.",
+      "community_name": "Naming Query",
       "norm_label": "q: what should i name this project? generate prospects across mythic, infrastructure, and ai-native styles with claude.",
       "id": "graphify_out_memory_query_20260804_214225_what_should_i_name_this_project_generate_prospect_q_what_should_i_name_this_project_generate_prospects_across_mythic_infrastructure_and_ai_native_styles_with_claude"
     },
@@ -1341,7 +1088,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "community": 12,
-      "community_name": "Q: What should I name this project? Generate prospects across mythic, infrastructure, and AI-native styles with Claude.",
+      "community_name": "Naming Query",
       "norm_label": "answer",
       "id": "graphify_out_memory_query_20260804_214225_what_should_i_name_this_project_generate_prospect_answer"
     },
@@ -1352,7 +1099,7 @@
       "source_location": "L15",
       "_origin": "ast",
       "community": 12,
-      "community_name": "Q: What should I name this project? Generate prospects across mythic, infrastructure, and AI-native styles with Claude.",
+      "community_name": "Naming Query",
       "norm_label": "source nodes",
       "id": "graphify_out_memory_query_20260804_214225_what_should_i_name_this_project_generate_prospect_source_nodes"
     },
@@ -1368,7 +1115,7 @@
       "community": 3,
       "norm_label": "polarlsm + polarrouter approved production design",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_document"
     },
     {
@@ -1383,7 +1130,7 @@
       "community": 3,
       "norm_label": "polar codec experiment readme",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "experiments_codec_bench_readme_document"
     },
     {
@@ -1398,7 +1145,7 @@
       "community": 3,
       "norm_label": "polarlsm",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_polarlsm"
     },
     {
@@ -1413,7 +1160,7 @@
       "community": 3,
       "norm_label": "polarrouter",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_polarrouter"
     },
     {
@@ -1428,7 +1175,7 @@
       "community": 3,
       "norm_label": "polarcode",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_polarcode"
     },
     {
@@ -1443,7 +1190,7 @@
       "community": 3,
       "norm_label": "direct int4 direction code",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_direct_int4_direction"
     },
     {
@@ -1458,7 +1205,7 @@
       "community": 3,
       "norm_label": "recursive hyperspherical angles",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_recursive_hyperspherical_angles"
     },
     {
@@ -1473,7 +1220,7 @@
       "community": 3,
       "norm_label": "turboquant-style orthogonal preconditioner",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_orthogonal_preconditioner"
     },
     {
@@ -1488,7 +1235,7 @@
       "community": 3,
       "norm_label": "pq96x8 residual refinement",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_pq96x8_residual"
     },
     {
@@ -1503,7 +1250,7 @@
       "community": 3,
       "norm_label": "searchable fp32 memtables",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_searchable_fp32_memtables"
     },
     {
@@ -1518,7 +1265,7 @@
       "community": 3,
       "norm_label": "immutable vector segments",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_immutable_vector_segments"
     },
     {
@@ -1533,7 +1280,7 @@
       "community": 3,
       "norm_label": "raft replication and immediate visibility",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_raft_replication_visibility"
     },
     {
@@ -1548,7 +1295,7 @@
       "community": 3,
       "norm_label": "version truth indexes",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_version_truth_indexes"
     },
     {
@@ -1563,7 +1310,7 @@
       "community": 3,
       "norm_label": "certified pruning error bounds",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_certified_pruning_bounds"
     },
     {
@@ -1578,7 +1325,7 @@
       "community": 3,
       "norm_label": "spherical direction cells",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_direction_cells"
     },
     {
@@ -1593,7 +1340,7 @@
       "community": 3,
       "norm_label": "immutable cell-local hnsw",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_cell_local_hnsw"
     },
     {
@@ -1608,7 +1355,7 @@
       "community": 3,
       "norm_label": "snapshot validation and candidate refill",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_snapshot_validation_refill"
     },
     {
@@ -1623,7 +1370,7 @@
       "community": 3,
       "norm_label": "blob storage and snapshot leases",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_blob_storage_snapshot_leases"
     },
     {
@@ -1638,7 +1385,7 @@
       "community": 3,
       "norm_label": "virtual-shard placement and split",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_vshard_placement_split"
     },
     {
@@ -1653,7 +1400,7 @@
       "community": 3,
       "norm_label": "adaptive aos and tiled-soa layouts",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_adaptive_physical_layouts"
     },
     {
@@ -1668,7 +1415,7 @@
       "community": 3,
       "norm_label": "v1 quality performance and correctness gates",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_acceptance_gates"
     },
     {
@@ -1683,7 +1430,7 @@
       "community": 3,
       "norm_label": "prototype codec and layout benchmark evidence",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_prototype_benchmark_evidence"
     },
     {
@@ -1698,730 +1445,8 @@
       "community": 3,
       "norm_label": "scorer-version comparison scale",
       "_origin": "semantic",
-      "community_name": "PolarLSM + PolarRouter Approved Production Design",
+      "community_name": "Production Architecture",
       "id": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_scorer_version_scale"
-    },
-    {
-      "label": "main.rs",
-      "file_type": "code",
-      "source_file": "crates/spherra-bench/src/main.rs",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 15,
-      "norm_label": "main.rs",
-      "id": "crates_spherra_bench_src_main"
-    },
-    {
-      "label": "main()",
-      "file_type": "code",
-      "source_file": "crates/spherra-bench/src/main.rs",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 15,
-      "norm_label": "main()",
-      "id": "crates_spherra_bench_src_main_main"
-    },
-    {
-      "label": "spherra-codec/src/lib.rs",
-      "file_type": "code",
-      "source_file": "crates/spherra-codec/src/lib.rs",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 16,
-      "norm_label": "spherra-codec/src/lib.rs",
-      "id": "crates_spherra_codec_src_lib"
-    },
-    {
-      "label": "spherra-domain/src/lib.rs",
-      "file_type": "code",
-      "source_file": "crates/spherra-domain/src/lib.rs",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 17,
-      "norm_label": "spherra-domain/src/lib.rs",
-      "id": "crates_spherra_domain_src_lib"
-    },
-    {
-      "label": "spherra-format/src/lib.rs",
-      "file_type": "code",
-      "source_file": "crates/spherra-format/src/lib.rs",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 18,
-      "norm_label": "spherra-format/src/lib.rs",
-      "id": "crates_spherra_format_src_lib"
-    },
-    {
-      "label": "spherra-simd/src/lib.rs",
-      "file_type": "code",
-      "source_file": "crates/spherra-simd/src/lib.rs",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 19,
-      "norm_label": "spherra-simd/src/lib.rs",
-      "id": "crates_spherra_simd_src_lib"
-    },
-    {
-      "label": "spherra-testkit/src/lib.rs",
-      "file_type": "code",
-      "source_file": "crates/spherra-testkit/src/lib.rs",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 20,
-      "norm_label": "spherra-testkit/src/lib.rs",
-      "id": "crates_spherra_testkit_src_lib"
-    },
-    {
-      "label": "bench.cpp",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "bench.cpp",
-      "id": "experiments_codec_bench_bench"
-    },
-    {
-      "label": "Measurement",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L22",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "measurement",
-      "id": "experiments_codec_bench_bench_measurement"
-    },
-    {
-      "label": "seconds",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L23",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "seconds",
-      "id": "experiments_codec_bench_bench_measurement_seconds"
-    },
-    {
-      "label": "vectors_per_second",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L24",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "vectors_per_second",
-      "id": "experiments_codec_bench_bench_measurement_vectors_per_second"
-    },
-    {
-      "label": "checksum",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L25",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "checksum",
-      "id": "experiments_codec_bench_bench_measurement_checksum"
-    },
-    {
-      "label": "measure()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L29",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "measure()",
-      "id": "experiments_codec_bench_bench_measure"
-    },
-    {
-      "label": "make_angle_tables()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L44",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "make_angle_tables()",
-      "id": "experiments_codec_bench_bench_make_angle_tables"
-    },
-    {
-      "label": "make_query()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L58",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "make_query()",
-      "id": "experiments_codec_bench_bench_make_query"
-    },
-    {
-      "label": "make_angle_codes()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L73",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "make_angle_codes()",
-      "id": "experiments_codec_bench_bench_make_angle_codes"
-    },
-    {
-      "label": "make_cartesian_codes()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L89",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "make_cartesian_codes()",
-      "id": "experiments_codec_bench_bench_make_cartesian_codes"
-    },
-    {
-      "label": "pack_aos()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L103",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "pack_aos()",
-      "id": "experiments_codec_bench_bench_pack_aos"
-    },
-    {
-      "label": "print_measurement()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L114",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "print_measurement()",
-      "id": "experiments_codec_bench_bench_print_measurement"
-    },
-    {
-      "label": "main()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/bench.cpp",
-      "source_location": "L124",
-      "_origin": "ast",
-      "community": 5,
-      "norm_label": "main()",
-      "id": "experiments_codec_bench_bench_main"
-    },
-    {
-      "label": "codec.cpp",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "codec.cpp",
-      "id": "experiments_codec_bench_codec_cpp_experiments_codec_bench_codec"
-    },
-    {
-      "label": "AngleTables::AngleTables()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L8",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "angletables::angletables()",
-      "id": "experiments_codec_bench_codec_angletables_angletables"
-    },
-    {
-      "label": "decode_hyperspherical()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L43",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "decode_hyperspherical()",
-      "id": "experiments_codec_bench_codec_decode_hyperspherical"
-    },
-    {
-      "label": "score_hyperspherical()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L61",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "score_hyperspherical()",
-      "id": "experiments_codec_bench_codec_score_hyperspherical"
-    },
-    {
-      "label": "score_quantized_angles()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L81",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "score_quantized_angles()",
-      "id": "experiments_codec_bench_codec_score_quantized_angles"
-    },
-    {
-      "label": "score_cartesian_int4()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L101",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "score_cartesian_int4()",
-      "id": "experiments_codec_bench_codec_score_cartesian_int4"
-    },
-    {
-      "label": "nibble_at()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L121",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "nibble_at()",
-      "id": "experiments_codec_bench_codec_nibble_at"
-    },
-    {
-      "label": "require_packed_size()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L127",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "require_packed_size()",
-      "id": "experiments_codec_bench_codec_require_packed_size"
-    },
-    {
-      "label": "score_packed_quantized_angles()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L135",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "score_packed_quantized_angles()",
-      "id": "experiments_codec_bench_codec_score_packed_quantized_angles"
-    },
-    {
-      "label": "score_packed_cartesian_int4()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L159",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "score_packed_cartesian_int4()",
-      "id": "experiments_codec_bench_codec_score_packed_cartesian_int4"
-    },
-    {
-      "label": "pack_soa_nibbles()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L176",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "pack_soa_nibbles()",
-      "id": "experiments_codec_bench_codec_pack_soa_nibbles"
-    },
-    {
-      "label": "soa_code_at()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L204",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "soa_code_at()",
-      "id": "experiments_codec_bench_codec_soa_code_at"
-    },
-    {
-      "label": "require_soa_size()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L215",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "require_soa_size()",
-      "id": "experiments_codec_bench_codec_require_soa_size"
-    },
-    {
-      "label": "scan_packed_angles_soa()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L227",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "scan_packed_angles_soa()",
-      "id": "experiments_codec_bench_codec_scan_packed_angles_soa"
-    },
-    {
-      "label": "scan_packed_cartesian_soa()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L256",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "scan_packed_cartesian_soa()",
-      "id": "experiments_codec_bench_codec_scan_packed_cartesian_soa"
-    },
-    {
-      "label": "tiled_soa_required_size()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L280",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "tiled_soa_required_size()",
-      "id": "experiments_codec_bench_codec_tiled_soa_required_size"
-    },
-    {
-      "label": "tiled_soa_code_at()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L291",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "tiled_soa_code_at()",
-      "id": "experiments_codec_bench_codec_tiled_soa_code_at"
-    },
-    {
-      "label": "require_tiled_soa_size()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L307",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "require_tiled_soa_size()",
-      "id": "experiments_codec_bench_codec_require_tiled_soa_size"
-    },
-    {
-      "label": "pack_tiled_soa_nibbles()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L319",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "pack_tiled_soa_nibbles()",
-      "id": "experiments_codec_bench_codec_pack_tiled_soa_nibbles"
-    },
-    {
-      "label": "scan_packed_cartesian_tiled_soa()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L350",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "scan_packed_cartesian_tiled_soa()",
-      "id": "experiments_codec_bench_codec_scan_packed_cartesian_tiled_soa"
-    },
-    {
-      "label": "score_packed_cartesian_tiled_soa_at()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L375",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "score_packed_cartesian_tiled_soa_at()",
-      "id": "experiments_codec_bench_codec_score_packed_cartesian_tiled_soa_at"
-    },
-    {
-      "label": "pack_nibbles()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L396",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "pack_nibbles()",
-      "id": "experiments_codec_bench_codec_pack_nibbles"
-    },
-    {
-      "label": "unpack_nibbles()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.cpp",
-      "source_location": "L409",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "unpack_nibbles()",
-      "id": "experiments_codec_bench_codec_unpack_nibbles"
-    },
-    {
-      "label": "codec.hpp",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.hpp",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 7,
-      "norm_label": "codec.hpp",
-      "id": "experiments_codec_bench_codec_hpp_experiments_codec_bench_codec"
-    },
-    {
-      "label": "AngleTables",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.hpp",
-      "source_location": "L10",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "angletables",
-      "id": "experiments_codec_bench_codec_angletables"
-    },
-    {
-      "label": "set",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.hpp",
-      "source_location": "L14",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "set",
-      "id": "experiments_codec_bench_codec_angletables_set"
-    },
-    {
-      "label": "cosine",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.hpp",
-      "source_location": "L20",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "cosine",
-      "id": "experiments_codec_bench_codec_angletables_cosine"
-    },
-    {
-      "label": "sine",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.hpp",
-      "source_location": "L21",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "sine",
-      "id": "experiments_codec_bench_codec_angletables_sine"
-    },
-    {
-      "label": "angle_count",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.hpp",
-      "source_location": "L22",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "angle_count",
-      "id": "experiments_codec_bench_codec_angletables_angle_count"
-    },
-    {
-      "label": "cosines_",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.hpp",
-      "source_location": "L26",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "cosines_",
-      "id": "experiments_codec_bench_codec_angletables_cosines"
-    },
-    {
-      "label": "sines_",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec.hpp",
-      "source_location": "L27",
-      "_origin": "ast",
-      "community": 0,
-      "norm_label": "sines_",
-      "id": "experiments_codec_bench_codec_angletables_sines"
-    },
-    {
-      "label": "codec_test.cpp",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec_test.cpp",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 7,
-      "norm_label": "codec_test.cpp",
-      "id": "experiments_codec_bench_codec_test"
-    },
-    {
-      "label": "expect_near()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec_test.cpp",
-      "source_location": "L10",
-      "_origin": "ast",
-      "community": 7,
-      "norm_label": "expect_near()",
-      "id": "experiments_codec_bench_codec_test_expect_near"
-    },
-    {
-      "label": "test_hyperspherical_decode_matches_known_vector()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec_test.cpp",
-      "source_location": "L17",
-      "_origin": "ast",
-      "community": 7,
-      "norm_label": "test_hyperspherical_decode_matches_known_vector()",
-      "id": "experiments_codec_bench_codec_test_test_hyperspherical_decode_matches_known_vector"
-    },
-    {
-      "label": "test_recursive_score_matches_decoded_dot_product()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec_test.cpp",
-      "source_location": "L26",
-      "_origin": "ast",
-      "community": 7,
-      "norm_label": "test_recursive_score_matches_decoded_dot_product()",
-      "id": "experiments_codec_bench_codec_test_test_recursive_score_matches_decoded_dot_product"
-    },
-    {
-      "label": "test_nibbles_round_trip()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec_test.cpp",
-      "source_location": "L40",
-      "_origin": "ast",
-      "community": 7,
-      "norm_label": "test_nibbles_round_trip()",
-      "id": "experiments_codec_bench_codec_test_test_nibbles_round_trip"
-    },
-    {
-      "label": "test_quantized_angle_score_uses_recursive_prefix()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec_test.cpp",
-      "source_location": "L51",
-      "_origin": "ast",
-      "community": 7,
-      "norm_label": "test_quantized_angle_score_uses_recursive_prefix()",
-      "id": "experiments_codec_bench_codec_test_test_quantized_angle_score_uses_recursive_prefix"
-    },
-    {
-      "label": "test_cartesian_int4_score_maps_endpoints_to_unit_range()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec_test.cpp",
-      "source_location": "L62",
-      "_origin": "ast",
-      "community": 7,
-      "norm_label": "test_cartesian_int4_score_maps_endpoints_to_unit_range()",
-      "id": "experiments_codec_bench_codec_test_test_cartesian_int4_score_maps_endpoints_to_unit_range"
-    },
-    {
-      "label": "test_packed_scores_match_unpacked_scores()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec_test.cpp",
-      "source_location": "L69",
-      "_origin": "ast",
-      "community": 7,
-      "norm_label": "test_packed_scores_match_unpacked_scores()",
-      "id": "experiments_codec_bench_codec_test_test_packed_scores_match_unpacked_scores"
-    },
-    {
-      "label": "test_soa_scans_match_individual_scores()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec_test.cpp",
-      "source_location": "L95",
-      "_origin": "ast",
-      "community": 7,
-      "norm_label": "test_soa_scans_match_individual_scores()",
-      "id": "experiments_codec_bench_codec_test_test_soa_scans_match_individual_scores"
-    },
-    {
-      "label": "test_tiled_soa_supports_scan_and_random_access()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec_test.cpp",
-      "source_location": "L119",
-      "_origin": "ast",
-      "community": 7,
-      "norm_label": "test_tiled_soa_supports_scan_and_random_access()",
-      "id": "experiments_codec_bench_codec_test_test_tiled_soa_supports_scan_and_random_access"
-    },
-    {
-      "label": "main()",
-      "file_type": "code",
-      "source_file": "experiments/codec_bench/codec_test.cpp",
-      "source_location": "L142",
-      "_origin": "ast",
-      "community": 7,
-      "norm_label": "main()",
-      "id": "experiments_codec_bench_codec_test_main"
-    },
-    {
-      "label": "bound_soundness.rs",
-      "file_type": "code",
-      "source_file": "fuzz/fuzz_targets/bound_soundness.rs",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 21,
-      "norm_label": "bound_soundness.rs",
-      "id": "fuzz_fuzz_targets_bound_soundness"
-    },
-    {
-      "label": "format_open.rs",
-      "file_type": "code",
-      "source_file": "fuzz/fuzz_targets/format_open.rs",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 22,
-      "norm_label": "format_open.rs",
-      "id": "fuzz_fuzz_targets_format_open"
-    },
-    {
-      "label": "check_dependency_policy.py",
-      "file_type": "code",
-      "source_file": "scripts/check_dependency_policy.py",
-      "source_location": "L1",
-      "_origin": "ast",
-      "community": 13,
-      "norm_label": "check_dependency_policy.py",
-      "id": "scripts_check_dependency_policy"
-    },
-    {
-      "label": "cargo_executable()",
-      "file_type": "code",
-      "source_file": "scripts/check_dependency_policy.py",
-      "source_location": "L13",
-      "_origin": "ast",
-      "community": 13,
-      "norm_label": "cargo_executable()",
-      "id": "scripts_check_dependency_policy_cargo_executable"
-    },
-    {
-      "label": "normal_or_build_dependencies()",
-      "file_type": "code",
-      "source_file": "scripts/check_dependency_policy.py",
-      "source_location": "L29",
-      "_origin": "ast",
-      "community": 13,
-      "norm_label": "normal_or_build_dependencies()",
-      "id": "scripts_check_dependency_policy_normal_or_build_dependencies"
-    },
-    {
-      "label": "main()",
-      "file_type": "code",
-      "source_file": "scripts/check_dependency_policy.py",
-      "source_location": "L42",
-      "_origin": "ast",
-      "community": 13,
-      "norm_label": "main()",
-      "id": "scripts_check_dependency_policy_main"
-    },
-    {
-      "label": "ci.sh",
-      "file_type": "code",
-      "source_file": "scripts/ci.sh",
-      "source_location": "L1",
-      "metadata": {
-        "language": "bash",
-        "kind": "file"
-      },
-      "_origin": "ast",
-      "community": 14,
-      "norm_label": "ci.sh",
-      "id": "scripts_ci"
-    },
-    {
-      "label": "ci.sh script",
-      "file_type": "code",
-      "source_file": "scripts/ci.sh",
-      "source_location": "L1",
-      "metadata": {
-        "language": "bash",
-        "kind": "bash_entrypoint"
-      },
-      "_origin": "ast",
-      "community": 14,
-      "norm_label": "ci.sh script",
-      "id": "scripts_ci_sh__entry"
-    },
-    {
-      "label": "PATH",
-      "file_type": "code",
-      "source_file": "scripts/ci.sh",
-      "source_location": "L4",
-      "metadata": {
-        "language": "bash",
-        "kind": "code"
-      },
-      "_origin": "ast",
-      "community": 14,
-      "norm_label": "path",
-      "id": "scripts_ci_path"
     },
     {
       "label": "Rust Workspace Bootstrap",
@@ -2435,6 +1460,7 @@
       "community": 9,
       "norm_label": "rust workspace bootstrap",
       "_origin": "semantic",
+      "community_name": "Rust Bootstrap and CI",
       "id": "agents_rust_workspace_bootstrap"
     },
     {
@@ -2449,6 +1475,7 @@
       "community": 9,
       "norm_label": "task 2 next step",
       "_origin": "semantic",
+      "community_name": "Rust Bootstrap and CI",
       "id": "agents_task_2_next_step"
     },
     {
@@ -2463,6 +1490,7 @@
       "community": 9,
       "norm_label": "task 1 pinned rust workspace",
       "_origin": "semantic",
+      "community_name": "Rust Bootstrap and CI",
       "id": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_1"
     },
     {
@@ -2477,6 +1505,7 @@
       "community": 9,
       "norm_label": "quality ci job",
       "_origin": "semantic",
+      "community_name": "Rust Bootstrap and CI",
       "id": "github_workflows_ci_quality_job"
     },
     {
@@ -2491,283 +1520,1113 @@
       "community": 9,
       "norm_label": "security ci job",
       "_origin": "semantic",
+      "community_name": "Rust Bootstrap and CI",
       "id": "github_workflows_ci_security_job"
+    },
+    {
+      "label": "main.rs",
+      "file_type": "code",
+      "source_file": "crates/spherra-bench/src/main.rs",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "Benchmark Entrypoint",
+      "norm_label": "main.rs",
+      "id": "crates_spherra_bench_src_main"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "crates/spherra-bench/src/main.rs",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 15,
+      "community_name": "Benchmark Entrypoint",
+      "norm_label": "main()",
+      "id": "crates_spherra_bench_src_main_main"
+    },
+    {
+      "label": "spherra-codec/src/lib.rs",
+      "file_type": "code",
+      "source_file": "crates/spherra-codec/src/lib.rs",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 16,
+      "community_name": "Codec Crate Stub",
+      "norm_label": "spherra-codec/src/lib.rs",
+      "id": "crates_spherra_codec_src_lib"
+    },
+    {
+      "label": "spherra-domain/src/lib.rs",
+      "file_type": "code",
+      "source_file": "crates/spherra-domain/src/lib.rs",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 17,
+      "community_name": "Domain Crate Stub",
+      "norm_label": "spherra-domain/src/lib.rs",
+      "id": "crates_spherra_domain_src_lib"
+    },
+    {
+      "label": "spherra-format/src/lib.rs",
+      "file_type": "code",
+      "source_file": "crates/spherra-format/src/lib.rs",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 18,
+      "community_name": "Format Crate Stub",
+      "norm_label": "spherra-format/src/lib.rs",
+      "id": "crates_spherra_format_src_lib"
+    },
+    {
+      "label": "spherra-simd/src/lib.rs",
+      "file_type": "code",
+      "source_file": "crates/spherra-simd/src/lib.rs",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 19,
+      "community_name": "SIMD Crate Stub",
+      "norm_label": "spherra-simd/src/lib.rs",
+      "id": "crates_spherra_simd_src_lib"
+    },
+    {
+      "label": "spherra-testkit/src/lib.rs",
+      "file_type": "code",
+      "source_file": "crates/spherra-testkit/src/lib.rs",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 20,
+      "community_name": "Testkit Crate Stub",
+      "norm_label": "spherra-testkit/src/lib.rs",
+      "id": "crates_spherra_testkit_src_lib"
+    },
+    {
+      "label": "accuracy.py",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "accuracy.py",
+      "id": "experiments_codec_bench_accuracy"
+    },
+    {
+      "label": "ScalarCodec",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L11",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "scalarcodec",
+      "id": "experiments_codec_bench_accuracy_scalarcodec"
+    },
+    {
+      "label": "normalize()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L16",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "normalize()",
+      "id": "experiments_codec_bench_accuracy_normalize"
+    },
+    {
+      "label": "to_hyperspherical()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L22",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "to_hyperspherical()",
+      "id": "experiments_codec_bench_accuracy_to_hyperspherical"
+    },
+    {
+      "label": "from_hyperspherical()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L38",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "from_hyperspherical()",
+      "id": "experiments_codec_bench_accuracy_from_hyperspherical"
+    },
+    {
+      "label": "fit_scalar_codec()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L52",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "fit_scalar_codec()",
+      "id": "experiments_codec_bench_accuracy_fit_scalar_codec"
+    },
+    {
+      "label": "encode_scalar()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L75",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "encode_scalar()",
+      "id": "experiments_codec_bench_accuracy_encode_scalar"
+    },
+    {
+      "label": "decode_scalar()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L86",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "decode_scalar()",
+      "id": "experiments_codec_bench_accuracy_decode_scalar"
+    },
+    {
+      "label": "topk_indices()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L95",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "topk_indices()",
+      "id": "experiments_codec_bench_accuracy_topk_indices"
+    },
+    {
+      "label": "recall_at_k()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L102",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "recall_at_k()",
+      "id": "experiments_codec_bench_accuracy_recall_at_k"
+    },
+    {
+      "label": "make_dataset()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L111",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "make_dataset()",
+      "id": "experiments_codec_bench_accuracy_make_dataset"
+    },
+    {
+      "label": "score_decoded_corpus()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L140",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "score_decoded_corpus()",
+      "id": "experiments_codec_bench_accuracy_score_decoded_corpus"
+    },
+    {
+      "label": "reconstruction_metrics()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L148",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "reconstruction_metrics()",
+      "id": "experiments_codec_bench_accuracy_reconstruction_metrics"
+    },
+    {
+      "label": "cone_metrics()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L157",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "cone_metrics()",
+      "id": "experiments_codec_bench_accuracy_cone_metrics"
+    },
+    {
+      "label": "evaluate()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L177",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "evaluate()",
+      "id": "experiments_codec_bench_accuracy_evaluate"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L233",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "Python Accuracy Experiment",
+      "norm_label": "main()",
+      "id": "experiments_codec_bench_accuracy_main"
+    },
+    {
+      "label": "accuracy_test.py",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Python Accuracy Tests",
+      "norm_label": "accuracy_test.py",
+      "id": "experiments_codec_bench_accuracy_test"
+    },
+    {
+      "label": "AccuracyTest",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L8",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Python Accuracy Tests",
+      "norm_label": "accuracytest",
+      "id": "experiments_codec_bench_accuracy_test_accuracytest"
+    },
+    {
+      "label": ".test_hyperspherical_round_trip()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L9",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Python Accuracy Tests",
+      "norm_label": ".test_hyperspherical_round_trip()",
+      "id": "experiments_codec_bench_accuracy_test_accuracytest_test_hyperspherical_round_trip"
+    },
+    {
+      "label": ".test_scalar_codec_reconstructs_bin_means()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L26",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Python Accuracy Tests",
+      "norm_label": ".test_scalar_codec_reconstructs_bin_means()",
+      "id": "experiments_codec_bench_accuracy_test_accuracytest_test_scalar_codec_reconstructs_bin_means"
+    },
+    {
+      "label": ".test_recall_at_k_uses_exact_neighbor_ids()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L38",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Python Accuracy Tests",
+      "norm_label": ".test_recall_at_k_uses_exact_neighbor_ids()",
+      "id": "experiments_codec_bench_accuracy_test_accuracytest_test_recall_at_k_uses_exact_neighbor_ids"
+    },
+    {
+      "label": ".test_correlated_dataset_uses_supplied_projection()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L44",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Python Accuracy Tests",
+      "norm_label": ".test_correlated_dataset_uses_supplied_projection()",
+      "id": "experiments_codec_bench_accuracy_test_accuracytest_test_correlated_dataset_uses_supplied_projection"
+    },
+    {
+      "label": ".test_approximate_scores_keep_query_high_precision()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L59",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Python Accuracy Tests",
+      "norm_label": ".test_approximate_scores_keep_query_high_precision()",
+      "id": "experiments_codec_bench_accuracy_test_accuracytest_test_approximate_scores_keep_query_high_precision"
+    },
+    {
+      "label": "bench.cpp",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "bench.cpp",
+      "id": "experiments_codec_bench_bench"
+    },
+    {
+      "label": "Measurement",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L22",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "measurement",
+      "id": "experiments_codec_bench_bench_measurement"
+    },
+    {
+      "label": "seconds",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L23",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "seconds",
+      "id": "experiments_codec_bench_bench_measurement_seconds"
+    },
+    {
+      "label": "vectors_per_second",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L24",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "vectors_per_second",
+      "id": "experiments_codec_bench_bench_measurement_vectors_per_second"
+    },
+    {
+      "label": "checksum",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L25",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "checksum",
+      "id": "experiments_codec_bench_bench_measurement_checksum"
+    },
+    {
+      "label": "measure()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L29",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "measure()",
+      "id": "experiments_codec_bench_bench_measure"
+    },
+    {
+      "label": "make_angle_tables()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L44",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "make_angle_tables()",
+      "id": "experiments_codec_bench_bench_make_angle_tables"
+    },
+    {
+      "label": "make_query()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L58",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "make_query()",
+      "id": "experiments_codec_bench_bench_make_query"
+    },
+    {
+      "label": "make_angle_codes()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L73",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "make_angle_codes()",
+      "id": "experiments_codec_bench_bench_make_angle_codes"
+    },
+    {
+      "label": "make_cartesian_codes()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L89",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "make_cartesian_codes()",
+      "id": "experiments_codec_bench_bench_make_cartesian_codes"
+    },
+    {
+      "label": "pack_aos()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L103",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "pack_aos()",
+      "id": "experiments_codec_bench_bench_pack_aos"
+    },
+    {
+      "label": "print_measurement()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L114",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "print_measurement()",
+      "id": "experiments_codec_bench_bench_print_measurement"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/bench.cpp",
+      "source_location": "L124",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "main()",
+      "id": "experiments_codec_bench_bench_main"
+    },
+    {
+      "label": "codec.cpp",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "codec.cpp",
+      "id": "experiments_codec_bench_codec_cpp_experiments_codec_bench_codec"
+    },
+    {
+      "label": "AngleTables::AngleTables()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L8",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "angletables::angletables()",
+      "id": "experiments_codec_bench_codec_angletables_angletables"
+    },
+    {
+      "label": "decode_hyperspherical()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L43",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "decode_hyperspherical()",
+      "id": "experiments_codec_bench_codec_decode_hyperspherical"
+    },
+    {
+      "label": "score_hyperspherical()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L61",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "score_hyperspherical()",
+      "id": "experiments_codec_bench_codec_score_hyperspherical"
+    },
+    {
+      "label": "score_quantized_angles()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L81",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "score_quantized_angles()",
+      "id": "experiments_codec_bench_codec_score_quantized_angles"
+    },
+    {
+      "label": "score_cartesian_int4()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L101",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "score_cartesian_int4()",
+      "id": "experiments_codec_bench_codec_score_cartesian_int4"
+    },
+    {
+      "label": "nibble_at()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L121",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "nibble_at()",
+      "id": "experiments_codec_bench_codec_nibble_at"
+    },
+    {
+      "label": "require_packed_size()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L127",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "require_packed_size()",
+      "id": "experiments_codec_bench_codec_require_packed_size"
+    },
+    {
+      "label": "score_packed_quantized_angles()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L135",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "score_packed_quantized_angles()",
+      "id": "experiments_codec_bench_codec_score_packed_quantized_angles"
+    },
+    {
+      "label": "score_packed_cartesian_int4()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L159",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "score_packed_cartesian_int4()",
+      "id": "experiments_codec_bench_codec_score_packed_cartesian_int4"
+    },
+    {
+      "label": "pack_soa_nibbles()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L176",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "pack_soa_nibbles()",
+      "id": "experiments_codec_bench_codec_pack_soa_nibbles"
+    },
+    {
+      "label": "soa_code_at()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L204",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "soa_code_at()",
+      "id": "experiments_codec_bench_codec_soa_code_at"
+    },
+    {
+      "label": "require_soa_size()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L215",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "require_soa_size()",
+      "id": "experiments_codec_bench_codec_require_soa_size"
+    },
+    {
+      "label": "scan_packed_angles_soa()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L227",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "scan_packed_angles_soa()",
+      "id": "experiments_codec_bench_codec_scan_packed_angles_soa"
+    },
+    {
+      "label": "scan_packed_cartesian_soa()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L256",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "scan_packed_cartesian_soa()",
+      "id": "experiments_codec_bench_codec_scan_packed_cartesian_soa"
+    },
+    {
+      "label": "tiled_soa_required_size()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L280",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "tiled_soa_required_size()",
+      "id": "experiments_codec_bench_codec_tiled_soa_required_size"
+    },
+    {
+      "label": "tiled_soa_code_at()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L291",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "tiled_soa_code_at()",
+      "id": "experiments_codec_bench_codec_tiled_soa_code_at"
+    },
+    {
+      "label": "require_tiled_soa_size()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L307",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "require_tiled_soa_size()",
+      "id": "experiments_codec_bench_codec_require_tiled_soa_size"
+    },
+    {
+      "label": "pack_tiled_soa_nibbles()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L319",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "pack_tiled_soa_nibbles()",
+      "id": "experiments_codec_bench_codec_pack_tiled_soa_nibbles"
+    },
+    {
+      "label": "scan_packed_cartesian_tiled_soa()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L350",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "scan_packed_cartesian_tiled_soa()",
+      "id": "experiments_codec_bench_codec_scan_packed_cartesian_tiled_soa"
+    },
+    {
+      "label": "score_packed_cartesian_tiled_soa_at()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L375",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "score_packed_cartesian_tiled_soa_at()",
+      "id": "experiments_codec_bench_codec_score_packed_cartesian_tiled_soa_at"
+    },
+    {
+      "label": "pack_nibbles()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L396",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "pack_nibbles()",
+      "id": "experiments_codec_bench_codec_pack_nibbles"
+    },
+    {
+      "label": "unpack_nibbles()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.cpp",
+      "source_location": "L409",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "unpack_nibbles()",
+      "id": "experiments_codec_bench_codec_unpack_nibbles"
+    },
+    {
+      "label": "codec.hpp",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.hpp",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 5,
+      "community_name": "C++ Benchmark Harness",
+      "norm_label": "codec.hpp",
+      "id": "experiments_codec_bench_codec_hpp_experiments_codec_bench_codec"
+    },
+    {
+      "label": "AngleTables",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.hpp",
+      "source_location": "L10",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "angletables",
+      "id": "experiments_codec_bench_codec_angletables"
+    },
+    {
+      "label": "set",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.hpp",
+      "source_location": "L14",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "set",
+      "id": "experiments_codec_bench_codec_angletables_set"
+    },
+    {
+      "label": "cosine",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.hpp",
+      "source_location": "L20",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "cosine",
+      "id": "experiments_codec_bench_codec_angletables_cosine"
+    },
+    {
+      "label": "sine",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.hpp",
+      "source_location": "L21",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "sine",
+      "id": "experiments_codec_bench_codec_angletables_sine"
+    },
+    {
+      "label": "angle_count",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.hpp",
+      "source_location": "L22",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "angle_count",
+      "id": "experiments_codec_bench_codec_angletables_angle_count"
+    },
+    {
+      "label": "cosines_",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.hpp",
+      "source_location": "L26",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "cosines_",
+      "id": "experiments_codec_bench_codec_angletables_cosines"
+    },
+    {
+      "label": "sines_",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec.hpp",
+      "source_location": "L27",
+      "_origin": "ast",
+      "community": 0,
+      "community_name": "C++ Codec Kernels",
+      "norm_label": "sines_",
+      "id": "experiments_codec_bench_codec_angletables_sines"
+    },
+    {
+      "label": "codec_test.cpp",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec_test.cpp",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "C++ Codec Tests",
+      "norm_label": "codec_test.cpp",
+      "id": "experiments_codec_bench_codec_test"
+    },
+    {
+      "label": "expect_near()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec_test.cpp",
+      "source_location": "L10",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "C++ Codec Tests",
+      "norm_label": "expect_near()",
+      "id": "experiments_codec_bench_codec_test_expect_near"
+    },
+    {
+      "label": "test_hyperspherical_decode_matches_known_vector()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec_test.cpp",
+      "source_location": "L17",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "C++ Codec Tests",
+      "norm_label": "test_hyperspherical_decode_matches_known_vector()",
+      "id": "experiments_codec_bench_codec_test_test_hyperspherical_decode_matches_known_vector"
+    },
+    {
+      "label": "test_recursive_score_matches_decoded_dot_product()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec_test.cpp",
+      "source_location": "L26",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "C++ Codec Tests",
+      "norm_label": "test_recursive_score_matches_decoded_dot_product()",
+      "id": "experiments_codec_bench_codec_test_test_recursive_score_matches_decoded_dot_product"
+    },
+    {
+      "label": "test_nibbles_round_trip()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec_test.cpp",
+      "source_location": "L40",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "C++ Codec Tests",
+      "norm_label": "test_nibbles_round_trip()",
+      "id": "experiments_codec_bench_codec_test_test_nibbles_round_trip"
+    },
+    {
+      "label": "test_quantized_angle_score_uses_recursive_prefix()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec_test.cpp",
+      "source_location": "L51",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "C++ Codec Tests",
+      "norm_label": "test_quantized_angle_score_uses_recursive_prefix()",
+      "id": "experiments_codec_bench_codec_test_test_quantized_angle_score_uses_recursive_prefix"
+    },
+    {
+      "label": "test_cartesian_int4_score_maps_endpoints_to_unit_range()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec_test.cpp",
+      "source_location": "L62",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "C++ Codec Tests",
+      "norm_label": "test_cartesian_int4_score_maps_endpoints_to_unit_range()",
+      "id": "experiments_codec_bench_codec_test_test_cartesian_int4_score_maps_endpoints_to_unit_range"
+    },
+    {
+      "label": "test_packed_scores_match_unpacked_scores()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec_test.cpp",
+      "source_location": "L69",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "C++ Codec Tests",
+      "norm_label": "test_packed_scores_match_unpacked_scores()",
+      "id": "experiments_codec_bench_codec_test_test_packed_scores_match_unpacked_scores"
+    },
+    {
+      "label": "test_soa_scans_match_individual_scores()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec_test.cpp",
+      "source_location": "L95",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "C++ Codec Tests",
+      "norm_label": "test_soa_scans_match_individual_scores()",
+      "id": "experiments_codec_bench_codec_test_test_soa_scans_match_individual_scores"
+    },
+    {
+      "label": "test_tiled_soa_supports_scan_and_random_access()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec_test.cpp",
+      "source_location": "L119",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "C++ Codec Tests",
+      "norm_label": "test_tiled_soa_supports_scan_and_random_access()",
+      "id": "experiments_codec_bench_codec_test_test_tiled_soa_supports_scan_and_random_access"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "experiments/codec_bench/codec_test.cpp",
+      "source_location": "L142",
+      "_origin": "ast",
+      "community": 7,
+      "community_name": "C++ Codec Tests",
+      "norm_label": "main()",
+      "id": "experiments_codec_bench_codec_test_main"
+    },
+    {
+      "label": "bound_soundness.rs",
+      "file_type": "code",
+      "source_file": "fuzz/fuzz_targets/bound_soundness.rs",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 21,
+      "community_name": "Bound Fuzz Target",
+      "norm_label": "bound_soundness.rs",
+      "id": "fuzz_fuzz_targets_bound_soundness"
+    },
+    {
+      "label": "format_open.rs",
+      "file_type": "code",
+      "source_file": "fuzz/fuzz_targets/format_open.rs",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 22,
+      "community_name": "Format Fuzz Target",
+      "norm_label": "format_open.rs",
+      "id": "fuzz_fuzz_targets_format_open"
+    },
+    {
+      "label": "check_dependency_policy.py",
+      "file_type": "code",
+      "source_file": "scripts/check_dependency_policy.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Dependency Policy Script",
+      "norm_label": "check_dependency_policy.py",
+      "id": "scripts_check_dependency_policy"
+    },
+    {
+      "label": "cargo_executable()",
+      "file_type": "code",
+      "source_file": "scripts/check_dependency_policy.py",
+      "source_location": "L13",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Dependency Policy Script",
+      "norm_label": "cargo_executable()",
+      "id": "scripts_check_dependency_policy_cargo_executable"
+    },
+    {
+      "label": "normal_or_build_dependencies()",
+      "file_type": "code",
+      "source_file": "scripts/check_dependency_policy.py",
+      "source_location": "L29",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Dependency Policy Script",
+      "norm_label": "normal_or_build_dependencies()",
+      "id": "scripts_check_dependency_policy_normal_or_build_dependencies"
+    },
+    {
+      "label": "main()",
+      "file_type": "code",
+      "source_file": "scripts/check_dependency_policy.py",
+      "source_location": "L42",
+      "_origin": "ast",
+      "community": 13,
+      "community_name": "Dependency Policy Script",
+      "norm_label": "main()",
+      "id": "scripts_check_dependency_policy_main"
+    },
+    {
+      "label": "ci.sh",
+      "file_type": "code",
+      "source_file": "scripts/ci.sh",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "file"
+      },
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "Local CI Script",
+      "norm_label": "ci.sh",
+      "id": "scripts_ci"
+    },
+    {
+      "label": "ci.sh script",
+      "file_type": "code",
+      "source_file": "scripts/ci.sh",
+      "source_location": "L1",
+      "metadata": {
+        "language": "bash",
+        "kind": "bash_entrypoint"
+      },
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "Local CI Script",
+      "norm_label": "ci.sh script",
+      "id": "scripts_ci_sh__entry"
+    },
+    {
+      "label": "PATH",
+      "file_type": "code",
+      "source_file": "scripts/ci.sh",
+      "source_location": "L4",
+      "metadata": {
+        "language": "bash",
+        "kind": "code"
+      },
+      "_origin": "ast",
+      "community": 14,
+      "community_name": "Local CI Script",
+      "norm_label": "path",
+      "id": "scripts_ci_path"
+    },
+    {
+      "label": "Local Quality Gate",
+      "file_type": "document",
+      "source_file": ".github/workflows/ci.yml",
+      "source_location": "L11",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "workflows_ci_local_quality_gate",
+      "community": 23,
+      "community_name": "CI Advisory Audit",
+      "norm_label": "local quality gate"
+    },
+    {
+      "label": "Security Advisories",
+      "file_type": "document",
+      "source_file": ".github/workflows/ci.yml",
+      "source_location": "L27",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "workflows_ci_security_advisories",
+      "community": 23,
+      "community_name": "CI Advisory Audit",
+      "norm_label": "security advisories"
+    },
+    {
+      "label": "Advisory Database Snapshot",
+      "file_type": "document",
+      "source_file": ".github/workflows/ci.yml",
+      "source_location": "L36",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "workflows_ci_advisory_database_snapshot",
+      "community": 23,
+      "community_name": "CI Advisory Audit",
+      "norm_label": "advisory database snapshot"
+    },
+    {
+      "label": "cargo-deny",
+      "file_type": "document",
+      "source_file": ".github/workflows/ci.yml",
+      "source_location": "L35",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "id": "workflows_ci_cargo_deny",
+      "community": 23,
+      "community_name": "CI Advisory Audit",
+      "norm_label": "cargo-deny"
     }
   ],
   "links": [
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L157",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_cone_metrics"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L86",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_decode_scalar"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L75",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_encode_scalar"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L177",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_evaluate"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L52",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_fit_scalar_codec"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L38",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_from_hyperspherical"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L233",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_main"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L111",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_make_dataset"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L16",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_normalize"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L102",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_recall_at_k"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L148",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_reconstruction_metrics"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L11",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_scalarcodec"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L140",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_score_decoded_corpus"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L22",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_to_hyperspherical"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L95",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy",
-      "target": "experiments_codec_bench_accuracy_topk_indices"
-    },
-    {
-      "relation": "imports",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L5",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_test",
-      "target": "experiments_codec_bench_accuracy"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L86",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_decode_scalar",
-      "target": "experiments_codec_bench_accuracy_scalarcodec"
-    },
-    {
-      "relation": "references",
-      "context": "parameter_type",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L75",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_encode_scalar",
-      "target": "experiments_codec_bench_accuracy_scalarcodec"
-    },
-    {
-      "relation": "references",
-      "context": "return_type",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L52",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_fit_scalar_codec",
-      "target": "experiments_codec_bench_accuracy_scalarcodec"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L203",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_evaluate",
-      "target": "experiments_codec_bench_accuracy_normalize"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L136",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_make_dataset",
-      "target": "experiments_codec_bench_accuracy_normalize"
-    },
-    {
-      "relation": "references",
-      "context": "generic_arg",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L16",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_normalize",
-      "target": "ndarray"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L149",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_reconstruction_metrics",
-      "target": "experiments_codec_bench_accuracy_normalize"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L25",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_to_hyperspherical",
-      "target": "experiments_codec_bench_accuracy_normalize"
-    },
     {
       "relation": "references",
       "context": "parameter_type",
@@ -2842,6 +2701,18 @@
     },
     {
       "relation": "references",
+      "context": "generic_arg",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_normalize",
+      "target": "ndarray"
+    },
+    {
+      "relation": "references",
       "context": "parameter_type",
       "confidence": "EXTRACTED",
       "source_file": "experiments/codec_bench/accuracy.py",
@@ -2901,138 +2772,6 @@
       "target": "ndarray"
     },
     {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L205",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_evaluate",
-      "target": "experiments_codec_bench_accuracy_to_hyperspherical"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L207",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_evaluate",
-      "target": "experiments_codec_bench_accuracy_from_hyperspherical"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L199",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_evaluate",
-      "target": "experiments_codec_bench_accuracy_fit_scalar_codec"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L201",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_evaluate",
-      "target": "experiments_codec_bench_accuracy_encode_scalar"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L200",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_evaluate",
-      "target": "experiments_codec_bench_accuracy_decode_scalar"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L197",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_evaluate",
-      "target": "experiments_codec_bench_accuracy_topk_indices"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L225",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_evaluate",
-      "target": "experiments_codec_bench_accuracy_recall_at_k"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L186",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_evaluate",
-      "target": "experiments_codec_bench_accuracy_make_dataset"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L216",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_evaluate",
-      "target": "experiments_codec_bench_accuracy_score_decoded_corpus"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L227",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_evaluate",
-      "target": "experiments_codec_bench_accuracy_reconstruction_metrics"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L228",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_evaluate",
-      "target": "experiments_codec_bench_accuracy_cone_metrics"
-    },
-    {
       "relation": "references",
       "context": "parameter_type",
       "confidence": "EXTRACTED",
@@ -3043,84 +2782,6 @@
       "confidence_score": 1.0,
       "source": "experiments_codec_bench_accuracy_evaluate",
       "target": "namespace"
-    },
-    {
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy.py",
-      "source_location": "L243",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_main",
-      "target": "experiments_codec_bench_accuracy_evaluate"
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L8",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_test",
-      "target": "experiments_codec_bench_accuracy_test_accuracytest"
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L59",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_test_accuracytest",
-      "target": "experiments_codec_bench_accuracy_test_accuracytest_test_approximate_scores_keep_query_high_precision"
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L44",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_test_accuracytest",
-      "target": "experiments_codec_bench_accuracy_test_accuracytest_test_correlated_dataset_uses_supplied_projection"
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L9",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_test_accuracytest",
-      "target": "experiments_codec_bench_accuracy_test_accuracytest_test_hyperspherical_round_trip"
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L38",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_test_accuracytest",
-      "target": "experiments_codec_bench_accuracy_test_accuracytest_test_recall_at_k_uses_exact_neighbor_ids"
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "experiments/codec_bench/accuracy_test.py",
-      "source_location": "L26",
-      "weight": 1.0,
-      "_origin": "ast",
-      "confidence_score": 1.0,
-      "source": "experiments_codec_bench_accuracy_test_accuracytest",
-      "target": "experiments_codec_bench_accuracy_test_accuracytest_test_scalar_codec_reconstructs_bin_means"
     },
     {
       "relation": "references",
@@ -5578,6 +5239,50 @@
       "target": "docs_superpowers_specs_2026_08_04_polar_lsm_router_design_adaptive_physical_layouts"
     },
     {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "AGENTS.md",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "semantic",
+      "source": "agents_rust_workspace_bootstrap",
+      "target": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_1"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "AGENTS.md",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "semantic",
+      "source": "agents_task_2_next_step",
+      "target": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_1"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/superpowers/plans/2026-08-04-polar-codec-format-foundation.md",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "semantic",
+      "source": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_1",
+      "target": "github_workflows_ci_security_job"
+    },
+    {
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".github/workflows/ci.yml",
+      "source_location": null,
+      "weight": 1.0,
+      "_origin": "semantic",
+      "source": "github_workflows_ci_quality_job",
+      "target": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_1"
+    },
+    {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "crates/spherra-bench/src/main.rs",
@@ -5587,6 +5292,477 @@
       "confidence_score": 1.0,
       "source": "crates_spherra_bench_src_main",
       "target": "crates_spherra_bench_src_main_main"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L157",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_cone_metrics"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L86",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_decode_scalar"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L75",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_encode_scalar"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L177",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_evaluate"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_fit_scalar_codec"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L38",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_from_hyperspherical"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L233",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_main"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L111",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_make_dataset"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_normalize"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L102",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_recall_at_k"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L148",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_reconstruction_metrics"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_scalarcodec"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L140",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_score_decoded_corpus"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_to_hyperspherical"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L95",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy",
+      "target": "experiments_codec_bench_accuracy_topk_indices"
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_test",
+      "target": "experiments_codec_bench_accuracy"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L86",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_decode_scalar",
+      "target": "experiments_codec_bench_accuracy_scalarcodec"
+    },
+    {
+      "relation": "references",
+      "context": "parameter_type",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L75",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_encode_scalar",
+      "target": "experiments_codec_bench_accuracy_scalarcodec"
+    },
+    {
+      "relation": "references",
+      "context": "return_type",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L52",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_fit_scalar_codec",
+      "target": "experiments_codec_bench_accuracy_scalarcodec"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L203",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_evaluate",
+      "target": "experiments_codec_bench_accuracy_normalize"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L136",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_make_dataset",
+      "target": "experiments_codec_bench_accuracy_normalize"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L149",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_reconstruction_metrics",
+      "target": "experiments_codec_bench_accuracy_normalize"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L25",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_to_hyperspherical",
+      "target": "experiments_codec_bench_accuracy_normalize"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L205",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_evaluate",
+      "target": "experiments_codec_bench_accuracy_to_hyperspherical"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L207",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_evaluate",
+      "target": "experiments_codec_bench_accuracy_from_hyperspherical"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L199",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_evaluate",
+      "target": "experiments_codec_bench_accuracy_fit_scalar_codec"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L201",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_evaluate",
+      "target": "experiments_codec_bench_accuracy_encode_scalar"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L200",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_evaluate",
+      "target": "experiments_codec_bench_accuracy_decode_scalar"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L197",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_evaluate",
+      "target": "experiments_codec_bench_accuracy_topk_indices"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L225",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_evaluate",
+      "target": "experiments_codec_bench_accuracy_recall_at_k"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L186",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_evaluate",
+      "target": "experiments_codec_bench_accuracy_make_dataset"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L216",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_evaluate",
+      "target": "experiments_codec_bench_accuracy_score_decoded_corpus"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L227",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_evaluate",
+      "target": "experiments_codec_bench_accuracy_reconstruction_metrics"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L228",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_evaluate",
+      "target": "experiments_codec_bench_accuracy_cone_metrics"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy.py",
+      "source_location": "L243",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_main",
+      "target": "experiments_codec_bench_accuracy_evaluate"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L8",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_test",
+      "target": "experiments_codec_bench_accuracy_test_accuracytest"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L59",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_test_accuracytest",
+      "target": "experiments_codec_bench_accuracy_test_accuracytest_test_approximate_scores_keep_query_high_precision"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L44",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_test_accuracytest",
+      "target": "experiments_codec_bench_accuracy_test_accuracytest_test_correlated_dataset_uses_supplied_projection"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_test_accuracytest",
+      "target": "experiments_codec_bench_accuracy_test_accuracytest_test_hyperspherical_round_trip"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L38",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_test_accuracytest",
+      "target": "experiments_codec_bench_accuracy_test_accuracytest_test_recall_at_k_uses_exact_neighbor_ids"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "experiments/codec_bench/accuracy_test.py",
+      "source_location": "L26",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "experiments_codec_bench_accuracy_test_accuracytest",
+      "target": "experiments_codec_bench_accuracy_test_accuracytest_test_scalar_codec_reconstructs_bin_means"
     },
     {
       "relation": "contains",
@@ -6825,47 +7001,33 @@
       "relation": "references",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
-      "source_file": "AGENTS.md",
-      "source_location": null,
+      "source_file": ".github/workflows/ci.yml",
+      "source_location": "L23",
       "weight": 1.0,
-      "_origin": "semantic",
-      "source": "agents_rust_workspace_bootstrap",
-      "target": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_1"
+      "source": "workflows_ci_local_quality_gate",
+      "target": "workflows_ci_cargo_deny"
     },
     {
       "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "AGENTS.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_origin": "semantic",
-      "source": "agents_task_2_next_step",
-      "target": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_1"
-    },
-    {
-      "relation": "references",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "docs/superpowers/plans/2026-08-04-polar-codec-format-foundation.md",
-      "source_location": null,
-      "weight": 1.0,
-      "_origin": "semantic",
-      "source": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_1",
-      "target": "github_workflows_ci_security_job"
-    },
-    {
-      "relation": "implements",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": ".github/workflows/ci.yml",
-      "source_location": null,
+      "source_location": "L36",
       "weight": 1.0,
-      "_origin": "semantic",
-      "source": "github_workflows_ci_quality_job",
-      "target": "docs_superpowers_plans_2026_08_04_polar_codec_format_foundation_task_1"
+      "source": "workflows_ci_security_advisories",
+      "target": "workflows_ci_advisory_database_snapshot"
+    },
+    {
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": ".github/workflows/ci.yml",
+      "source_location": "L35",
+      "weight": 1.0,
+      "source": "workflows_ci_security_advisories",
+      "target": "workflows_ci_cargo_deny"
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "ea20f32097c746de2f8918b49f52ecd9ab377cfe"
+  "built_at_commit": "43a16e880bf8bae5d919f57acb95f3571d9d2332"
 }

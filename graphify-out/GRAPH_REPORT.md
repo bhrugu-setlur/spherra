@@ -1,11 +1,10 @@
 # Graph Report - .  (2026-08-04)
 
 ## Corpus Check
-- 1 files · ~21,008 words
-- Verdict: corpus is large enough that graph structure adds value.
+- 26 files · ~21,070 words. The corpus fits in a single context window; the graph is retained for repository traversal.
 
 ## Summary
-- 222 nodes · 381 edges · 23 communities (21 shown, 2 thin omitted)
+- 226 nodes · 384 edges · 24 communities (22 shown, 2 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 2 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
@@ -25,6 +24,7 @@
 - Naming Query
 - Dependency Policy Script
 - Local CI Script
+- CI Advisory Audit
 
 ## God Nodes (most connected - your core abstractions)
 1. `PolarLSM + PolarRouter Approved Production Design` - 19 edges
@@ -53,7 +53,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (23 total, 2 thin omitted)
+## Communities (24 total, 2 thin omitted)
 
 ### Community 0 - "C++ Codec Kernels"
 Cohesion: 0.20
@@ -76,16 +76,16 @@ Cohesion: 0.10
 Nodes (18): Approval record, Plan self-review record, Planned file map, Scope and exit gate, Spherra polar codec and format foundation implementation plan, Task 1: Establish version control and the pinned Rust workspace, Task 2: Encode domain invariants before codec code, Task 3: Implement the exact scalar transform oracle (+10 more)
 
 ### Community 5 - "C++ Benchmark Harness"
-Cohesion: 0.22
-Nodes (18): size_t, uint8_t, vector, main(), make_angle_codes(), make_angle_tables(), make_cartesian_codes(), make_query() (+10 more)
+Cohesion: 0.19
+Nodes (19): size_t, uint8_t, vector, main(), make_angle_codes(), make_angle_tables(), make_cartesian_codes(), make_query() (+11 more)
 
 ### Community 6 - "Python Accuracy Experiment"
 Cohesion: 0.31
 Nodes (17): cone_metrics(), decode_scalar(), encode_scalar(), evaluate(), fit_scalar_codec(), from_hyperspherical(), main(), make_dataset() (+9 more)
 
 ### Community 7 - "C++ Codec Tests"
-Cohesion: 0.36
-Nodes (11): vector, expect_near(), main(), test_cartesian_int4_score_maps_endpoints_to_unit_range(), test_hyperspherical_decode_matches_known_vector(), test_nibbles_round_trip(), test_packed_scores_match_unpacked_scores(), test_quantized_angle_score_uses_recursive_prefix() (+3 more)
+Cohesion: 0.45
+Nodes (10): expect_near(), main(), test_cartesian_int4_score_maps_endpoints_to_unit_range(), test_hyperspherical_decode_matches_known_vector(), test_nibbles_round_trip(), test_packed_scores_match_unpacked_scores(), test_quantized_angle_score_uses_recursive_prefix(), test_recursive_score_matches_decoded_dot_product() (+2 more)
 
 ### Community 9 - "Rust Bootstrap and CI"
 Cohesion: 0.40
@@ -107,8 +107,12 @@ Nodes (3): Answer, Q: What should I name this project? Generate prospects across
 Cohesion: 0.83
 Nodes (3): cargo_executable(), main(), normal_or_build_dependencies()
 
+### Community 23 - "CI Advisory Audit"
+Cohesion: 0.50
+Nodes (4): Advisory Database Snapshot, cargo-deny, Local Quality Gate, Security Advisories
+
 ## Knowledge Gaps
-- **78 isolated node(s):** `Mandatory living-document rule`, `Start here`, `Project in one paragraph`, `Naming contract`, `Product and hardware contract` (+73 more)
+- **80 isolated node(s):** `Mandatory living-document rule`, `Start here`, `Project in one paragraph`, `Naming contract`, `Product and hardware contract` (+75 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **2 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
@@ -116,11 +120,11 @@ Nodes (3): cargo_executable(), main(), normal_or_build_dependencies()
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Spherra v1 implementation specification` connect `V1 Implementation Spec` to `Codec Foundation Plan`?**
-  _High betweenness centrality (0.060) - this node is a cross-community bridge._
+  _High betweenness centrality (0.058) - this node is a cross-community bridge._
 - **Why does `Spherra project guide` connect `Project Guide Policy` to `Codec Foundation Plan`?**
-  _High betweenness centrality (0.056) - this node is a cross-community bridge._
+  _High betweenness centrality (0.054) - this node is a cross-community bridge._
 - **What connects `Mandatory living-document rule`, `Start here`, `Project in one paragraph` to the rest of the system?**
-  _78 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _80 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `V1 Implementation Spec` be split into smaller, more focused modules?**
   _Cohesion score 0.07407407407407407 - nodes in this community are weakly interconnected._
 - **Should `Project Guide Policy` be split into smaller, more focused modules?**

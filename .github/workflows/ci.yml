@@ -33,7 +33,18 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Install cargo-deny
         run: cargo install cargo-deny --version 0.20.2 --locked
-      - name: Check advisories and record database timestamp
+      - name: Check advisories and record database revision
         run: |
-          printf 'cargo-deny advisory database checked at %s\\n' "$(date --utc --iso-8601=seconds)"
+          set -euo pipefail
+          cargo deny fetch db
+          advisory_root="${CARGO_HOME:-$HOME/.cargo}/advisory-dbs"
+          advisory_count=0
+          while IFS= read -r -d '' advisory_database; do
+            git -C "$advisory_database" rev-parse --is-inside-work-tree >/dev/null
+            printf 'cargo-deny advisory database: %s\n' "$advisory_database"
+            printf 'cargo-deny advisory database HEAD: %s\n' "$(git -C "$advisory_database" rev-parse HEAD)"
+            printf 'cargo-deny advisory database commit timestamp: %s\n' "$(git -C "$advisory_database" show -s --format=%cI HEAD)"
+            advisory_count=$((advisory_count + 1))
+          done < <(find "$advisory_root" -mindepth 1 -maxdepth 1 -type d -print0)
+          test "$advisory_count" -gt 0
           cargo deny check advisories
