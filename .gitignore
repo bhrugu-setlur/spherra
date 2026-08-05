@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 
 /target/
+/.worktrees/
 /.idea/
 /.vscode/
 *.profraw
