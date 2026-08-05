@@ -3,6 +3,7 @@ use core::array;
 use spherra_domain::DIMENSION;
 
 use crate::int4::{DirectCode, QuantizerTable};
+use crate::transform::TransformedDirection;
 
 const TILE_ROWS: usize = 32;
 const BYTES_PER_COORDINATE: usize = TILE_ROWS / 2;
@@ -67,13 +68,13 @@ impl TiledSoa32 {
         })
     }
 
-    pub fn scan_scores(&self, table: &QuantizerTable, query: &[f32; DIMENSION]) -> Vec<f32> {
+    pub fn scan_scores(&self, table: &QuantizerTable, query: &TransformedDirection) -> Vec<f32> {
         let mut scores = vec![0.0; self.row_count];
 
         for tile in 0..self.tile_count() {
             let first_row = tile * TILE_ROWS;
             let last_row = (first_row + TILE_ROWS).min(self.row_count);
-            for (coordinate, query_value) in query.iter().enumerate() {
+            for (coordinate, query_value) in query.as_array().iter().enumerate() {
                 for (row, score) in scores.iter_mut().enumerate().take(last_row).skip(first_row) {
                     *score += query_value
                         * table

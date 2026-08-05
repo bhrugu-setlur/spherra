@@ -149,12 +149,12 @@ Last updated: 2026-08-04.
 - Rust-first technology stack approved by Codex and Claude Opus.
 - C++20 scalar layout/access experiment comparing recursive angles and direct int4.
 - Python synthetic retrieval-quality comparison.
-- Project Graphify graph exists.
+- Project Graphify graph exists as a full-repository snapshot with one canonical relative-path namespace for graph nodes and manifest entries.
 - I4 v1 implementation specification and P4 codec/format foundation plan approved by Codex and Claude Opus; Spherra package and command identifiers were applied later as a user-directed, non-behavioral naming amendment.
 - Task 1 established the Rust 1.88.0 / edition 2024 resolver-3 workspace, root unsafe/warnings denial, six empty Spherra crates with the approved dependency direction, isolated nightly-only fuzz targets, lockfiles, dependency-policy check, and local/GitHub CI gates. Fresh local quality, policy, fuzz-target, and advisory checks passed.
 - Task 2 defined the `spherra-domain` contracts for 768-dimensional validation, FP16-safe stored radius, direction reliability, distinct 128-bit chunk/document IDs, and 16-bit-epoch/48-bit-index put sequences. Five focused contract tests plus the complete workspace quality gate pass.
 - Task 3 implemented the exact scalar transform oracle: fixed-size normalized H128, cached two-round sign/permutation/H128 plans, and a provisional domain-separated canonical-little-endian BLAKE3 transform identity. Public forward transform entry points accept only `ReliableDirection`; six focused scalar/codec property and contract tests plus the complete workspace quality gate pass.
-- Task 4 implemented the provisional scalar direct-int4 primary representation: independently sorted coordinate-wise quantile training, canonical little-endian BLAKE3 table identities, low-even/high-odd nibble packing, table-driven decode and scalar scoring, opaque four-byte `RadiusFlags`, and `TILED_SOA_32` with logical, physical, and zero-tail-padding accounting. Public quantizer-center lookups return `None` for invalid coordinates or non-four-bit codes, while bounded encode/decode/score paths preserve their values. The user-approved, Claude Opus-recommended endpoint-inclusive rank rule uses `floor(j * (n - 1) / 15)` with `u128` arithmetic; it remains provisional pending the M1 measurement gate. Nine focused direct-int4/layout contract tests pass.
+- Task 4 implemented the provisional scalar direct-int4 primary representation: independently sorted coordinate-wise quantile training, canonical little-endian BLAKE3 table identities, low-even/high-odd nibble packing, table-driven decode and scalar scoring, opaque four-byte `RadiusFlags`, and `TILED_SOA_32` with logical, physical, and zero-tail-padding accounting. Public directional encode and query-scoring paths accept only `TransformedDirection`, which can originate only from transforming a `ReliableDirection`; raw transformed arrays remain limited to the explicitly validating calibration trainer. Public quantizer-center lookups return `None` for invalid coordinates or non-four-bit codes, while bounded encode/decode/score paths preserve their values. The user-approved, Claude Opus-recommended endpoint-inclusive rank rule uses `floor(j * (n - 1) / 15)` with `u128` arithmetic; it remains provisional pending the M1 measurement gate. Ten focused direct-int4/layout contract tests pass.
 
 ### Existing artifacts
 
@@ -198,7 +198,7 @@ Do not describe the approved production design as a working production database.
 
 ## Current status and next step
 
-Current phase: **P4 Task 4 scalar direct-int4 and TILED_SOA_32 complete; Task 5 is next.**
+Current phase: **P4 Task 4 scalar direct-int4, `TILED_SOA_32`, and the validated transformed-direction boundary complete; Task 5 is next.**
 
 Active plan: approved P4 [`docs/superpowers/plans/2026-08-04-polar-codec-format-foundation.md`](docs/superpowers/plans/2026-08-04-polar-codec-format-foundation.md), with Spherra identifiers applied as a naming-only amendment.
 

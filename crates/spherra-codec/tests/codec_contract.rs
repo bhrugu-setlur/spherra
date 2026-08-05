@@ -1,8 +1,8 @@
 use core::array;
 
-use spherra_codec::TiledSoa32;
 use spherra_codec::int4::{DirectCode, QuantizerTable, RadiusFlags, TrainError};
-use spherra_domain::DIMENSION;
+use spherra_codec::{TiledSoa32, TransformPlan, TransformedDirection, transform};
+use spherra_domain::{DIMENSION, DomainError, ValidatedVector};
 
 fn direct_code(nibbles: [u8; DIMENSION]) -> DirectCode {
     DirectCode::from_nibbles(nibbles).expect("test codes are four-bit values")
@@ -30,6 +30,18 @@ fn affine_calibration() -> Vec<[f32; DIMENSION]> {
 
 fn affine_table() -> QuantizerTable {
     QuantizerTable::train(&affine_calibration()).expect("finite non-empty calibration")
+}
+
+fn transformed_query() -> TransformedDirection {
+    let components = (0..DIMENSION)
+        .map(|coordinate| (coordinate as f32 - 384.0) * 0.25)
+        .collect();
+    let vector = ValidatedVector::new(components).expect("finite test vector");
+    let direction = vector
+        .normalized_direction()
+        .expect("non-zero test vector has a reliable direction");
+
+    transform(&TransformPlan::from_seed(0x5eed_fade), direction)
 }
 
 #[test]
@@ -68,6 +80,29 @@ fn quantizer_table_rejects_out_of_bounds_center_lookups() {
     assert_eq!(table.center(0, 0), Some(0.0));
     assert_eq!(table.center(0, 16), None);
     assert_eq!(table.center(DIMENSION, 0), None);
+}
+
+#[test]
+fn directional_codec_paths_start_with_validated_transformed_direction() {
+    let mut non_finite = vec![0.0; DIMENSION];
+    non_finite[23] = f32::NAN;
+    assert_eq!(
+        ValidatedVector::new(non_finite),
+        Err(DomainError::NonFiniteComponent { index: 23 })
+    );
+
+    let unreliable = ValidatedVector::new(vec![0.0; DIMENSION])
+        .expect("a zero vector is finite but direction-unreliable");
+    assert!(unreliable.normalized_direction().is_none());
+
+    let query = transformed_query();
+    let table = QuantizerTable::train(&[*query.as_array()])
+        .expect("a reliable transformed direction is valid calibration");
+    let code = table.encode(&query);
+    let score = table.score(&query, &code);
+    let tiled = TiledSoa32::from_codes(std::slice::from_ref(&code));
+
+    assert_eq!(tiled.scan_scores(&table, &query), vec![score]);
 }
 
 #[test]
@@ -172,25 +207,22 @@ fn trainer_canonicalizes_negative_zero_and_hashes_coordinate_major_little_endian
 
 #[test]
 fn quantizer_encodes_decodes_and_scores_using_its_trained_table() {
-    let table = affine_table();
-    let lowest = array::from_fn(|coordinate| coordinate as f32);
-    let highest = array::from_fn(|coordinate| (150 + coordinate) as f32);
+    let query = transformed_query();
+    let table = QuantizerTable::train(&[*query.as_array()])
+        .expect("a reliable transformed direction is valid calibration");
+    let code = table.encode(&query);
 
-    let lowest_code = table.encode(&lowest);
-    let highest_code = table.encode(&highest);
-
-    assert_eq!(lowest_code.as_bytes(), &[0; DirectCode::BYTE_LEN]);
-    assert_eq!(highest_code.as_bytes(), &[0xff; DirectCode::BYTE_LEN]);
-    assert_eq!(table.decode(&lowest_code), lowest);
-    assert_eq!(table.decode(&highest_code), highest);
-    assert_eq!(table.score(&[1.0; DIMENSION], &highest_code), 409_728.0);
-
-    let halfway = array::from_fn(|coordinate| (5 + coordinate) as f32);
-    assert_eq!(table.encode(&halfway).nibble_at(0), 0);
+    assert_eq!(code.as_bytes(), &[0; DirectCode::BYTE_LEN]);
+    assert_eq!(table.decode(&code), *query.as_array());
+    let expected_score = query
+        .as_array()
+        .iter()
+        .fold(0.0, |score, value| score + value * value);
+    assert_eq!(table.score(&query, &code), expected_score);
 
     let duplicate_table =
         QuantizerTable::train(&[[6.0; DIMENSION]]).expect("a singleton calibration is valid");
-    assert_eq!(duplicate_table.encode(&[6.0; DIMENSION]).nibble_at(0), 0);
+    assert_eq!(duplicate_table.encode(&query).nibble_at(0), 0);
 }
 
 #[test]
@@ -203,7 +235,7 @@ fn tiled_soa_full_tile_scan_matches_independent_per_row_scalar_scores() {
             }))
         })
         .collect();
-    let query = array::from_fn(|coordinate| ((coordinate % 7) as f32 - 3.0) * 0.25);
+    let query = transformed_query();
     let tiled = TiledSoa32::from_codes(&rows);
 
     assert_eq!(tiled.row_count(), 32);
