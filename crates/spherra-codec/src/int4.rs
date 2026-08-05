@@ -132,8 +132,13 @@ impl QuantizerTable {
         &self.identity
     }
 
-    pub fn center(&self, coordinate: usize, code: usize) -> f32 {
-        self.centers[center_index(coordinate, code)]
+    /// Returns a center only when both the coordinate and four-bit code are in range.
+    pub fn center(&self, coordinate: usize, code: usize) -> Option<f32> {
+        if coordinate >= DIMENSION || code >= CENTERS_PER_COORDINATE {
+            return None;
+        }
+
+        Some(self.center_for_valid_indices(coordinate, code))
     }
 
     pub fn encode(&self, values: &[f32; DIMENSION]) -> DirectCode {
@@ -143,7 +148,9 @@ impl QuantizerTable {
     }
 
     pub fn decode(&self, code: &DirectCode) -> [f32; DIMENSION] {
-        array::from_fn(|coordinate| self.center(coordinate, code.nibble_at(coordinate) as usize))
+        array::from_fn(|coordinate| {
+            self.center_for_valid_indices(coordinate, code.nibble_at(coordinate) as usize)
+        })
     }
 
     pub fn score(&self, query: &[f32; DIMENSION], code: &DirectCode) -> f32 {
@@ -151,16 +158,22 @@ impl QuantizerTable {
             .iter()
             .enumerate()
             .fold(0.0, |score, (coordinate, value)| {
-                score + value * self.center(coordinate, code.nibble_at(coordinate) as usize)
+                score
+                    + value
+                        * self.center_for_valid_indices(
+                            coordinate,
+                            code.nibble_at(coordinate) as usize,
+                        )
             })
     }
 
     fn nearest_code(&self, coordinate: usize, value: f32) -> u8 {
         let mut selected = 0;
-        let mut smallest_distance = (value - self.center(coordinate, selected)).abs();
+        let mut smallest_distance =
+            (value - self.center_for_valid_indices(coordinate, selected)).abs();
 
         for code in 1..CENTERS_PER_COORDINATE {
-            let distance = (value - self.center(coordinate, code)).abs();
+            let distance = (value - self.center_for_valid_indices(coordinate, code)).abs();
             if distance < smallest_distance {
                 selected = code;
                 smallest_distance = distance;
@@ -168,6 +181,10 @@ impl QuantizerTable {
         }
 
         selected as u8
+    }
+
+    fn center_for_valid_indices(&self, coordinate: usize, code: usize) -> f32 {
+        self.centers[center_index(coordinate, code)]
     }
 }
 

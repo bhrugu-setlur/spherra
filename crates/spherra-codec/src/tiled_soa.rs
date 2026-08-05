@@ -76,7 +76,9 @@ impl TiledSoa32 {
             for (coordinate, query_value) in query.iter().enumerate() {
                 for (row, score) in scores.iter_mut().enumerate().take(last_row).skip(first_row) {
                     *score += query_value
-                        * table.center(coordinate, self.nibble_at(row, coordinate) as usize);
+                        * table
+                            .center(coordinate, self.nibble_at(row, coordinate) as usize)
+                            .expect("tiled scan supplies valid coordinates and four-bit codes");
                 }
             }
         }
