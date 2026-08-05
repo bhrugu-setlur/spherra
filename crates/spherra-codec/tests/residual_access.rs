@@ -163,7 +163,10 @@ fn candidate_rerank_loads_one_residual_for_each_candidate() {
     let query = prepared_query();
     let rows = [2, 7, 9];
     let mut reranked = core::array::from_fn(|_| {
-        PreparedCandidate::new(PrimaryScore::for_row(0), [0.0; DIMENSION])
+        codebook.prepare_candidate(
+            PrimaryScore::for_row(0),
+            Pq96Code::from_bytes([0; Pq96Code::BYTE_LEN]),
+        )
     });
 
     let written = rerank_candidates(&primary, &residual, &codebook, &query, &rows, &mut reranked)
@@ -183,9 +186,9 @@ fn candidate_rerank_rejects_missing_and_unexpected_primary_rows() {
         Pq96Codebook::train(&calibration_residuals(), 23).expect("calibration residuals are valid");
     let residual = SpyResidual::new(Pq96Code::from_bytes([0; Pq96Code::BYTE_LEN]));
     let query = prepared_query();
-    let mut reranked = [PreparedCandidate::new(
+    let mut reranked = [codebook.prepare_candidate(
         PrimaryScore::for_row(0),
-        [0.0; DIMENSION],
+        Pq96Code::from_bytes([0; Pq96Code::BYTE_LEN]),
     )];
 
     assert!(matches!(
@@ -222,9 +225,9 @@ fn candidate_rerank_rejects_u32_max_before_loading_residuals() {
         Pq96Codebook::train(&calibration_residuals(), 29).expect("calibration residuals are valid");
     let residual = SpyResidual::new(Pq96Code::from_bytes([0; Pq96Code::BYTE_LEN]));
     let query = prepared_query();
-    let mut reranked = [PreparedCandidate::new(
+    let mut reranked = [codebook.prepare_candidate(
         PrimaryScore::for_row(0),
-        [0.0; DIMENSION],
+        Pq96Code::from_bytes([0; Pq96Code::BYTE_LEN]),
     )];
 
     assert!(matches!(

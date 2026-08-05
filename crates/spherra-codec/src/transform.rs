@@ -175,3 +175,51 @@ fn apply_hadamard_blocks(values: [f32; DIMENSION]) -> [f32; DIMENSION] {
 
     transformed
 }
+
+#[cfg(test)]
+pub(crate) fn transform_f64_reference(
+    plan: &TransformPlan,
+    mut values: [f64; DIMENSION],
+) -> [f64; DIMENSION] {
+    for round in &plan.rounds {
+        let signed: [f64; DIMENSION] =
+            array::from_fn(|index| values[index] * f64::from(round.signs[index]));
+        let permuted = array::from_fn(|index| signed[round.permutation[index]]);
+        values = apply_hadamard_blocks_f64(permuted);
+    }
+    values
+}
+
+#[cfg(test)]
+fn apply_hadamard_blocks_f64(values: [f64; DIMENSION]) -> [f64; DIMENSION] {
+    let mut transformed = [0.0; DIMENSION];
+
+    for block in 0..BLOCKS_PER_ROUND {
+        let start = block * HADAMARD_BLOCK_LEN;
+        let end = start + HADAMARD_BLOCK_LEN;
+        let mut output = [0.0_f64; HADAMARD_BLOCK_LEN];
+        output.copy_from_slice(&values[start..end]);
+        let mut half_width = 1;
+        while half_width < HADAMARD_BLOCK_LEN {
+            let full_width = half_width * 2;
+            for group_start in (0..HADAMARD_BLOCK_LEN).step_by(full_width) {
+                for offset in 0..half_width {
+                    let left_index = group_start + offset;
+                    let right_index = left_index + half_width;
+                    let left = output[left_index];
+                    let right = output[right_index];
+                    output[left_index] = left + right;
+                    output[right_index] = left - right;
+                }
+            }
+            half_width = full_width;
+        }
+        let normalization = 1.0 / (HADAMARD_BLOCK_LEN as f64).sqrt();
+        for value in &mut output {
+            *value *= normalization;
+        }
+        transformed[start..end].copy_from_slice(&output);
+    }
+
+    transformed
+}

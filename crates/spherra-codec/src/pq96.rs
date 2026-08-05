@@ -179,17 +179,12 @@ impl PrimaryScore {
 #[derive(Clone, Debug, PartialEq)]
 pub struct PreparedCandidate {
     primary: PrimaryScore,
+    residual_code: Pq96Code,
+    codebook_identity: [u8; PQ_CODEBOOK_ID_LEN],
     decoded_residual: ResidualVector,
 }
 
 impl PreparedCandidate {
-    pub const fn new(primary: PrimaryScore, decoded_residual: ResidualVector) -> Self {
-        Self {
-            primary,
-            decoded_residual,
-        }
-    }
-
     pub const fn primary(&self) -> PrimaryScore {
         self.primary
     }
@@ -200,6 +195,14 @@ impl PreparedCandidate {
 
     pub const fn decoded_residual(&self) -> &ResidualVector {
         &self.decoded_residual
+    }
+
+    pub const fn residual_code(&self) -> &Pq96Code {
+        &self.residual_code
+    }
+
+    pub(crate) const fn codebook_identity(&self) -> [u8; PQ_CODEBOOK_ID_LEN] {
+        self.codebook_identity
     }
 }
 
@@ -275,8 +278,8 @@ pub fn rerank_candidates(
             });
         }
 
-        let decoded_residual = codebook.decode(&residuals.load_residual(row)?);
-        out[index] = PreparedCandidate::new(primary_score[0], decoded_residual);
+        let residual_code = residuals.load_residual(row)?;
+        out[index] = codebook.prepare_candidate(primary_score[0], residual_code);
     }
 
     Ok(written)
@@ -348,6 +351,34 @@ impl Pq96Codebook {
         Ok(codebook)
     }
 
+    /// A finite, deterministic codebook reserved for the external fuzz crate.
+    ///
+    /// It avoids embedding a full 96-way Lloyd training run in every fuzz
+    /// worker startup while retaining non-zero, code-dependent residual terms.
+    /// This feature is intentionally absent from normal codec builds.
+    #[cfg(feature = "fuzzing")]
+    pub fn fuzz_fixture() -> Self {
+        let mut centroids = Box::new(
+            [[[0.0; Pq96Code::SUBVECTOR_DIMENSION]; Pq96Code::CENTROIDS]; Pq96Code::SUBQUANTIZERS],
+        );
+        for subquantizer in 0..Pq96Code::SUBQUANTIZERS {
+            for code in 0..Pq96Code::CENTROIDS {
+                for lane in 0..Pq96Code::SUBVECTOR_DIMENSION {
+                    centroids[subquantizer][code][lane] = (code as f32 - 127.5) * 0.000_25
+                        + subquantizer as f32 * 0.000_001
+                        + lane as f32 * 0.000_000_1;
+                }
+            }
+        }
+        let mut codebook = Self {
+            centroids,
+            codebook_id: [0; PQ_CODEBOOK_ID_LEN],
+            training_diagnostics: Pq96TrainingDiagnostics::default(),
+        };
+        codebook.codebook_id = *blake3::hash(&codebook.canonical_bytes()).as_bytes();
+        codebook
+    }
+
     pub fn encode(&self, residual: &ResidualVector) -> Result<Pq96Code, CodecError> {
         for (coordinate, value) in residual.iter().enumerate() {
             if !value.is_finite() {
@@ -360,6 +391,22 @@ impl Pq96Codebook {
             *code = nearest_centroid(residual, subquantizer, &self.centroids[subquantizer]) as u8;
         }
         Ok(Pq96Code::from_bytes(codes))
+    }
+
+    /// Retains the one loaded residual code and its decoded value for candidate
+    /// reranking.  Construction is deliberately owned by the codebook so a
+    /// Task 6 scorer can reject decoded residuals from another representation.
+    pub fn prepare_candidate(
+        &self,
+        primary: PrimaryScore,
+        residual_code: Pq96Code,
+    ) -> PreparedCandidate {
+        PreparedCandidate {
+            primary,
+            residual_code,
+            codebook_identity: self.codebook_id,
+            decoded_residual: self.decode(&residual_code),
+        }
     }
 
     pub fn decode(&self, code: &Pq96Code) -> ResidualVector {
@@ -663,5 +710,21 @@ mod tests {
         assert!(lloyd_iteration_has_converged(false, false));
         assert!(!lloyd_iteration_has_converged(true, false));
         assert!(!lloyd_iteration_has_converged(true, true));
+    }
+
+    #[cfg(feature = "fuzzing")]
+    #[test]
+    fn fuzz_fixture_is_deterministic_and_nonzero() {
+        let first_id = {
+            let first = super::Pq96Codebook::fuzz_fixture();
+            *first.codebook_id()
+        };
+        let second = super::Pq96Codebook::fuzz_fixture();
+
+        assert_eq!(first_id, *second.codebook_id());
+        assert_ne!(
+            second.centroid(0, 0).expect("valid fixture centroid"),
+            second.centroid(0, 1).expect("valid fixture centroid"),
+        );
     }
 }
