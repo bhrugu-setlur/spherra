@@ -1,39 +1,51 @@
-# Graph Report - .  (2026-08-04)
+# Graph Report - spherra  (2026-08-04)
 
 ## Corpus Check
-- Corpus is ~23,318 words - fits in a single context window. You may not need a graph.
+- 43 files · ~24,711 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 343 nodes · 557 edges · 31 communities (25 shown, 6 thin omitted)
+- 367 nodes · 575 edges · 37 communities (31 shown, 6 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 22 edges (avg confidence: 0.92)
 - Token cost: 0 input · 0 output
 
+## Graph Freshness
+- Built from commit: `de9601ae`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
+
 ## Community Hubs (Navigation)
 - C++ Angle Codec
-- Task 2 Domain Contracts
-- V1 Implementation Specification
-- Domain Errors and IDs
-- Spherra project guide
-- .new_with_min_norm_epsilon
-- Production Architecture
-- C++ Benchmark Harness
-- Python Accuracy Harness
-- C++ Codec Tests
-- transform_contract.rs
-- Python Accuracy Tests
-- Project Guide Query Memory
-- Technology Stack Query
-- Project Naming Query
-- Task 2 Query Memory
-- Dependency Policy Script
-- Rust Security Tooling
-- Local CI Script
-- Benchmark Crate Stub
 - transform.rs
-- Vector Dimension Contract
-- SIMD Crate Stub
+- Spherra project guide
+- Spherra polar codec and format foundation implementation plan
+- Spherra v1 implementation specification
+- PutSeq
+- .new_with_min_norm_epsilon
+- PolarLSM + PolarRouter Approved Production Design
+- bench.cpp
+- accuracy.py
+- codec_test.cpp
+- transform_contract.rs
+- AccuracyTest
+- Task 3 Scalar Transform Oracle
+- Q: yes do that. also set up a comprehensive AGENTS.md that acts as the project guide. AGENTS.md should be set up so that any agent that reads it has an excellent understanding of the project, whats been done, what still needs t be done, what the next step is. there should be a rule in agents.md which states that agents must keep agents.md up to date. also make sure the graphify project graph stays up to date always
+- Q: What tech stack should PolarLSM plus PolarRouter use?
+- Q: What should I name this project? Generate prospects across mythic, infrastructure, and AI-native styles with Claude.
+- Q: Start Task 2: encode domain invariants before codec code
 - Q: What approved boundaries govern Task 3's scalar transform oracle?
-- Community 30
+- check_dependency_policy.py
+- cargo-deny
+- ci.sh
+- Vector Dimension
+- Quality CI Job
+- Security CI Job
+- Q: so right now we have a design spec and an implementation spec right?
+- Q: explain in simple terms what spherra should be
+- Q: will spherra store its vectors in polar form?
+- Q: is the direction a single value or a collection of values?
+- Q: how is this different than 767 connected angles? i thought one of the reasons why storing in polar is more efficient is because angles are a fixed range
+- Q: ok so if i understand this correctly: we take a vector and split it into its magnitude and its direction. the magnitude is a 16 bit number and the direction is stored as a unit vector. now since we are embedding into 768 dimensions, that unit vector that determines direction also must have 768 components. but since unit vectors are fixed at a magnitude of 1, all of those components that make up the unit vector must fall between -1 and 1. this essentially mimics the fixed range of connected angles, but decoding the unit vector components is easier so searching is faster with this approach. tell me if im wrong
 
 ## God Nodes (most connected - your core abstractions)
 1. `PolarLSM + PolarRouter Approved Production Design` - 19 edges
@@ -65,103 +77,127 @@
 ## Hyperedges (group relationships)
 - **Task 3 Scalar Transform Contract** — plans_2026_08_04_polar_codec_format_foundation_task_3_scalar_transform_oracle, plans_2026_08_04_polar_codec_format_foundation_normalized_h128, plans_2026_08_04_polar_codec_format_foundation_transform_identity, plans_2026_08_04_polar_codec_format_foundation_reliable_direction_boundary [EXTRACTED 1.00]
 
-## Communities (31 total, 6 thin omitted)
+## Communities (37 total, 6 thin omitted)
 
 ### Community 0 - "C++ Angle Codec"
 Cohesion: 0.18
 Nodes (35): AngleTables, angle_count, AngleTables::AngleTables(), cosine, cosines_, set, sine, sines_ (+27 more)
 
-### Community 1 - "Task 2 Domain Contracts"
+### Community 1 - "transform.rs"
 Cohesion: 0.10
 Nodes (18): ChaCha20Rng, Self, TransformSpec, apply_forward_round(), apply_hadamard_blocks(), apply_inverse_round(), derive_identity(), derive_round_seed() (+10 more)
 
-### Community 2 - "V1 Implementation Specification"
+### Community 2 - "Spherra project guide"
 Cohesion: 0.07
 Nodes (28): After every project change, Approved technology stack, Before work, Completed, Current repository state, Current status and next step, Definition of done for any task, During work (+20 more)
 
-### Community 3 - "Domain Errors and IDs"
+### Community 3 - "Spherra polar codec and format foundation implementation plan"
 Cohesion: 0.08
 Nodes (29): Frozen Vector Representation and Scoring, Task 2 Domain Invariants Complete, Task 3 Exact Scalar Transform Next, Approval record, 768-Dimensional Vector Invariant, Distinct ChunkId and DocumentId, Domain Contract Tests, FP16-Safe Original Radius (+21 more)
 
-### Community 4 - "Spherra project guide"
+### Community 4 - "Spherra v1 implementation specification"
 Cohesion: 0.07
 Nodes (27): 10. Status and document maintenance, 11. Approval record, 1. Purpose and authority, 2. Starting state, 3. Fixed implementation constraints, 4. Implementation strategy, 5. Workspace and dependency boundaries, 6.1 Codec boundary (+19 more)
 
-### Community 5 - ".new_with_min_norm_epsilon"
-Cohesion: 0.11
-Nodes (14): DomainError, Result, ChunkId, DocumentId, Opaque Identifier Contract, Self, 48-bit Put Sequence Contract, PutSeq (+6 more)
-
-### Community 6 - "Production Architecture"
+### Community 5 - "PutSeq"
 Cohesion: 0.15
-Nodes (15): Direction Reliability Contract, FP16 Radius Contract, FP64 Normalization Contract, ReliableDirection, Result, Self, Vec, ValidatedVector (+7 more)
+Nodes (9): ChunkId, DocumentId, Opaque Identifier Contract, Self, 48-bit Put Sequence Contract, PutSeq, Result, Self (+1 more)
 
-### Community 7 - "C++ Benchmark Harness"
+### Community 6 - ".new_with_min_norm_epsilon"
+Cohesion: 0.11
+Nodes (20): DomainError, Result, Direction Reliability Contract, FP16 Radius Contract, FP64 Normalization Contract, ReliableDirection, Result, Self (+12 more)
+
+### Community 7 - "PolarLSM + PolarRouter Approved Production Design"
 Cohesion: 0.16
 Nodes (23): V1 Quality Performance and Correctness Gates, Adaptive AoS and Tiled-SoA Layouts, Blob Storage and Snapshot Leases, Immutable Cell-Local HNSW, Certified Pruning Error Bounds, Direct Int4 Direction Code, Spherical Direction Cells, PolarLSM + PolarRouter Approved Production Design (+15 more)
 
-### Community 8 - "Python Accuracy Harness"
+### Community 8 - "bench.cpp"
 Cohesion: 0.22
 Nodes (18): size_t, uint8_t, vector, main(), make_angle_codes(), make_angle_tables(), make_cartesian_codes(), make_query() (+10 more)
 
-### Community 9 - "C++ Codec Tests"
+### Community 9 - "accuracy.py"
 Cohesion: 0.31
 Nodes (17): cone_metrics(), decode_scalar(), encode_scalar(), evaluate(), fit_scalar_codec(), from_hyperspherical(), main(), make_dataset() (+9 more)
 
-### Community 10 - "transform_contract.rs"
+### Community 10 - "codec_test.cpp"
 Cohesion: 0.45
 Nodes (10): expect_near(), main(), test_cartesian_int4_score_maps_endpoints_to_unit_range(), test_hyperspherical_decode_matches_known_vector(), test_nibbles_round_trip(), test_packed_scores_match_unpacked_scores(), test_quantized_angle_score_uses_recursive_prefix(), test_recursive_score_matches_decoded_dot_product() (+2 more)
 
-### Community 13 - "Technology Stack Query"
+### Community 13 - "Task 3 Scalar Transform Oracle"
 Cohesion: 0.33
 Nodes (6): Task 3 Scalar Transform Status, Task 3 Transform Boundaries Query, Normalized H128, ReliableDirection Transform Boundary, Task 3 Scalar Transform Oracle, Deterministic Transform Identity
 
-### Community 14 - "Project Naming Query"
+### Community 14 - "Q: yes do that. also set up a comprehensive AGENTS.md that acts as the project guide. AGENTS.md should be set up so that any agent that reads it has an excellent understanding of the project, whats been done, what still needs t be done, what the next step is. there should be a rule in agents.md which states that agents must keep agents.md up to date. also make sure the graphify project graph stays up to date always"
 Cohesion: 0.40
 Nodes (4): Answer, Outcome, Q: yes do that. also set up a comprehensive AGENTS.md that acts as the project guide. AGENTS.md should be set up so that any agent that reads it has an excellent understanding of the project, whats been done, what still needs t be done, what the next step is. there should be a rule in agents.md which states that agents must keep agents.md up to date. also make sure the graphify project graph stays up to date always, Source Nodes
 
-### Community 15 - "Task 2 Query Memory"
+### Community 15 - "Q: What tech stack should PolarLSM plus PolarRouter use?"
 Cohesion: 0.50
 Nodes (3): Answer, Outcome, Q: What tech stack should PolarLSM plus PolarRouter use?
 
-### Community 16 - "Dependency Policy Script"
+### Community 16 - "Q: What should I name this project? Generate prospects across mythic, infrastructure, and AI-native styles with Claude."
 Cohesion: 0.50
 Nodes (3): Answer, Q: What should I name this project? Generate prospects across mythic, infrastructure, and AI-native styles with Claude., Source Nodes
 
-### Community 17 - "Rust Security Tooling"
+### Community 17 - "Q: Start Task 2: encode domain invariants before codec code"
 Cohesion: 0.50
 Nodes (3): Answer, Q: Start Task 2: encode domain invariants before codec code, Source Nodes
 
-### Community 18 - "Local CI Script"
+### Community 18 - "Q: What approved boundaries govern Task 3's scalar transform oracle?"
 Cohesion: 0.50
 Nodes (3): Answer, Q: What approved boundaries govern Task 3's scalar transform oracle?, Source Nodes
 
-### Community 19 - "Benchmark Crate Stub"
+### Community 19 - "check_dependency_policy.py"
 Cohesion: 0.83
 Nodes (3): cargo_executable(), main(), normal_or_build_dependencies()
 
-### Community 20 - "transform.rs"
+### Community 20 - "cargo-deny"
 Cohesion: 0.50
 Nodes (4): Advisory Database Snapshot, cargo-deny, Local Quality Gate, Security Advisories
 
+### Community 31 - "Q: so right now we have a design spec and an implementation spec right?"
+Cohesion: 0.50
+Nodes (3): Answer, Q: so right now we have a design spec and an implementation spec right?, Source Nodes
+
+### Community 32 - "Q: explain in simple terms what spherra should be"
+Cohesion: 0.50
+Nodes (3): Answer, Q: explain in simple terms what spherra should be, Source Nodes
+
+### Community 33 - "Q: will spherra store its vectors in polar form?"
+Cohesion: 0.50
+Nodes (3): Answer, Q: will spherra store its vectors in polar form?, Source Nodes
+
+### Community 34 - "Q: is the direction a single value or a collection of values?"
+Cohesion: 0.50
+Nodes (3): Answer, Q: is the direction a single value or a collection of values?, Source Nodes
+
+### Community 35 - "Q: how is this different than 767 connected angles? i thought one of the reasons why storing in polar is more efficient is because angles are a fixed range"
+Cohesion: 0.50
+Nodes (3): Answer, Q: how is this different than 767 connected angles? i thought one of the reasons why storing in polar is more efficient is because angles are a fixed range, Source Nodes
+
+### Community 36 - "Q: ok so if i understand this correctly: we take a vector and split it into its magnitude and its direction. the magnitude is a 16 bit number and the direction is stored as a unit vector. now since we are embedding into 768 dimensions, that unit vector that determines direction also must have 768 components. but since unit vectors are fixed at a magnitude of 1, all of those components that make up the unit vector must fall between -1 and 1. this essentially mimics the fixed range of connected angles, but decoding the unit vector components is easier so searching is faster with this approach. tell me if im wrong"
+Cohesion: 0.50
+Nodes (3): Answer, Q: ok so if i understand this correctly: we take a vector and split it into its magnitude and its direction. the magnitude is a 16 bit number and the direction is stored as a unit vector. now since we are embedding into 768 dimensions, that unit vector that determines direction also must have 768 components. but since unit vectors are fixed at a magnitude of 1, all of those components that make up the unit vector must fall between -1 and 1. this essentially mimics the fixed range of connected angles, but decoding the unit vector components is easier so searching is faster with this approach. tell me if im wrong, Source Nodes
+
 ## Knowledge Gaps
-- **86 isolated node(s):** `seconds`, `vectors_per_second`, `checksum`, `cosines_`, `sines_` (+81 more)
+- **98 isolated node(s):** `seconds`, `vectors_per_second`, `checksum`, `cosines_`, `sines_` (+93 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **6 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ReliableDirection` connect `Production Architecture` to `Task 2 Domain Contracts`, `Python Accuracy Tests`?**
-  _High betweenness centrality (0.042) - this node is a cross-community bridge._
-- **Why does `transform()` connect `Task 2 Domain Contracts` to `Production Architecture`?**
-  _High betweenness centrality (0.034) - this node is a cross-community bridge._
-- **Why does `Spherra polar codec and format foundation implementation plan` connect `Domain Errors and IDs` to `V1 Implementation Specification`?**
-  _High betweenness centrality (0.033) - this node is a cross-community bridge._
+- **Why does `ReliableDirection` connect `.new_with_min_norm_epsilon` to `transform.rs`, `transform_contract.rs`?**
+  _High betweenness centrality (0.036) - this node is a cross-community bridge._
+- **Why does `transform()` connect `transform.rs` to `.new_with_min_norm_epsilon`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._
+- **Why does `Spherra polar codec and format foundation implementation plan` connect `Spherra polar codec and format foundation implementation plan` to `Spherra project guide`?**
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
 - **What connects `seconds`, `vectors_per_second`, `checksum` to the rest of the system?**
-  _86 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Task 2 Domain Contracts` be split into smaller, more focused modules?**
+  _98 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `transform.rs` be split into smaller, more focused modules?**
   _Cohesion score 0.09682539682539683 - nodes in this community are weakly interconnected._
-- **Should `V1 Implementation Specification` be split into smaller, more focused modules?**
+- **Should `Spherra project guide` be split into smaller, more focused modules?**
   _Cohesion score 0.06854838709677419 - nodes in this community are weakly interconnected._
-- **Should `Domain Errors and IDs` be split into smaller, more focused modules?**
+- **Should `Spherra polar codec and format foundation implementation plan` be split into smaller, more focused modules?**
   _Cohesion score 0.0812807881773399 - nodes in this community are weakly interconnected._
