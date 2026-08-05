@@ -28,6 +28,46 @@ impl PrimaryCodes for SpyPrimary {
     }
 }
 
+struct OverfilledPrimary;
+
+impl PrimaryCodes for OverfilledPrimary {
+    fn scan_primary(
+        &self,
+        _: Range<u32>,
+        _: &PreparedQuery,
+        out: &mut [PrimaryScore],
+    ) -> Result<usize, CodecError> {
+        Ok(out.len() + 1)
+    }
+}
+
+struct MissingPrimary;
+
+impl PrimaryCodes for MissingPrimary {
+    fn scan_primary(
+        &self,
+        _: Range<u32>,
+        _: &PreparedQuery,
+        _: &mut [PrimaryScore],
+    ) -> Result<usize, CodecError> {
+        Ok(0)
+    }
+}
+
+struct UnexpectedPrimary;
+
+impl PrimaryCodes for UnexpectedPrimary {
+    fn scan_primary(
+        &self,
+        rows: Range<u32>,
+        _: &PreparedQuery,
+        out: &mut [PrimaryScore],
+    ) -> Result<usize, CodecError> {
+        out[0] = PrimaryScore::for_row(rows.start + 1);
+        Ok(1)
+    }
+}
+
 struct SpyResidual {
     loads: RefCell<Vec<u32>>,
     code: Pq96Code,
@@ -85,6 +125,34 @@ fn primary_scan_cannot_load_residual_codes() {
 }
 
 #[test]
+fn primary_scan_rejects_reversed_ranges() {
+    let query = prepared_query();
+    let mut scores = [PrimaryScore::for_row(0); 3];
+    let start = 7;
+    let end = 4;
+
+    assert!(matches!(
+        scan_primary(&SpyPrimary, start..end, &query, &mut scores),
+        Err(CodecError::InvalidRowRange { start: 7, end: 4 })
+    ));
+}
+
+#[test]
+fn primary_scan_rejects_overfilled_output() {
+    let query = prepared_query();
+    let mut scores = [PrimaryScore::for_row(0); 1];
+
+    assert!(matches!(
+        scan_primary(&OverfilledPrimary, 4..5, &query, &mut scores),
+        Err(CodecError::PrimarySourceOverfilled {
+            requested_rows: 1,
+            output_capacity: 1,
+            written: 2,
+        })
+    ));
+}
+
+#[test]
 fn candidate_rerank_loads_one_residual_for_each_candidate() {
     let primary = SpyPrimary;
     let codebook =
@@ -107,4 +175,68 @@ fn candidate_rerank_loads_one_residual_for_each_candidate() {
         assert_eq!(candidate.decoded_residual(), &expected_residual);
     }
     assert_eq!(residual.loaded_rows(), rows);
+}
+
+#[test]
+fn candidate_rerank_rejects_missing_and_unexpected_primary_rows() {
+    let codebook =
+        Pq96Codebook::train(&calibration_residuals(), 23).expect("calibration residuals are valid");
+    let residual = SpyResidual::new(Pq96Code::from_bytes([0; Pq96Code::BYTE_LEN]));
+    let query = prepared_query();
+    let mut reranked = [PreparedCandidate::new(
+        PrimaryScore::for_row(0),
+        [0.0; DIMENSION],
+    )];
+
+    assert!(matches!(
+        rerank_candidates(
+            &MissingPrimary,
+            &residual,
+            &codebook,
+            &query,
+            &[12],
+            &mut reranked,
+        ),
+        Err(CodecError::PrimarySourceDidNotReturnCandidate { row: 12 })
+    ));
+    assert!(matches!(
+        rerank_candidates(
+            &UnexpectedPrimary,
+            &residual,
+            &codebook,
+            &query,
+            &[12],
+            &mut reranked,
+        ),
+        Err(CodecError::PrimarySourceReturnedUnexpectedRow {
+            expected: 12,
+            actual: 13,
+        })
+    ));
+    assert!(residual.loaded_rows().is_empty());
+}
+
+#[test]
+fn candidate_rerank_rejects_u32_max_before_loading_residuals() {
+    let codebook =
+        Pq96Codebook::train(&calibration_residuals(), 29).expect("calibration residuals are valid");
+    let residual = SpyResidual::new(Pq96Code::from_bytes([0; Pq96Code::BYTE_LEN]));
+    let query = prepared_query();
+    let mut reranked = [PreparedCandidate::new(
+        PrimaryScore::for_row(0),
+        [0.0; DIMENSION],
+    )];
+
+    assert!(matches!(
+        rerank_candidates(
+            &SpyPrimary,
+            &residual,
+            &codebook,
+            &query,
+            &[u32::MAX],
+            &mut reranked,
+        ),
+        Err(CodecError::RowOverflow { row: u32::MAX })
+    ));
+    assert!(residual.loaded_rows().is_empty());
 }

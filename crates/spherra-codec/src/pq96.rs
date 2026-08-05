@@ -465,15 +465,16 @@ fn train_subquantizer(
         }
 
         let mut reseeded_rows = vec![false; residuals.len()];
-        let mut reseeded_empty_centroid = false;
+        let mut centroids_changed = false;
         for centroid in 0..Pq96Code::CENTROIDS {
             if counts[centroid] == 0 {
-                reseeded_empty_centroid = true;
                 diagnostics.empty_cluster_reseeds += 1;
                 let row = largest_error_row(&squared_errors, &reseeded_rows);
                 reseeded_rows[row] = true;
-                let reseeded_centroid = subvector(residuals[row], subquantizer);
-                diagnostics.centroid_moves += u32::from(centroids[centroid] != reseeded_centroid);
+                let reseeded_centroid = subvector(&residuals[row], subquantizer);
+                let centroid_changed = centroids[centroid] != reseeded_centroid;
+                diagnostics.centroid_moves += u32::from(centroid_changed);
+                centroids_changed |= centroid_changed;
                 centroids[centroid] = reseeded_centroid;
             } else {
                 let count = counts[centroid] as f64;
@@ -481,12 +482,14 @@ fn train_subquantizer(
                 for (lane, value) in updated_centroid.iter_mut().enumerate() {
                     *value = canonicalize_zero((sums[centroid][lane] / count) as f32);
                 }
-                diagnostics.centroid_moves += u32::from(centroids[centroid] != updated_centroid);
+                let centroid_changed = centroids[centroid] != updated_centroid;
+                diagnostics.centroid_moves += u32::from(centroid_changed);
+                centroids_changed |= centroid_changed;
                 centroids[centroid] = updated_centroid;
             }
         }
 
-        if lloyd_iteration_has_converged(assignments_changed, reseeded_empty_centroid) {
+        if lloyd_iteration_has_converged(assignments_changed, centroids_changed) {
             break;
         }
     }
@@ -494,8 +497,8 @@ fn train_subquantizer(
     (centroids, diagnostics)
 }
 
-fn lloyd_iteration_has_converged(assignments_changed: bool, reseeded_empty_centroid: bool) -> bool {
-    !assignments_changed && !reseeded_empty_centroid
+fn lloyd_iteration_has_converged(assignments_changed: bool, centroids_changed: bool) -> bool {
+    !assignments_changed && !centroids_changed
 }
 
 fn initialize_centroids(
@@ -510,7 +513,7 @@ fn initialize_centroids(
 
     let first = uniform_index(&mut rng, residuals.len());
     selected[first] = true;
-    centroids[0] = subvector(residuals[first], subquantizer);
+    centroids[0] = subvector(&residuals[first], subquantizer);
 
     for centroid in 1..Pq96Code::CENTROIDS {
         let previous = &centroids[centroid - 1];
@@ -531,7 +534,7 @@ fn initialize_centroids(
             weighted_row(&mut rng, &minimum_squared_errors, total_squared_error)
         };
         selected[next] = true;
-        centroids[centroid] = subvector(residuals[next], subquantizer);
+        centroids[centroid] = subvector(&residuals[next], subquantizer);
     }
 
     centroids
@@ -579,7 +582,7 @@ fn squared_distance(
 }
 
 fn subvector(
-    residual: ResidualVector,
+    residual: &ResidualVector,
     subquantizer: usize,
 ) -> [f32; Pq96Code::SUBVECTOR_DIMENSION] {
     let start = subquantizer * Pq96Code::SUBVECTOR_DIMENSION;
@@ -655,9 +658,10 @@ mod tests {
     use super::lloyd_iteration_has_converged;
 
     #[test]
-    fn lloyd_iteration_cannot_stop_after_empty_cluster_reseeding() {
+    fn lloyd_iteration_stops_only_when_assignments_and_centroids_are_unchanged() {
         assert!(!lloyd_iteration_has_converged(false, true));
         assert!(lloyd_iteration_has_converged(false, false));
         assert!(!lloyd_iteration_has_converged(true, false));
+        assert!(!lloyd_iteration_has_converged(true, true));
     }
 }

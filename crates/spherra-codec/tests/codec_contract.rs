@@ -1,6 +1,6 @@
 use core::array;
 
-use spherra_codec::{CodecError, Pq96Code, Pq96Codebook};
+use spherra_codec::{CodecError, Pq96Code, Pq96Codebook, PreparedQuery};
 use spherra_domain::DIMENSION;
 
 fn calibration_residuals() -> Vec<[f32; DIMENSION]> {
@@ -115,6 +115,32 @@ fn pq96_training_rejects_incomplete_or_non_finite_residuals() {
 }
 
 #[test]
+fn pq96_public_codec_boundaries_reject_invalid_inputs() {
+    let calibration = calibration_residuals();
+    let codebook = Pq96Codebook::train(&calibration, 13).expect("calibration residuals are valid");
+
+    let mut residual = calibration[0];
+    residual[23] = f32::INFINITY;
+    assert!(matches!(
+        codebook.encode(&residual),
+        Err(CodecError::NonFiniteEncodedResidual { coordinate: 23 })
+    ));
+
+    let mut query = [0.0; DIMENSION];
+    query[31] = f32::NAN;
+    assert!(matches!(
+        PreparedQuery::from_transformed(query),
+        Err(CodecError::NonFinitePreparedQuery { coordinate: 31 })
+    ));
+
+    assert!(matches!(
+        codebook.centroid(Pq96Code::SUBQUANTIZERS, 0),
+        Err(CodecError::InvalidSubquantizer { index })
+            if index == Pq96Code::SUBQUANTIZERS
+    ));
+}
+
+#[test]
 fn public_training_moves_centroids_and_recovers_empty_clusters() {
     let movement_calibration = movement_calibration_residuals();
     let moved = Pq96Codebook::train(&movement_calibration, 42)
@@ -132,12 +158,16 @@ fn public_training_moves_centroids_and_recovers_empty_clusters() {
     let diagnostics = recovered.training_diagnostics();
     assert_eq!(
         diagnostics.lloyd_iterations(),
-        (Pq96Code::SUBQUANTIZERS * 25) as u32,
-        "empty-cluster recovery prevents an early stop immediately after reseeding"
+        (Pq96Code::SUBQUANTIZERS * 2) as u32,
+        "a real reseed receives one follow-up pass, then no-op reseeding permits convergence"
     );
     assert_eq!(
         diagnostics.empty_cluster_reseeds(),
-        (Pq96Code::SUBQUANTIZERS * (Pq96Code::CENTROIDS - 2) * 25) as u32,
-        "two distinct rows leave 254 empty centroids per subquantizer and Lloyd pass"
+        (Pq96Code::SUBQUANTIZERS * (Pq96Code::CENTROIDS - 2) * 2) as u32,
+        "two distinct rows leave 254 empty centroids in each of the two Lloyd passes"
+    );
+    assert!(
+        diagnostics.centroid_moves() > 0,
+        "the public diagnostics must prove that the first pass performed real reseeds"
     );
 }
