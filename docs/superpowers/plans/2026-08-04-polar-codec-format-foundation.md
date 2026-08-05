@@ -384,7 +384,7 @@ Expected: one baseline commit containing the approved docs, project guide, graph
 - Modify: `crates/spherra-domain/src/lib.rs`
 - Test: `crates/spherra-domain/tests/contracts.rs`
 
-- [ ] **Step 1: Write failing contract tests**
+- [x] **Step 1: Write failing contract tests**
 
 The test must assert:
 
@@ -414,7 +414,7 @@ fn vector_validation_rejects_non_finite_and_marks_small_norms() {
 }
 ```
 
-- [ ] **Step 2: Run the tests and observe failure**
+- [x] **Step 2: Run the tests and observe failure**
 
 Run:
 
@@ -424,7 +424,7 @@ cargo test -p spherra-domain --test contracts --locked
 
 Expected: compilation fails because the public contracts do not exist.
 
-- [ ] **Step 3: Implement the domain types**
+- [x] **Step 3: Implement the domain types**
 
 Use `DIMENSION: usize = 768`, distinct 128-bit newtypes for chunk/document IDs, and this sequence representation:
 
@@ -450,7 +450,7 @@ impl PutSeq {
 
 `ValidatedVector::new` requires exactly 768 finite components, computes the L2 norm in FP64, rejects norms above `half::f16::MAX`, stores the original FP16 radius, and marks norms below the collection `min_norm_epsilon` as direction-unreliable. Provide a constructor with explicit epsilon for tests and a default of `1e-12`. `normalized_direction()` returns `None` for an unreliable direction, and every transform/codec entry point requires the `ReliableDirection` newtype so zero or near-zero vectors cannot be normalized accidentally. Such rows remain eligible only for the future non-routable radius/metadata partition.
 
-- [ ] **Step 4: Run domain tests and quality checks**
+- [x] **Step 4: Run domain tests and quality checks**
 
 Run:
 
@@ -461,7 +461,7 @@ cargo clippy -p spherra-domain --all-targets --locked
 
 Expected: tests pass and clippy exits 0.
 
-- [ ] **Step 5: Update project state, refresh Graphify, and commit**
+- [x] **Step 5: Update project state, refresh Graphify, and commit**
 
 Commit message:
 

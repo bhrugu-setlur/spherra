@@ -40,14 +40,14 @@
     "semantic_hash": "249ee2453b7a2ec8ea8fe57e2904900d"
   },
   "AGENTS.md": {
-    "mtime": 1785884885.9901662,
-    "ast_hash": "a9056a646245e640ec7b9a6397406bf7",
-    "semantic_hash": "a9056a646245e640ec7b9a6397406bf7"
+    "mtime": 1785888290.6302977,
+    "ast_hash": "82ec82062b969b6117950d2c6c9c18d9",
+    "semantic_hash": "82ec82062b969b6117950d2c6c9c18d9"
   },
   "docs/superpowers/plans/2026-08-04-polar-codec-format-foundation.md": {
-    "mtime": 1785885918.3259957,
-    "ast_hash": "cd51fcaaa8b7bbdc48714349cb1644b0",
-    "semantic_hash": "cd51fcaaa8b7bbdc48714349cb1644b0"
+    "mtime": 1785889402.132585,
+    "ast_hash": "f957be7753bf43df6cfe3385be665b72",
+    "semantic_hash": "f957be7753bf43df6cfe3385be665b72"
   },
   "docs/superpowers/specs/2026-08-04-polar-v1-implementation-spec.md": {
     "mtime": 1785884004.5894308,
@@ -85,9 +85,9 @@
     "semantic_hash": "8944b59866d287b0a9e66c20f4d1c36c"
   },
   "crates/spherra-domain/src/lib.rs": {
-    "mtime": 1785884464.1118634,
-    "ast_hash": "8944b59866d287b0a9e66c20f4d1c36c",
-    "semantic_hash": "8944b59866d287b0a9e66c20f4d1c36c"
+    "mtime": 1785888229.3723075,
+    "ast_hash": "001df4e31665851f4a3db9760d98825f",
+    "semantic_hash": "001df4e31665851f4a3db9760d98825f"
   },
   "crates/spherra-format/src/lib.rs": {
     "mtime": 1785884464.1134868,
@@ -128,5 +128,35 @@
     "mtime": 1785886855.4888813,
     "ast_hash": "c7ad3ffe539e32030d5a987df4d44652",
     "semantic_hash": "c7ad3ffe539e32030d5a987df4d44652"
+  },
+  "crates/spherra-domain/src/error.rs": {
+    "mtime": 1785888268.078716,
+    "ast_hash": "2626642221d5de711b5c0b24a9196f27",
+    "semantic_hash": "2626642221d5de711b5c0b24a9196f27"
+  },
+  "crates/spherra-domain/src/ids.rs": {
+    "mtime": 1785888225.082494,
+    "ast_hash": "32a0e51a38038b687627a321e2bb868e",
+    "semantic_hash": "32a0e51a38038b687627a321e2bb868e"
+  },
+  "crates/spherra-domain/src/record.rs": {
+    "mtime": 1785888229.3732932,
+    "ast_hash": "eb68a5ac64e7b700ac493ba6d8cd6900",
+    "semantic_hash": "eb68a5ac64e7b700ac493ba6d8cd6900"
+  },
+  "crates/spherra-domain/src/sequence.rs": {
+    "mtime": 1785888203.0656326,
+    "ast_hash": "f34124ca00ab120fee373592f86b0a95",
+    "semantic_hash": "f34124ca00ab120fee373592f86b0a95"
+  },
+  "crates/spherra-domain/tests/contracts.rs": {
+    "mtime": 1785888616.8612838,
+    "ast_hash": "06565449a44ca0c1d755f485d6257ae5",
+    "semantic_hash": "06565449a44ca0c1d755f485d6257ae5"
+  },
+  "graphify-out/memory/query_20260805_000124_start_task_2__encode_domain_invariants_before_code.md": {
+    "mtime": 1785888084.366951,
+    "ast_hash": "ac81c5a905a7d8005a1cd005c840ea99",
+    "semantic_hash": "ac81c5a905a7d8005a1cd005c840ea99"
   }
 }
