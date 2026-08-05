@@ -62,6 +62,15 @@ fn direct_code_packs_endpoints_and_deterministic_random_nibbles() {
 }
 
 #[test]
+fn quantizer_table_rejects_out_of_bounds_center_lookups() {
+    let table = affine_table();
+
+    assert_eq!(table.center(0, 0), Some(0.0));
+    assert_eq!(table.center(0, 16), None);
+    assert_eq!(table.center(DIMENSION, 0), None);
+}
+
+#[test]
 fn trainer_uses_the_user_approved_endpoint_inclusive_quantile_ranks() {
     let cases: &[(usize, [f32; 16])] = &[
         (1, [7.0; 16]),
@@ -97,7 +106,11 @@ fn trainer_uses_the_user_approved_endpoint_inclusive_quantile_ranks() {
     for (row_count, expected_centers) in cases {
         let table = QuantizerTable::train(&coordinate_rank_calibration(*row_count))
             .expect("finite non-empty calibration");
-        let actual_centers = array::from_fn(|center| table.center(7, center));
+        let actual_centers = array::from_fn(|center| {
+            table
+                .center(7, center)
+                .expect("rank test requests valid coordinates and four-bit codes")
+        });
         assert_eq!(actual_centers, *expected_centers, "row count {row_count}");
     }
 }
