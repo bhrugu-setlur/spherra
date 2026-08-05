@@ -153,6 +153,7 @@ Last updated: 2026-08-04.
 - I4 v1 implementation specification and P4 codec/format foundation plan approved by Codex and Claude Opus; Spherra package and command identifiers were applied later as a user-directed, non-behavioral naming amendment.
 - Task 1 established the Rust 1.88.0 / edition 2024 resolver-3 workspace, root unsafe/warnings denial, six empty Spherra crates with the approved dependency direction, isolated nightly-only fuzz targets, lockfiles, dependency-policy check, and local/GitHub CI gates. Fresh local quality, policy, fuzz-target, and advisory checks passed.
 - Task 2 defined the `spherra-domain` contracts for 768-dimensional validation, FP16-safe stored radius, direction reliability, distinct 128-bit chunk/document IDs, and 16-bit-epoch/48-bit-index put sequences. Five focused contract tests plus the complete workspace quality gate pass.
+- Task 3 implemented the exact scalar transform oracle: fixed-size normalized H128, cached two-round sign/permutation/H128 plans, and a provisional domain-separated canonical-little-endian BLAKE3 transform identity. Public forward transform entry points accept only `ReliableDirection`; six focused scalar/codec property and contract tests plus the complete workspace quality gate pass.
 
 ### Existing artifacts
 
@@ -164,6 +165,8 @@ Last updated: 2026-08-04.
 - `scripts/check_dependency_policy.py`, `scripts/ci.sh`
 - `crates/spherra-domain/`, `crates/spherra-simd/`, `crates/spherra-codec/`, `crates/spherra-format/`, `crates/spherra-testkit/`, `crates/spherra-bench/`
 - `crates/spherra-domain/src/error.rs`, `ids.rs`, `record.rs`, `sequence.rs`, and `tests/contracts.rs`
+- `crates/spherra-simd/src/scalar.rs` and `tests/scalar_transform.rs`
+- `crates/spherra-codec/src/spec.rs`, `transform.rs`, and `tests/transform_contract.rs`
 - `fuzz/Cargo.toml`, `fuzz/Cargo.lock`, `fuzz/fuzz_targets/`
 - `docs/superpowers/specs/2026-08-04-polar-lsm-router-design.md`
 - `docs/superpowers/specs/2026-08-04-polar-v1-implementation-spec.md`
@@ -182,8 +185,8 @@ Last updated: 2026-08-04.
 
 There is no production database yet. Specifically absent are:
 
-- Production Rust functionality beyond the Task 2 domain invariants; transform, codec, format, testkit, and benchmark crates remain stubs.
-- Production two-round transform, PQ96x8, fixed-point scoring, or certified-bound implementation.
+- Production Rust functionality beyond the Task 3 scalar transform oracle; direct-int4, PQ, format, testkit, and benchmark crates remain stubs.
+- Production direct-int4, PQ96x8, fixed-point scoring, or certified-bound implementation.
 - Production SIMD kernels or real-corpus acceptance harness.
 - Durable Raft log, OpenRaft integration, searchable memtables, truth indexes, or session tokens.
 - Segment/manifest files, compaction, recovery, blob store, replication, or repair.
@@ -194,13 +197,13 @@ Do not describe the approved production design as a working production database.
 
 ## Current status and next step
 
-Current phase: **P4 Task 2 domain invariants complete; Task 3 is next.**
+Current phase: **P4 Task 3 exact scalar transform oracle complete; Task 4 is next.**
 
 Active plan: approved P4 [`docs/superpowers/plans/2026-08-04-polar-codec-format-foundation.md`](docs/superpowers/plans/2026-08-04-polar-codec-format-foundation.md), with Spherra identifiers applied as a naming-only amendment.
 
 Next executable work:
 
-1. Execute Task 3 of the active plan: implement the exact scalar transform oracle.
+1. Execute Task 4 of the active plan: implement direct-int4 and `TILED_SOA_32`.
 2. Continue the active plan through the scalar codec/format measurement gate.
 3. Write the detailed M2 one-member-Raft vertical-slice plan only after M1 evidence is recorded.
 

@@ -481,7 +481,7 @@ feat(domain): define vector and sequence invariants
 - Modify: `crates/spherra-codec/src/lib.rs`
 - Test: `crates/spherra-codec/tests/transform_contract.rs`
 
-- [ ] **Step 1: Write failing mathematical property tests**
+- [x] **Step 1: Write failing mathematical property tests**
 
 Tests use deterministic random vectors and assert:
 
@@ -503,7 +503,7 @@ proptest! {
 
 Add a dot-preservation test and a structural test that records two rounds, six blocks/round, block length 128, and dimension 768 without padding.
 
-- [ ] **Step 2: Observe the tests fail**
+- [x] **Step 2: Observe the tests fail**
 
 Run:
 
@@ -513,11 +513,11 @@ cargo test -p spherra-simd -p spherra-codec --test scalar_transform --test trans
 
 Expected: missing types/functions cause compilation failure.
 
-- [ ] **Step 3: Implement normalized 128-point Hadamard**
+- [x] **Step 3: Implement normalized 128-point Hadamard**
 
 `spherra-simd::scalar::hadamard_128` performs seven butterfly stages and multiplies every output by `1.0 / sqrt(128.0)`. Reject any general-length API; the fixed `[f32; 128]` type prevents padding or accidental size changes.
 
-- [ ] **Step 4: Implement deterministic two-round transform identity**
+- [x] **Step 4: Implement deterministic two-round transform identity**
 
 `TransformPlan::from_seed` expands the collection seed into two 32-byte ChaCha20 seeds plus a BLAKE3 identity and caches the derived tables. For each round, use one deterministic RNG stream to create 768 sign bits and a Fisher-Yates permutation of `0..768`.
 
@@ -535,7 +535,7 @@ six normalized H128 blocks -> inverse global permutation -> same sign flip
 
 Cache derived signs/permutations in an immutable `TransformPlan`; do not regenerate them per vector.
 
-- [ ] **Step 5: Run transform tests**
+- [x] **Step 5: Run transform tests**
 
 Run:
 
@@ -545,7 +545,7 @@ cargo test -p spherra-simd -p spherra-codec --test scalar_transform --test trans
 
 Expected: structural, determinism, inverse, norm, and dot tests pass.
 
-- [ ] **Step 6: Refresh project state and commit**
+- [x] **Step 6: Refresh project state and commit**
 
 Commit message:
 
