@@ -171,6 +171,38 @@ impl PrimaryScore {
     }
 }
 
+/// A primary candidate prepared for Task 6 fixed-point comparison.
+///
+/// The decoded residual is retained after the one permitted candidate-only
+/// residual-code read, so the fixed-point scorer can consume it without
+/// reopening the residual source.
+#[derive(Clone, Debug, PartialEq)]
+pub struct PreparedCandidate {
+    primary: PrimaryScore,
+    decoded_residual: ResidualVector,
+}
+
+impl PreparedCandidate {
+    pub const fn new(primary: PrimaryScore, decoded_residual: ResidualVector) -> Self {
+        Self {
+            primary,
+            decoded_residual,
+        }
+    }
+
+    pub const fn primary(&self) -> PrimaryScore {
+        self.primary
+    }
+
+    pub const fn row(&self) -> u32 {
+        self.primary.row()
+    }
+
+    pub const fn decoded_residual(&self) -> &ResidualVector {
+        &self.decoded_residual
+    }
+}
+
 /// The capability available to resident primary-code scanners.
 pub trait PrimaryCodes {
     fn scan_primary(
@@ -216,16 +248,16 @@ pub fn scan_primary(
 /// Prepares a bounded candidate row slice for reranking by loading and decoding one
 /// residual code per row.
 ///
-/// Task 6 combines the primary reconstruction and decoded residual in its
+/// Task 6 combines the retained primary candidate and decoded residual in its
 /// fixed-point comparison path. This Task 5 boundary deliberately performs no
-/// floating-point serving-score calculation.
+/// floating-point serving-score calculation and does not reopen residual codes.
 pub fn rerank_candidates(
     primary: &dyn PrimaryCodes,
     residuals: &dyn ResidualCodes,
     codebook: &Pq96Codebook,
     query: &PreparedQuery,
     candidate_rows: &[u32],
-    out: &mut [PrimaryScore],
+    out: &mut [PreparedCandidate],
 ) -> Result<usize, CodecError> {
     let written = candidate_rows.len().min(out.len());
 
@@ -243,17 +275,49 @@ pub fn rerank_candidates(
             });
         }
 
-        let _decoded_residual = codebook.decode(&residuals.load_residual(row)?);
-        out[index] = primary_score[0];
+        let decoded_residual = codebook.decode(&residuals.load_residual(row)?);
+        out[index] = PreparedCandidate::new(primary_score[0], decoded_residual);
     }
 
     Ok(written)
+}
+
+/// Deterministic training facts collected across all 96 subquantizers.
+///
+/// These diagnostics support validation of the scalar training path. They do
+/// not participate in canonical codebook bytes or serving-score comparison.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Pq96TrainingDiagnostics {
+    lloyd_iterations: u32,
+    centroid_moves: u32,
+    empty_cluster_reseeds: u32,
+}
+
+impl Pq96TrainingDiagnostics {
+    pub const fn lloyd_iterations(self) -> u32 {
+        self.lloyd_iterations
+    }
+
+    pub const fn centroid_moves(self) -> u32 {
+        self.centroid_moves
+    }
+
+    pub const fn empty_cluster_reseeds(self) -> u32 {
+        self.empty_cluster_reseeds
+    }
+
+    fn include(&mut self, other: Self) {
+        self.lloyd_iterations += other.lloyd_iterations;
+        self.centroid_moves += other.centroid_moves;
+        self.empty_cluster_reseeds += other.empty_cluster_reseeds;
+    }
 }
 
 #[derive(Clone, Debug)]
 pub struct Pq96Codebook {
     centroids: Box<Centroids>,
     codebook_id: [u8; PQ_CODEBOOK_ID_LEN],
+    training_diagnostics: Pq96TrainingDiagnostics,
 }
 
 impl Pq96Codebook {
@@ -267,13 +331,18 @@ impl Pq96Codebook {
         let mut centroids = Box::new(
             [[[0.0; Pq96Code::SUBVECTOR_DIMENSION]; Pq96Code::CENTROIDS]; Pq96Code::SUBQUANTIZERS],
         );
+        let mut training_diagnostics = Pq96TrainingDiagnostics::default();
         for subquantizer in 0..Pq96Code::SUBQUANTIZERS {
-            centroids[subquantizer] = train_subquantizer(residuals, subquantizer, seed);
+            let (trained_centroids, subquantizer_diagnostics) =
+                train_subquantizer(residuals, subquantizer, seed);
+            centroids[subquantizer] = trained_centroids;
+            training_diagnostics.include(subquantizer_diagnostics);
         }
 
         let mut codebook = Self {
             centroids,
             codebook_id: [0; PQ_CODEBOOK_ID_LEN],
+            training_diagnostics,
         };
         codebook.codebook_id = *blake3::hash(&codebook.canonical_bytes()).as_bytes();
         Ok(codebook)
@@ -338,6 +407,10 @@ impl Pq96Codebook {
     pub const fn codebook_id(&self) -> &[u8; PQ_CODEBOOK_ID_LEN] {
         &self.codebook_id
     }
+
+    pub const fn training_diagnostics(&self) -> Pq96TrainingDiagnostics {
+        self.training_diagnostics
+    }
 }
 
 fn validate_calibration_residuals(residuals: &[ResidualVector]) -> Result<(), CodecError> {
@@ -362,11 +435,16 @@ fn train_subquantizer(
     residuals: &[ResidualVector],
     subquantizer: usize,
     seed: u64,
-) -> [[f32; Pq96Code::SUBVECTOR_DIMENSION]; Pq96Code::CENTROIDS] {
+) -> (
+    [[f32; Pq96Code::SUBVECTOR_DIMENSION]; Pq96Code::CENTROIDS],
+    Pq96TrainingDiagnostics,
+) {
     let mut centroids = initialize_centroids(residuals, subquantizer, seed);
     let mut assignments = vec![usize::MAX; residuals.len()];
+    let mut diagnostics = Pq96TrainingDiagnostics::default();
 
     for _ in 0..LLOYD_ITERATIONS {
+        diagnostics.lloyd_iterations += 1;
         let mut sums = [[0.0_f64; Pq96Code::SUBVECTOR_DIMENSION]; Pq96Code::CENTROIDS];
         let mut counts = [0_usize; Pq96Code::CENTROIDS];
         let mut squared_errors = vec![0.0_f64; residuals.len()];
@@ -391,15 +469,20 @@ fn train_subquantizer(
         for centroid in 0..Pq96Code::CENTROIDS {
             if counts[centroid] == 0 {
                 reseeded_empty_centroid = true;
+                diagnostics.empty_cluster_reseeds += 1;
                 let row = largest_error_row(&squared_errors, &reseeded_rows);
                 reseeded_rows[row] = true;
-                centroids[centroid] = subvector(residuals[row], subquantizer);
+                let reseeded_centroid = subvector(residuals[row], subquantizer);
+                diagnostics.centroid_moves += u32::from(centroids[centroid] != reseeded_centroid);
+                centroids[centroid] = reseeded_centroid;
             } else {
                 let count = counts[centroid] as f64;
-                for lane in 0..Pq96Code::SUBVECTOR_DIMENSION {
-                    centroids[centroid][lane] =
-                        canonicalize_zero((sums[centroid][lane] / count) as f32);
+                let mut updated_centroid = [0.0; Pq96Code::SUBVECTOR_DIMENSION];
+                for (lane, value) in updated_centroid.iter_mut().enumerate() {
+                    *value = canonicalize_zero((sums[centroid][lane] / count) as f32);
                 }
+                diagnostics.centroid_moves += u32::from(centroids[centroid] != updated_centroid);
+                centroids[centroid] = updated_centroid;
             }
         }
 
@@ -408,7 +491,7 @@ fn train_subquantizer(
         }
     }
 
-    centroids
+    (centroids, diagnostics)
 }
 
 fn lloyd_iteration_has_converged(assignments_changed: bool, reseeded_empty_centroid: bool) -> bool {

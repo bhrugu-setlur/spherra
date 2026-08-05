@@ -15,6 +15,44 @@ fn calibration_residuals() -> Vec<[f32; DIMENSION]> {
         .collect()
 }
 
+fn movement_calibration_residuals() -> Vec<[f32; DIMENSION]> {
+    let mut residuals = Vec::with_capacity(Pq96Code::CENTROIDS + 1);
+    residuals.push([-1.0; DIMENSION]);
+    residuals.push([1.0; DIMENSION]);
+    for group in 1..Pq96Code::CENTROIDS {
+        residuals.push([group as f32 * 1_000_000.0; DIMENSION]);
+    }
+    residuals
+}
+
+fn empty_cluster_calibration_residuals() -> Vec<[f32; DIMENSION]> {
+    (0..Pq96Code::CENTROIDS)
+        .map(|row| {
+            if row < Pq96Code::CENTROIDS / 2 {
+                [0.0; DIMENSION]
+            } else {
+                [10.0; DIMENSION]
+            }
+        })
+        .collect()
+}
+
+fn squared_reconstruction_error(codebook: &Pq96Codebook, residuals: &[[f32; DIMENSION]]) -> f64 {
+    let mut total_error = 0.0;
+    for residual in residuals {
+        let decoded = codebook.decode(
+            &codebook
+                .encode(residual)
+                .expect("calibration residuals are finite"),
+        );
+        for (actual, reconstructed) in residual.iter().zip(decoded) {
+            let difference = f64::from(*actual) - f64::from(reconstructed);
+            total_error += difference * difference;
+        }
+    }
+    total_error
+}
+
 #[test]
 fn pq96_constants_and_training_are_canonical_and_deterministic() {
     assert_eq!(Pq96Code::SUBQUANTIZERS, 96);
@@ -28,6 +66,7 @@ fn pq96_constants_and_training_are_canonical_and_deterministic() {
 
     assert_eq!(first.canonical_bytes(), repeat.canonical_bytes());
     assert_eq!(first.codebook_id(), repeat.codebook_id());
+    assert_eq!(first.training_diagnostics(), repeat.training_diagnostics());
     assert_eq!(
         first.canonical_bytes().len(),
         96 * 256 * 8 * size_of::<f32>()
@@ -73,4 +112,32 @@ fn pq96_training_rejects_incomplete_or_non_finite_residuals() {
             coordinate: 17
         })
     ));
+}
+
+#[test]
+fn public_training_moves_centroids_and_recovers_empty_clusters() {
+    let movement_calibration = movement_calibration_residuals();
+    let moved = Pq96Codebook::train(&movement_calibration, 42)
+        .expect("movement calibration residuals are valid");
+
+    assert_eq!(moved.training_diagnostics().empty_cluster_reseeds(), 0);
+    assert!(moved.training_diagnostics().centroid_moves() > 0);
+    assert!(
+        squared_reconstruction_error(&moved, &movement_calibration) < 2_000.0,
+        "Lloyd updates should reconstruct the two near-origin rows through their mean"
+    );
+
+    let recovered = Pq96Codebook::train(&empty_cluster_calibration_residuals(), 43)
+        .expect("empty-cluster calibration residuals are valid");
+    let diagnostics = recovered.training_diagnostics();
+    assert_eq!(
+        diagnostics.lloyd_iterations(),
+        (Pq96Code::SUBQUANTIZERS * 25) as u32,
+        "empty-cluster recovery prevents an early stop immediately after reseeding"
+    );
+    assert_eq!(
+        diagnostics.empty_cluster_reseeds(),
+        (Pq96Code::SUBQUANTIZERS * (Pq96Code::CENTROIDS - 2) * 25) as u32,
+        "two distinct rows leave 254 empty centroids per subquantizer and Lloyd pass"
+    );
 }

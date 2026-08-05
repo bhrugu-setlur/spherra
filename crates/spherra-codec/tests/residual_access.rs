@@ -2,8 +2,8 @@ use core::cell::RefCell;
 use core::ops::Range;
 
 use spherra_codec::{
-    CodecError, Pq96Code, Pq96Codebook, PreparedQuery, PrimaryCodes, PrimaryScore, ResidualCodes,
-    rerank_candidates, scan_primary,
+    CodecError, Pq96Code, Pq96Codebook, PreparedCandidate, PreparedQuery, PrimaryCodes,
+    PrimaryScore, ResidualCodes, rerank_candidates, scan_primary,
 };
 use spherra_domain::DIMENSION;
 
@@ -89,15 +89,22 @@ fn candidate_rerank_loads_one_residual_for_each_candidate() {
     let primary = SpyPrimary;
     let codebook =
         Pq96Codebook::train(&calibration_residuals(), 19).expect("calibration residuals are valid");
-    let residual = SpyResidual::new(Pq96Code::from_bytes([0; Pq96Code::BYTE_LEN]));
+    let residual_code = Pq96Code::from_bytes([7; Pq96Code::BYTE_LEN]);
+    let expected_residual = codebook.decode(&residual_code);
+    let residual = SpyResidual::new(residual_code);
     let query = prepared_query();
     let rows = [2, 7, 9];
-    let mut reranked = [PrimaryScore::for_row(0); 3];
+    let mut reranked = core::array::from_fn(|_| {
+        PreparedCandidate::new(PrimaryScore::for_row(0), [0.0; DIMENSION])
+    });
 
     let written = rerank_candidates(&primary, &residual, &codebook, &query, &rows, &mut reranked)
         .expect("the spies support every candidate row");
 
     assert_eq!(written, rows.len());
-    assert_eq!(reranked.map(PrimaryScore::row), rows);
+    assert_eq!(reranked.each_ref().map(PreparedCandidate::row), rows);
+    for candidate in &reranked {
+        assert_eq!(candidate.decoded_residual(), &expected_residual);
+    }
     assert_eq!(residual.loaded_rows(), rows);
 }
