@@ -562,7 +562,7 @@ feat(codec): add scalar two-round transform oracle
 - Modify: `crates/spherra-codec/src/lib.rs`
 - Test: `crates/spherra-codec/tests/codec_contract.rs`
 
-- [ ] **Step 1: Write failing byte and layout tests**
+- [x] **Step 1: Write failing byte and layout tests**
 
 Tests must prove:
 
@@ -574,7 +574,7 @@ assert_eq!(TiledSoa32::direction_bytes_for_full_tile(), 12_288);
 
 They also encode/decode endpoints and random codes, compare a full-tile scan with per-row scalar scoring, and test a 1-row and 31-row tail while reporting physical padding separately from logical payload.
 
-- [ ] **Step 2: Observe failure**
+- [x] **Step 2: Observe failure**
 
 Run:
 
@@ -584,17 +584,19 @@ cargo test -p spherra-codec --test codec_contract --locked
 
 Expected: missing direct-code and layout types.
 
-- [ ] **Step 3: Implement quantizer training and nibble packing**
+- [x] **Step 3: Implement quantizer training and nibble packing**
 
 The scalar reference trainer sorts calibration values independently for each transformed coordinate and selects 16 deterministic quantile centers. Ties preserve lower code order. The table is `[f32; 768 * 16]` and is identified by BLAKE3 over canonical little-endian FP32 bytes.
 
+**User-approved, Opus-recommended provisional scalar rule (2026-08-04):** For sorted finite coordinate samples `x[0..n]`, require `n >= 1` and select center `j` at rank `floor(j * (n - 1) / 15)` for `j = 0..15`. Evaluate multiplication and division in `u128`, then convert the proven-bounded rank to `usize`; do not use floating-point rank arithmetic, interpolation, rounding, clamping, or deduplication. This includes the observed minimum and maximum. For `n < 16` and repeated values, keep duplicate centers. Nearest-center ties, including duplicate centers, select the smaller code. Reject an empty calibration corpus with a narrow training-specific error, and reject non-finite raw calibration values with row and coordinate context. Canonicalize `-0.0` to `+0.0` before sorting and hashing so equal numeric samples cannot produce different quantizer identities. Hash canonical little-endian FP32 table bytes in coordinate-major, center-minor order. Keep training errors separate from future encode/decode/durable-format errors; do not create a broad frozen `CodecError` in this task. This is a user-approved, Claude Opus-recommended provisional scalar rule, independently accepted by Codex with the `u128` rank-arithmetic hardening.
+
 Encoding selects the nearest center with ties going to the smaller code. Pack even coordinate `i` into the low nibble and `i + 1` into the high nibble. Decode and score use the table from the codec header, not a hard-coded `[-1, 1]` mapping.
 
-- [ ] **Step 4: Implement TILED_SOA_32**
+- [x] **Step 4: Implement TILED_SOA_32**
 
 Within each 32-row tile, store coordinate-major nibbles. For a full tile each coordinate consumes 16 bytes and 768 coordinates consume 12,288 bytes. Tail tiles are zero padded physically, while row count controls visibility and byte accounting reports both logical and physical bytes.
 
-- [ ] **Step 5: Run layout tests**
+- [x] **Step 5: Run layout tests**
 
 Run:
 
@@ -604,7 +606,7 @@ cargo test -p spherra-codec --test codec_contract --locked
 
 Expected: exact byte, round-trip, tie-breaking, full-tile, and tail tests pass.
 
-- [ ] **Step 6: Refresh project state and commit**
+- [x] **Step 6: Refresh project state and commit**
 
 Commit message:
 

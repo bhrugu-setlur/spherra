@@ -40,13 +40,13 @@
     "semantic_hash": "249ee2453b7a2ec8ea8fe57e2904900d"
   },
   "AGENTS.md": {
-    "mtime": 1785891038.1657991,
-    "ast_hash": "e6990e18e2ba57d8f7d30097ba411219",
+    "mtime": 1785896406.8564875,
+    "ast_hash": "734f2dc040a049e0edc747846ecd6d23",
     "semantic_hash": ""
   },
   "docs/superpowers/plans/2026-08-04-polar-codec-format-foundation.md": {
-    "mtime": 1785891038.1667361,
-    "ast_hash": "5e6a2d514fbd1d82ff16e4f9dd467018",
+    "mtime": 1785896406.8560457,
+    "ast_hash": "173a47e18665eb2fd5aa4403c5ce3263",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-08-04-polar-v1-implementation-spec.md": {
@@ -80,8 +80,8 @@
     "semantic_hash": "639e04c270fef8589636e0416761a67b"
   },
   "crates/spherra-codec/src/lib.rs": {
-    "mtime": 1785890892.1461933,
-    "ast_hash": "32f7ff2de32dce469826f51a298b7d84",
+    "mtime": 1785896279.6404781,
+    "ast_hash": "3854bcc3d0e19506084ef765496839b8",
     "semantic_hash": ""
   },
   "crates/spherra-domain/src/lib.rs": {
@@ -97,7 +97,7 @@
   "crates/spherra-simd/src/lib.rs": {
     "mtime": 1785890892.1455212,
     "ast_hash": "5d1dca10c1dc25b1de1bba5c09e40641",
-    "semantic_hash": ""
+    "semantic_hash": "5d1dca10c1dc25b1de1bba5c09e40641"
   },
   "crates/spherra-testkit/src/lib.rs": {
     "mtime": 1785884464.1138654,
@@ -162,31 +162,46 @@
   "crates/spherra-codec/src/spec.rs": {
     "mtime": 1785890892.1464233,
     "ast_hash": "931c47e2266b0e464daf949cf82c5e94",
-    "semantic_hash": ""
+    "semantic_hash": "931c47e2266b0e464daf949cf82c5e94"
   },
   "crates/spherra-codec/src/transform.rs": {
-    "mtime": 1785890923.911007,
-    "ast_hash": "5e7cd7182ae124eb80c0587b096d61b9",
-    "semantic_hash": ""
+    "mtime": 1785891243.3133337,
+    "ast_hash": "08a6c829e9200527d1d83e14ebe34adb",
+    "semantic_hash": "08a6c829e9200527d1d83e14ebe34adb"
   },
   "crates/spherra-codec/tests/transform_contract.rs": {
     "mtime": 1785890765.26625,
     "ast_hash": "093674caa11c9d091ebefcf17de826a4",
-    "semantic_hash": ""
+    "semantic_hash": "093674caa11c9d091ebefcf17de826a4"
   },
   "crates/spherra-simd/src/scalar.rs": {
     "mtime": 1785890892.145768,
     "ast_hash": "05cb636e2330f56786ac3aef6e4a508f",
-    "semantic_hash": ""
+    "semantic_hash": "05cb636e2330f56786ac3aef6e4a508f"
   },
   "crates/spherra-simd/tests/scalar_transform.rs": {
     "mtime": 1785890765.2657993,
     "ast_hash": "d8650f467da2c1d2333bb6d1dc5ccc80",
-    "semantic_hash": ""
+    "semantic_hash": "d8650f467da2c1d2333bb6d1dc5ccc80"
   },
   "graphify-out/memory/query_20260805_004505_what_approved_boundaries_govern_task_3_s_scalar_tr.md": {
     "mtime": 1785890705.178384,
     "ast_hash": "8c0f0743e2c40c4bfce03b9eec3b8b15",
+    "semantic_hash": "8c0f0743e2c40c4bfce03b9eec3b8b15"
+  },
+  "crates/spherra-codec/src/int4.rs": {
+    "mtime": 1785896330.8930342,
+    "ast_hash": "b53927912e8b1d74e6ee3f049bf5144e",
+    "semantic_hash": ""
+  },
+  "crates/spherra-codec/src/tiled_soa.rs": {
+    "mtime": 1785896359.213951,
+    "ast_hash": "e7a2b55ca1128c5a46946cbc5267a0ff",
+    "semantic_hash": ""
+  },
+  "crates/spherra-codec/tests/codec_contract.rs": {
+    "mtime": 1785896330.8969889,
+    "ast_hash": "24806e18f8bbbfd21e45d746d9ef4db3",
     "semantic_hash": ""
   },
   "/Users/bhrugusetlur/dev/spherra-worktrees/rust-workspace-bootstrap/crates/spherra-bench/src/main.rs": {
@@ -194,20 +209,35 @@
     "ast_hash": "639e04c270fef8589636e0416761a67b",
     "semantic_hash": "639e04c270fef8589636e0416761a67b"
   },
+  "/Users/bhrugusetlur/dev/spherra-worktrees/rust-workspace-bootstrap/crates/spherra-codec/src/int4.rs": {
+    "mtime": 1785896330.8930342,
+    "ast_hash": "b53927912e8b1d74e6ee3f049bf5144e",
+    "semantic_hash": "b53927912e8b1d74e6ee3f049bf5144e"
+  },
   "/Users/bhrugusetlur/dev/spherra-worktrees/rust-workspace-bootstrap/crates/spherra-codec/src/lib.rs": {
-    "mtime": 1785890892.1461933,
-    "ast_hash": "32f7ff2de32dce469826f51a298b7d84",
-    "semantic_hash": "32f7ff2de32dce469826f51a298b7d84"
+    "mtime": 1785896279.6404781,
+    "ast_hash": "3854bcc3d0e19506084ef765496839b8",
+    "semantic_hash": "3854bcc3d0e19506084ef765496839b8"
   },
   "/Users/bhrugusetlur/dev/spherra-worktrees/rust-workspace-bootstrap/crates/spherra-codec/src/spec.rs": {
     "mtime": 1785890892.1464233,
     "ast_hash": "931c47e2266b0e464daf949cf82c5e94",
     "semantic_hash": "931c47e2266b0e464daf949cf82c5e94"
   },
+  "/Users/bhrugusetlur/dev/spherra-worktrees/rust-workspace-bootstrap/crates/spherra-codec/src/tiled_soa.rs": {
+    "mtime": 1785896359.213951,
+    "ast_hash": "e7a2b55ca1128c5a46946cbc5267a0ff",
+    "semantic_hash": "e7a2b55ca1128c5a46946cbc5267a0ff"
+  },
   "/Users/bhrugusetlur/dev/spherra-worktrees/rust-workspace-bootstrap/crates/spherra-codec/src/transform.rs": {
     "mtime": 1785891243.3133337,
     "ast_hash": "08a6c829e9200527d1d83e14ebe34adb",
     "semantic_hash": "08a6c829e9200527d1d83e14ebe34adb"
+  },
+  "/Users/bhrugusetlur/dev/spherra-worktrees/rust-workspace-bootstrap/crates/spherra-codec/tests/codec_contract.rs": {
+    "mtime": 1785896330.8969889,
+    "ast_hash": "24806e18f8bbbfd21e45d746d9ef4db3",
+    "semantic_hash": "24806e18f8bbbfd21e45d746d9ef4db3"
   },
   "/Users/bhrugusetlur/dev/spherra-worktrees/rust-workspace-bootstrap/crates/spherra-codec/tests/transform_contract.rs": {
     "mtime": 1785890765.26625,
@@ -325,9 +355,9 @@
     "semantic_hash": "c7ad3ffe539e32030d5a987df4d44652"
   },
   "/Users/bhrugusetlur/dev/spherra-worktrees/rust-workspace-bootstrap/AGENTS.md": {
-    "mtime": 1785891038.1657991,
-    "ast_hash": "e6990e18e2ba57d8f7d30097ba411219",
-    "semantic_hash": "e6990e18e2ba57d8f7d30097ba411219"
+    "mtime": 1785896406.8564875,
+    "ast_hash": "734f2dc040a049e0edc747846ecd6d23",
+    "semantic_hash": "734f2dc040a049e0edc747846ecd6d23"
   },
   "/Users/bhrugusetlur/dev/spherra-worktrees/rust-workspace-bootstrap/README.md": {
     "mtime": 1785884004.5878441,
@@ -335,9 +365,9 @@
     "semantic_hash": "30818a249ba8424f773e1b4341844dff"
   },
   "/Users/bhrugusetlur/dev/spherra-worktrees/rust-workspace-bootstrap/docs/superpowers/plans/2026-08-04-polar-codec-format-foundation.md": {
-    "mtime": 1785891038.1667361,
-    "ast_hash": "5e6a2d514fbd1d82ff16e4f9dd467018",
-    "semantic_hash": "5e6a2d514fbd1d82ff16e4f9dd467018"
+    "mtime": 1785896406.8560457,
+    "ast_hash": "173a47e18665eb2fd5aa4403c5ce3263",
+    "semantic_hash": "173a47e18665eb2fd5aa4403c5ce3263"
   },
   "/Users/bhrugusetlur/dev/spherra-worktrees/rust-workspace-bootstrap/docs/superpowers/specs/2026-08-04-polar-lsm-router-design.md": {
     "mtime": 1785884004.5891008,
