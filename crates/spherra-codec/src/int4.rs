@@ -2,6 +2,8 @@ use core::{array, fmt};
 
 use spherra_domain::DIMENSION;
 
+use crate::transform::TransformedDirection;
+
 const CENTERS_PER_COORDINATE: usize = 16;
 const DIRECT_CODE_BYTE_LEN: usize = DIMENSION / 2;
 const QUANTIZER_TABLE_LEN: usize = DIMENSION * CENTERS_PER_COORDINATE;
@@ -141,9 +143,10 @@ impl QuantizerTable {
         Some(self.center_for_valid_indices(coordinate, code))
     }
 
-    pub fn encode(&self, values: &[f32; DIMENSION]) -> DirectCode {
-        let nibbles =
-            array::from_fn(|coordinate| self.nearest_code(coordinate, values[coordinate]));
+    pub fn encode(&self, values: &TransformedDirection) -> DirectCode {
+        let nibbles = array::from_fn(|coordinate| {
+            self.nearest_code(coordinate, values.as_array()[coordinate])
+        });
         DirectCode::from_valid_nibbles(nibbles)
     }
 
@@ -153,8 +156,9 @@ impl QuantizerTable {
         })
     }
 
-    pub fn score(&self, query: &[f32; DIMENSION], code: &DirectCode) -> f32 {
+    pub fn score(&self, query: &TransformedDirection, code: &DirectCode) -> f32 {
         query
+            .as_array()
             .iter()
             .enumerate()
             .fold(0.0, |score, (coordinate, value)| {
