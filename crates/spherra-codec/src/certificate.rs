@@ -1,4 +1,5 @@
 use core::{cmp::Ordering, fmt};
+use std::sync::Arc;
 
 use spherra_domain::DIMENSION;
 
@@ -7,18 +8,20 @@ use crate::scorer::{
     upward_mul, upward_sqrt,
 };
 use crate::{
-    DirectCode, FixedPointScore, FixedPointScorer, Pq96Code, Pq96Codebook, PreparedScorerQuery,
-    QuantizerTable, ScorerError, TransformPlan, normalize_fp64,
+    DirectCode, FixedPointScore, FixedPointScorer, Pq96Code, Pq96Codebook, PreparedCandidate,
+    PreparedScorerQuery, QuantizerTable, ScorerError, TransformPlan, normalize_fp64,
 };
 
 const CERTIFICATE_BLOCK_ID_LEN: usize = 32;
 
-/// Stable identity supplied by the immutable block/segment owner.
+/// Caller-supplied label for an in-memory certificate block.
 ///
-/// The codec cannot discover omitted storage rows on its own. The owner must
-/// therefore supply the durable block identity and expected physical row count
-/// when it creates an [`ExhaustiveBlock`]. Certificate construction verifies
-/// the exact contiguous coverage `0..row_count` before considering any vector.
+/// This value is not an authentication proof: Task 6 has no checked durable
+/// reader yet, so callers can reproduce any label. A future block/manifest
+/// reader is the sole authority that may authenticate a durable identity and
+/// physical row count. The certificate API instead uses a private per-instance
+/// capability to keep a successful in-memory enumeration from being confused
+/// with a different enumeration that reused this label.
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct CertificateBlockId([u8; CERTIFICATE_BLOCK_ID_LEN]);
 
@@ -30,6 +33,16 @@ impl CertificateBlockId {
     pub const fn as_bytes(self) -> [u8; CERTIFICATE_BLOCK_ID_LEN] {
         self.0
     }
+}
+
+/// An unforgeable capability allocated only after an exhaustive in-memory
+/// enumeration has passed its count and contiguous-row checks.
+///
+/// The non-zero field ensures every `Arc` allocation has a distinct object;
+/// equality is always `Arc::ptr_eq`, never the caller-supplied block label.
+#[derive(Debug)]
+struct ExhaustiveBlockCapability {
+    _nonzero: u8,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -63,12 +76,15 @@ impl<'a> CertificateRow<'a> {
 /// A block-owning, checked input to exhaustive certificate construction.
 ///
 /// `from_rows` collects the supplied storage rows, validates that the caller's
-/// manifest count is exact, and rejects duplicate, skipped, or out-of-range
-/// row ordinals. The resulting capability is also the sole source of rows
-/// accepted by the public certificate-bound API.
+/// declared count is self-consistent, and rejects duplicate, skipped, or
+/// out-of-range row ordinals. On success it creates an opaque capability that
+/// binds every candidate and certificate to this exact enumeration. It cannot
+/// authenticate a durable manifest by itself: only a future checked
+/// block/manifest reader can vouch for an on-disk identity and physical count.
 #[derive(Debug)]
 pub struct ExhaustiveBlock<'a> {
     identity: CertificateBlockId,
+    capability: Arc<ExhaustiveBlockCapability>,
     rows: Box<[CertificateRow<'a>]>,
 }
 
@@ -116,6 +132,7 @@ impl<'a> ExhaustiveBlock<'a> {
 
         Ok(Self {
             identity,
+            capability: Arc::new(ExhaustiveBlockCapability { _nonzero: 1 }),
             rows: rows.into_boxed_slice(),
         })
     }
@@ -138,6 +155,7 @@ impl<'a> ExhaustiveBlock<'a> {
             })?;
         Ok(CertificateBlockCandidate {
             block_identity: self.identity,
+            capability: Arc::clone(&self.capability),
             row: row.row,
             primary: row.primary,
             residual: row.residual,
@@ -146,16 +164,21 @@ impl<'a> ExhaustiveBlock<'a> {
 }
 
 /// An actual row minted by [`ExhaustiveBlock`], not caller-supplied codes.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct CertificateBlockCandidate<'a> {
     block_identity: CertificateBlockId,
+    capability: Arc<ExhaustiveBlockCapability>,
     row: u32,
     primary: &'a DirectCode,
     residual: &'a Pq96Code,
 }
 
 impl CertificateBlockCandidate<'_> {
-    pub const fn row(self) -> u32 {
+    pub const fn block_identity(&self) -> CertificateBlockId {
+        self.block_identity
+    }
+
+    pub const fn row(&self) -> u32 {
         self.row
     }
 }
@@ -209,105 +232,117 @@ impl ErrorCertificate {
 /// representation identity. It can be converted to a numeric value for
 /// ranking, but only its originating certificate can turn it into pruning
 /// bounds.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct CertifiedBlockScore {
     score: FixedPointScore,
     block_identity: CertificateBlockId,
+    capability: Arc<ExhaustiveBlockCapability>,
     row: u32,
 }
 
 impl CertifiedBlockScore {
-    pub const fn row(self) -> u32 {
+    pub const fn block_identity(&self) -> CertificateBlockId {
+        self.block_identity
+    }
+
+    pub const fn row(&self) -> u32 {
         self.row
     }
 
-    pub const fn raw(self) -> i64 {
+    pub const fn raw(&self) -> i64 {
         self.score.raw()
     }
 
-    pub fn as_f64(self) -> f64 {
+    pub fn as_f64(&self) -> f64 {
         self.score.as_f64()
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct BlockCertificate {
     block_identity: CertificateBlockId,
+    capability: Arc<ExhaustiveBlockCapability>,
     provenance: ScoreProvenance,
     primary: ErrorCertificate,
     refined: ErrorCertificate,
 }
 
 impl BlockCertificate {
-    pub const fn block_identity(self) -> CertificateBlockId {
+    pub const fn block_identity(&self) -> CertificateBlockId {
         self.block_identity
     }
 
-    pub const fn provenance(self) -> ScoreProvenance {
+    pub const fn provenance(&self) -> ScoreProvenance {
         self.provenance
     }
 
-    pub const fn primary(self) -> ErrorCertificate {
+    pub const fn primary(&self) -> ErrorCertificate {
         self.primary
     }
 
-    pub const fn refined(self) -> ErrorCertificate {
+    pub const fn refined(&self) -> ErrorCertificate {
         self.refined
     }
 
     pub fn score_primary(
-        self,
+        &self,
         scorer: &FixedPointScorer,
         query: &PreparedScorerQuery,
-        candidate: CertificateBlockCandidate<'_>,
+        candidate: &CertificateBlockCandidate<'_>,
     ) -> Result<CertifiedBlockScore, CertificateError> {
         self.validate_candidate(query, candidate)?;
         let score = scorer.score_primary(query, candidate.primary);
         Ok(CertifiedBlockScore {
             score,
             block_identity: self.block_identity,
+            capability: Arc::clone(&self.capability),
             row: candidate.row,
         })
     }
 
     pub fn score_refined(
-        self,
+        &self,
         scorer: &FixedPointScorer,
         query: &PreparedScorerQuery,
-        candidate: CertificateBlockCandidate<'_>,
+        candidate: &CertificateBlockCandidate<'_>,
+        prepared: &PreparedCandidate,
     ) -> Result<CertifiedBlockScore, CertificateError> {
         self.validate_candidate(query, candidate)?;
-        let score = scorer.score_refined(query, candidate.primary, candidate.residual);
+        self.validate_prepared_candidate(candidate, prepared)?;
+        let score = scorer
+            .score_prepared_candidate(query, candidate.primary, prepared)
+            .map_err(CertificateError::PreparedCandidateRejected)?;
         Ok(CertifiedBlockScore {
             score,
             block_identity: self.block_identity,
+            capability: Arc::clone(&self.capability),
             row: candidate.row,
         })
     }
 
     pub fn primary_bounds(
-        self,
+        &self,
         score: CertifiedBlockScore,
     ) -> Result<ScoreBounds, CertificateError> {
-        self.validate_certified_score(score, ScoreKind::Primary)?;
+        self.validate_certified_score(&score, ScoreKind::Primary)?;
         Ok(self.primary.bounds(score.score))
     }
 
     pub fn refined_bounds(
-        self,
+        &self,
         score: CertifiedBlockScore,
     ) -> Result<ScoreBounds, CertificateError> {
-        self.validate_certified_score(score, ScoreKind::Refined)?;
+        self.validate_certified_score(&score, ScoreKind::Refined)?;
         Ok(self.refined.bounds(score.score))
     }
 
     fn validate_candidate(
-        self,
+        &self,
         query: &PreparedScorerQuery,
-        candidate: CertificateBlockCandidate<'_>,
+        candidate: &CertificateBlockCandidate<'_>,
     ) -> Result<(), CertificateError> {
-        if candidate.block_identity != self.block_identity {
-            return Err(CertificateError::BlockIdentityMismatch);
+        if !Arc::ptr_eq(&candidate.capability, &self.capability) {
+            return Err(CertificateError::BlockCapabilityMismatch);
         }
         if query.provenance() != self.provenance {
             return Err(CertificateError::ScoreProvenanceMismatch);
@@ -315,13 +350,34 @@ impl BlockCertificate {
         Ok(())
     }
 
+    /// Binds the Task 5 once-loaded residual to the checked certificate row.
+    /// This compares the retained code with the code already held by the
+    /// in-memory certificate input; it does not grant the primary path a
+    /// residual capability and does not reopen residual storage.
+    fn validate_prepared_candidate(
+        &self,
+        candidate: &CertificateBlockCandidate<'_>,
+        prepared: &PreparedCandidate,
+    ) -> Result<(), CertificateError> {
+        if prepared.row() != candidate.row {
+            return Err(CertificateError::PreparedCandidateRowMismatch {
+                expected: candidate.row,
+                actual: prepared.row(),
+            });
+        }
+        if prepared.residual_code() != candidate.residual {
+            return Err(CertificateError::PreparedCandidateResidualMismatch { row: candidate.row });
+        }
+        Ok(())
+    }
+
     fn validate_certified_score(
-        self,
-        score: CertifiedBlockScore,
+        &self,
+        score: &CertifiedBlockScore,
         expected_kind: ScoreKind,
     ) -> Result<(), CertificateError> {
-        if score.block_identity != self.block_identity {
-            return Err(CertificateError::BlockIdentityMismatch);
+        if !Arc::ptr_eq(&score.capability, &self.capability) {
+            return Err(CertificateError::BlockCapabilityMismatch);
         }
         if score.score.provenance() != self.provenance {
             return Err(CertificateError::ScoreProvenanceMismatch);
@@ -340,9 +396,12 @@ pub enum CertificateError {
     RowOutOfRange { row: u32, expected_row_count: u32 },
     DuplicateRow { row: u32 },
     MissingRow { expected_row: u32 },
-    BlockIdentityMismatch,
+    BlockCapabilityMismatch,
     ScoreProvenanceMismatch,
     ScoreKindMismatch,
+    PreparedCandidateRowMismatch { expected: u32, actual: u32 },
+    PreparedCandidateResidualMismatch { row: u32 },
+    PreparedCandidateRejected(ScorerError),
     InvalidOriginal { row: u32, source: ScorerError },
     NonFiniteReconstruction { row: u32, coordinate: usize },
 }
@@ -373,13 +432,25 @@ impl fmt::Display for CertificateError {
             Self::MissingRow { expected_row } => {
                 write!(formatter, "certificate block is missing row {expected_row}")
             }
-            Self::BlockIdentityMismatch => formatter
-                .write_str("certificate score or candidate belongs to another physical block"),
+            Self::BlockCapabilityMismatch => formatter.write_str(
+                "certificate score or candidate belongs to another checked block enumeration",
+            ),
             Self::ScoreProvenanceMismatch => formatter.write_str(
                 "certificate score uses a different transform, codec, or scorer identity",
             ),
             Self::ScoreKindMismatch => formatter
                 .write_str("primary and refined certificates cannot be used interchangeably"),
+            Self::PreparedCandidateRowMismatch { expected, actual } => write!(
+                formatter,
+                "prepared candidate row {actual} does not match certified row {expected}",
+            ),
+            Self::PreparedCandidateResidualMismatch { row } => write!(
+                formatter,
+                "prepared candidate residual code does not match certified row {row}",
+            ),
+            Self::PreparedCandidateRejected(source) => {
+                write!(formatter, "prepared candidate cannot be scored: {source}")
+            }
             Self::InvalidOriginal { row, source } => {
                 write!(
                     formatter,
@@ -460,6 +531,7 @@ pub fn build_exhaustive_certificate(
         scorer.refined_serving_error(maximum_primary_norm, maximum_residual_norm);
     Ok(BlockCertificate {
         block_identity: block.identity,
+        capability: Arc::clone(&block.capability),
         provenance: expected_provenance,
         primary: ErrorCertificate {
             max_reconstruction_l2_error: maximum_primary_error,

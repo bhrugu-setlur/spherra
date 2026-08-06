@@ -23,6 +23,36 @@ impl TransformedDirection {
     }
 }
 
+/// A finite, non-zero FP32 kernel input derived directly from one normalized
+/// FP64 vector. It is crate-private so callers cannot bypass the public domain
+/// validation route for arbitrary raw vectors.
+///
+/// The scorer's certificate proof accounts for the one FP64-to-FP32 conversion
+/// performed here. This type deliberately does not compute another norm or
+/// divide components again: doing so would be a distinct numerical path that
+/// needs its own constructive error terms.
+#[derive(Clone, Debug)]
+pub(crate) struct KernelInputDirection([f32; DIMENSION]);
+
+impl KernelInputDirection {
+    pub(crate) fn from_normalized_fp64(normalized: &[f64; DIMENSION]) -> Option<Self> {
+        let mut values = [0.0; DIMENSION];
+        let mut non_zero = false;
+        for (coordinate, value) in normalized.iter().copied().enumerate() {
+            if !value.is_finite() {
+                return None;
+            }
+            let rounded = value as f32;
+            if !rounded.is_finite() {
+                return None;
+            }
+            non_zero |= rounded != 0.0;
+            values[coordinate] = rounded;
+        }
+        non_zero.then_some(Self(values))
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct TransformPlan {
     spec: TransformSpec,
@@ -103,8 +133,20 @@ fn uniform_index(rng: &mut ChaCha20Rng, upper_inclusive: usize) -> usize {
 }
 
 pub fn transform(plan: &TransformPlan, direction: &ReliableDirection) -> TransformedDirection {
-    let mut values = *direction.as_array();
+    transform_values(plan, *direction.as_array())
+}
 
+/// Executes the frozen transform on a kernel input that has already passed the
+/// scorer's FP64-normalization and one-rounding validation. It never performs
+/// a second normalization.
+pub(crate) fn transform_kernel_input(
+    plan: &TransformPlan,
+    direction: &KernelInputDirection,
+) -> TransformedDirection {
+    transform_values(plan, direction.0)
+}
+
+fn transform_values(plan: &TransformPlan, mut values: [f32; DIMENSION]) -> TransformedDirection {
     for round in &plan.rounds {
         values = apply_forward_round(values, round);
     }
@@ -222,4 +264,57 @@ fn apply_hadamard_blocks_f64(values: [f64; DIMENSION]) -> [f64; DIMENSION] {
     }
 
     transformed
+}
+
+#[cfg(test)]
+mod tests {
+    use core::array;
+
+    use spherra_domain::{DIMENSION, ValidatedVector};
+
+    use crate::scorer::transform_normalized_fp64;
+
+    use super::{TransformPlan, apply_forward_round};
+
+    #[test]
+    fn fp64_normalized_kernel_input_is_not_normalized_a_second_time() {
+        let mut state = 0x1234_5678_u64;
+        let (normalized, direct_kernel_input) = (0..128)
+            .find_map(|seed| {
+                let raw: [f64; DIMENSION] = array::from_fn(|coordinate| {
+                    state = state
+                        .wrapping_mul(6_364_136_223_846_793_005)
+                        .wrapping_add(1_442_695_040_888_963_407);
+                    let fraction = ((state >> 40) as u32) as f64 / (1_u32 << 24) as f64;
+                    let exponent = ((coordinate * 37 + seed * 19) % 151) as i32 - 75;
+                    fraction.mul_add(2.0, -1.0) * 2.0_f64.powi(exponent)
+                });
+                let norm = raw
+                    .iter()
+                    .fold(0.0, |sum, value| value.mul_add(*value, sum))
+                    .sqrt();
+                let normalized = array::from_fn(|coordinate| raw[coordinate] / norm);
+                let direct = array::from_fn(|coordinate| normalized[coordinate] as f32);
+                let validated = ValidatedVector::new(direct.to_vec())
+                    .expect("the finite rounded fixture validates");
+                let revalidated = validated
+                    .normalized_direction()
+                    .expect("the rounded fixture remains direction-reliable");
+                (direct != *revalidated.as_array()).then_some((normalized, direct))
+            })
+            .expect("the deterministic fixture search finds a rounded kernel input with drift");
+
+        let plan = TransformPlan::from_seed(0x6b_65_72_6e_65_6c);
+        let mut direct = direct_kernel_input;
+        for round in &plan.rounds {
+            direct = apply_forward_round(direct, round);
+        }
+        let actual = transform_normalized_fp64(&plan, &normalized)
+            .expect("the FP64-normalized fixture can enter the kernel");
+
+        assert_eq!(
+            actual, direct,
+            "the scorer kernel path must not perform an unmodeled second normalization"
+        );
+    }
 }

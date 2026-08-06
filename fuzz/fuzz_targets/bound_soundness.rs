@@ -6,8 +6,8 @@ use std::sync::OnceLock;
 use libfuzzer_sys::fuzz_target;
 use spherra_codec::{
     CertificateBlockId, CertificateRow, DirectCode, ExhaustiveBlock, FixedPointScorer, Pq96Code,
-    Pq96Codebook, QuantizerTable, TransformPlan, build_exhaustive_certificate, dot_f64,
-    normalize_fp64,
+    Pq96Codebook, PrimaryScore, QuantizerTable, TransformPlan, build_exhaustive_certificate,
+    dot_f64, normalize_fp64,
 };
 use spherra_domain::DIMENSION;
 
@@ -82,17 +82,18 @@ fuzz_target!(|data: &[u8]| {
     let candidate = block
         .candidate(0)
         .expect("the checked fuzz block has row zero");
+    let prepared_candidate = codebook().prepare_candidate(PrimaryScore::for_row(0), residual);
     let primary_bounds = certificate
         .primary_bounds(
             certificate
-                .score_primary(&scorer, &prepared, candidate)
+                .score_primary(&scorer, &prepared, &candidate)
                 .expect("matching fixed-point provenance"),
         )
         .expect("matching primary certificate kind");
     let refined_bounds = certificate
         .refined_bounds(
             certificate
-                .score_refined(&scorer, &prepared, candidate)
+                .score_refined(&scorer, &prepared, &candidate, &prepared_candidate)
                 .expect("matching fixed-point provenance"),
         )
         .expect("matching refined certificate kind");

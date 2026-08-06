@@ -203,14 +203,14 @@ fn fixed_point_scores_match_transformed_oracles_and_certificate_encloses_truth()
         let primary_bounds = certificate
             .primary_bounds(
                 certificate
-                    .score_primary(&scorer, &prepared, candidate)
+                    .score_primary(&scorer, &prepared, &candidate)
                     .expect("matching score provenance"),
             )
             .expect("a primary certified score has compatible provenance");
         let refined_bounds = certificate
             .refined_bounds(
                 certificate
-                    .score_refined(&scorer, &prepared, candidate)
+                    .score_refined(&scorer, &prepared, &candidate, &prepared_candidate)
                     .expect("matching score provenance"),
             )
             .expect("a refined certified score has compatible provenance");
@@ -363,17 +363,19 @@ fn exhaustive_certificate_encloses_adversarial_and_generated_pairs() {
             let candidate = block
                 .candidate(row as u32)
                 .expect("row was checked in the block");
+            let prepared_candidate = codebook()
+                .prepare_candidate(PrimaryScore::for_row(row as u32), residual_codes[row]);
             let primary_bounds = certificate
                 .primary_bounds(
                     certificate
-                        .score_primary(&scorer, &prepared, candidate)
+                        .score_primary(&scorer, &prepared, &candidate)
                         .expect("matching score provenance"),
                 )
                 .expect("matching primary kind");
             let refined_bounds = certificate
                 .refined_bounds(
                     certificate
-                        .score_refined(&scorer, &prepared, candidate)
+                        .score_refined(&scorer, &prepared, &candidate, &prepared_candidate)
                         .expect("matching score provenance"),
                 )
                 .expect("matching refined kind");
@@ -425,28 +427,278 @@ fn certificate_requires_complete_coverage_and_matching_provenance() {
         .prepare_query(&wrong_plan, &raw_vector(59), &table, codebook())
         .expect("finite query with another transform identity");
 
+    let block_candidate = block.candidate(0).expect("present row");
     assert!(matches!(
-        certificate.score_primary(
-            &scorer,
-            &wrong_query,
-            block.candidate(0).expect("present row"),
-        ),
+        certificate.score_primary(&scorer, &wrong_query, &block_candidate),
         Err(CertificateError::ScoreProvenanceMismatch)
     ));
+    let other_candidate = other_block.candidate(0).expect("present row");
     assert!(matches!(
-        certificate.score_primary(
-            &scorer,
-            &prepared,
-            other_block.candidate(0).expect("present row"),
-        ),
-        Err(CertificateError::BlockIdentityMismatch)
+        certificate.score_primary(&scorer, &prepared, &other_candidate),
+        Err(CertificateError::BlockCapabilityMismatch)
     ));
     let primary_score = certificate
-        .score_primary(&scorer, &prepared, block.candidate(0).expect("present row"))
+        .score_primary(&scorer, &prepared, &block_candidate)
         .expect("matching certificate inputs");
     assert!(matches!(
         certificate.refined_bounds(primary_score),
         Err(CertificateError::ScoreKindMismatch)
+    ));
+}
+
+#[test]
+fn certificate_rejects_a_same_id_candidate_from_different_content() {
+    let plan = TransformPlan::from_seed(0x91);
+    let first_original = raw_vector(101);
+    let second_original = raw_vector(103);
+    let first_transformed = transformed_from_raw(&plan, &first_original);
+    let second_transformed = transformed_from_raw(&plan, &second_original);
+    let table = QuantizerTable::train(&[
+        *first_transformed.as_array(),
+        *second_transformed.as_array(),
+    ])
+    .expect("finite calibration");
+    let first_primary = table.encode(&first_transformed);
+    let second_primary = table.encode(&second_transformed);
+    let first_residual = codebook()
+        .encode(&array::from_fn(|coordinate| {
+            first_transformed.as_array()[coordinate] - table.decode(&first_primary)[coordinate]
+        }))
+        .expect("finite first residual");
+    let second_residual = codebook()
+        .encode(&array::from_fn(|coordinate| {
+            second_transformed.as_array()[coordinate] - table.decode(&second_primary)[coordinate]
+        }))
+        .expect("finite second residual");
+    let reused_id = block_id(0xa1);
+    let certified_block = ExhaustiveBlock::from_rows(
+        reused_id,
+        1,
+        [CertificateRow::new(
+            0,
+            &first_original,
+            &first_primary,
+            &first_residual,
+        )],
+    )
+    .expect("the first one-row block has complete coverage");
+    let substituted_block = ExhaustiveBlock::from_rows(
+        reused_id,
+        1,
+        [CertificateRow::new(
+            0,
+            &second_original,
+            &second_primary,
+            &second_residual,
+        )],
+    )
+    .expect("the distinct one-row block also has self-consistent coverage");
+    let scorer = FixedPointScorer::new();
+    let certificate =
+        build_exhaustive_certificate(&scorer, &plan, &table, codebook(), &certified_block)
+            .expect("the first block can be certified");
+    let prepared = scorer
+        .prepare_query(&plan, &raw_vector(107), &table, codebook())
+        .expect("finite query");
+
+    let substituted_candidate = substituted_block
+        .candidate(0)
+        .expect("present substituted row");
+    assert!(
+        certificate
+            .score_primary(&scorer, &prepared, &substituted_candidate)
+            .is_err(),
+        "a caller-controlled block ID must not let another block's row use this certificate"
+    );
+}
+
+#[test]
+fn certificate_rejects_a_sampled_count_substitution() {
+    let plan = TransformPlan::from_seed(0x93);
+    let first_original = raw_vector(109);
+    let second_original = raw_vector(113);
+    let first_transformed = transformed_from_raw(&plan, &first_original);
+    let second_transformed = transformed_from_raw(&plan, &second_original);
+    let table = QuantizerTable::train(&[
+        *first_transformed.as_array(),
+        *second_transformed.as_array(),
+    ])
+    .expect("finite calibration");
+    let first_primary = table.encode(&first_transformed);
+    let second_primary = table.encode(&second_transformed);
+    let first_residual = codebook()
+        .encode(&array::from_fn(|coordinate| {
+            first_transformed.as_array()[coordinate] - table.decode(&first_primary)[coordinate]
+        }))
+        .expect("finite first residual");
+    let second_residual = codebook()
+        .encode(&array::from_fn(|coordinate| {
+            second_transformed.as_array()[coordinate] - table.decode(&second_primary)[coordinate]
+        }))
+        .expect("finite second residual");
+    let reused_id = block_id(0xa3);
+    let complete_block = ExhaustiveBlock::from_rows(
+        reused_id,
+        2,
+        [
+            CertificateRow::new(0, &first_original, &first_primary, &first_residual),
+            CertificateRow::new(1, &second_original, &second_primary, &second_residual),
+        ],
+    )
+    .expect("the two physical rows have complete coverage");
+    let sampled_block = ExhaustiveBlock::from_rows(
+        reused_id,
+        1,
+        [CertificateRow::new(
+            0,
+            &second_original,
+            &second_primary,
+            &second_residual,
+        )],
+    )
+    .expect("a malicious one-row self-declared count is internally consistent");
+    let scorer = FixedPointScorer::new();
+    let certificate =
+        build_exhaustive_certificate(&scorer, &plan, &table, codebook(), &complete_block)
+            .expect("the complete block can be certified");
+    let prepared = scorer
+        .prepare_query(&plan, &raw_vector(127), &table, codebook())
+        .expect("finite query");
+
+    let sampled_candidate = sampled_block.candidate(0).expect("present sampled row");
+    assert!(
+        certificate
+            .score_primary(&scorer, &prepared, &sampled_candidate)
+            .is_err(),
+        "a sampled block with a caller-declared count must not borrow a complete block certificate"
+    );
+}
+
+#[test]
+fn prepared_candidate_produces_a_certified_refined_bound_without_reloading_residuals() {
+    let plan = TransformPlan::from_seed(0xa7);
+    let original = raw_vector(131);
+    let transformed = transformed_from_raw(&plan, &original);
+    let table = QuantizerTable::train(&[*transformed.as_array()]).expect("finite calibration");
+    let primary = table.encode(&transformed);
+    let residual = codebook()
+        .encode(&array::from_fn(|coordinate| {
+            transformed.as_array()[coordinate] - table.decode(&primary)[coordinate]
+        }))
+        .expect("finite residual");
+    let block = ExhaustiveBlock::from_rows(
+        block_id(0xa5),
+        1,
+        [CertificateRow::new(0, &original, &primary, &residual)],
+    )
+    .expect("the one physical row has complete coverage");
+    let scorer = FixedPointScorer::new();
+    let certificate = build_exhaustive_certificate(&scorer, &plan, &table, codebook(), &block)
+        .expect("the complete block can be certified");
+    let query = raw_vector(137);
+    let prepared = scorer
+        .prepare_query(&plan, &query, &table, codebook())
+        .expect("finite query");
+    let block_candidate = block.candidate(0).expect("present certificate row");
+    let prepared_candidate = codebook().prepare_candidate(PrimaryScore::for_row(0), residual);
+    let wrong_row_candidate = codebook().prepare_candidate(PrimaryScore::for_row(1), residual);
+    let mut different_residual_bytes = *residual.as_bytes();
+    different_residual_bytes[0] ^= 1;
+    let wrong_residual_candidate = codebook().prepare_candidate(
+        PrimaryScore::for_row(0),
+        Pq96Code::from_bytes(different_residual_bytes),
+    );
+
+    assert!(matches!(
+        certificate.score_refined(&scorer, &prepared, &block_candidate, &wrong_row_candidate,),
+        Err(CertificateError::PreparedCandidateRowMismatch {
+            expected: 0,
+            actual: 1,
+        })
+    ));
+    assert!(matches!(
+        certificate.score_refined(
+            &scorer,
+            &prepared,
+            &block_candidate,
+            &wrong_residual_candidate,
+        ),
+        Err(CertificateError::PreparedCandidateResidualMismatch { row: 0 })
+    ));
+    let certified = certificate
+        .score_refined(&scorer, &prepared, &block_candidate, &prepared_candidate)
+        .expect("the retained candidate is bound to the certified block row");
+    let bounds = certificate
+        .refined_bounds(certified)
+        .expect("the retained candidate produces a refined certificate score");
+    let true_score = dot_f64(
+        &normalize_fp64(&query).expect("finite query"),
+        &normalize_fp64(&original).expect("finite original"),
+    );
+
+    assert!(bounds.lower <= true_score && true_score <= bounds.upper);
+}
+
+#[test]
+fn certificate_rejects_quantizer_and_codebook_provenance_mutations() {
+    let plan = TransformPlan::from_seed(0xab);
+    let original = raw_vector(139);
+    let transformed = transformed_from_raw(&plan, &original);
+    let table = QuantizerTable::train(&[*transformed.as_array()]).expect("finite calibration");
+    let primary = table.encode(&transformed);
+    let residual = codebook()
+        .encode(&array::from_fn(|coordinate| {
+            transformed.as_array()[coordinate] - table.decode(&primary)[coordinate]
+        }))
+        .expect("finite residual");
+    let block = ExhaustiveBlock::from_rows(
+        block_id(0xa9),
+        1,
+        [CertificateRow::new(0, &original, &primary, &residual)],
+    )
+    .expect("the one physical row has complete coverage");
+    let scorer = FixedPointScorer::new();
+    let certificate = build_exhaustive_certificate(&scorer, &plan, &table, codebook(), &block)
+        .expect("the original representation can be certified");
+    let query = raw_vector(149);
+    let prepared = scorer
+        .prepare_query(&plan, &query, &table, codebook())
+        .expect("finite query");
+    let candidate = block.candidate(0).expect("present certificate row");
+
+    let alternate_table = QuantizerTable::train(&[[-0.75; DIMENSION], [0.5; DIMENSION]])
+        .expect("finite alternate quantizer calibration");
+    let alternate_quantizer_query = scorer
+        .prepare_query(&plan, &query, &alternate_table, codebook())
+        .expect("finite alternate-quantizer query");
+    assert_ne!(
+        prepared.provenance().quantizer_identity(),
+        alternate_quantizer_query.provenance().quantizer_identity(),
+        "the fixture must exercise an alternate quantizer identity"
+    );
+    assert!(matches!(
+        certificate.score_primary(&scorer, &alternate_quantizer_query, &candidate),
+        Err(CertificateError::ScoreProvenanceMismatch)
+    ));
+
+    let alternate_calibration: Vec<_> = (0..Pq96Code::CENTROIDS)
+        .map(|row| {
+            array::from_fn(|coordinate| row as f32 * -0.000_7 + coordinate as f32 * 0.000_000_3)
+        })
+        .collect();
+    let alternate_codebook = Pq96Codebook::train(&alternate_calibration, 0x0a11_ce11)
+        .expect("finite alternate codebook calibration");
+    let alternate_certificate =
+        build_exhaustive_certificate(&scorer, &plan, &table, &alternate_codebook, &block)
+            .expect("the same physical rows can be enumerated with another codebook identity");
+    assert_ne!(
+        certificate.provenance().codebook_identity(),
+        alternate_certificate.provenance().codebook_identity(),
+        "the fixture must exercise an alternate certificate codebook identity"
+    );
+    assert!(matches!(
+        alternate_certificate.score_primary(&scorer, &prepared, &candidate),
+        Err(CertificateError::ScoreProvenanceMismatch)
     ));
 }
 

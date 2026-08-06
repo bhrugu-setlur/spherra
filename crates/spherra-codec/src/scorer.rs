@@ -1,10 +1,9 @@
 use core::{array, fmt};
 
-use spherra_domain::{DIMENSION, ValidatedVector};
+use spherra_domain::DIMENSION;
 
-use crate::{
-    DirectCode, Pq96Code, Pq96Codebook, PreparedCandidate, QuantizerTable, TransformPlan, transform,
-};
+use crate::transform::{KernelInputDirection, transform_kernel_input};
+use crate::{DirectCode, Pq96Code, Pq96Codebook, PreparedCandidate, QuantizerTable, TransformPlan};
 
 const PRIMARY_CODES_PER_COORDINATE: usize = 16;
 const TRANSFORM_ROUNDS: usize = 2;
@@ -481,20 +480,20 @@ pub(crate) fn transform_normalized_fp64(
     plan: &TransformPlan,
     normalized: &[f64; DIMENSION],
 ) -> Result<[f32; DIMENSION], ScorerError> {
-    let kernel_input: Vec<f32> = normalized.iter().map(|value| *value as f32).collect();
-    let validated =
-        ValidatedVector::new(kernel_input).map_err(|_| ScorerError::KernelInputRejected)?;
-    let direction = validated
-        .normalized_direction()
+    let kernel_input = KernelInputDirection::from_normalized_fp64(normalized)
         .ok_or(ScorerError::KernelInputRejected)?;
-    Ok(*transform(plan, direction).as_array())
+    Ok(*transform_kernel_input(plan, &kernel_input).as_array())
 }
 
 pub(crate) fn transform_delta() -> f64 {
-    let conversion = upward_mul(upward_sqrt(DIMENSION as f64), FP32_UNIT_ROUNDOFF);
-    let renormalization_denominator = next_down(1.0 - conversion);
-    let renormalization = upward_div(upward_mul(2.0, conversion), renormalization_denominator);
-    let kernel_input_delta = upward_add(renormalization, conversion);
+    // `normalize_fp64` has already produced the exact proof input x with
+    // ||x||2 = 1 under the contract's FP64 reduction/division order. The
+    // private `KernelInputDirection` route performs exactly one conversion per
+    // coordinate and never recomputes a norm, square root, or division. For
+    // each rounded component, the conservative absolute conversion envelope is
+    // u32; summing 768 coordinate envelopes in L2 gives sqrt(768) * u32. This
+    // also dominates FP32 underflow's absolute rounding term for a unit input.
+    let kernel_input_delta = upward_mul(upward_sqrt(DIMENSION as f64), FP32_UNIT_ROUNDOFF);
 
     let round_error = normalized_hadamard_error();
     let composed_round_error = match TRANSFORM_ROUNDS {
