@@ -259,6 +259,7 @@ dependencies = [
  "arbitrary",
  "libfuzzer-sys",
  "spherra-codec",
+ "spherra-domain",
  "spherra-format",
 ]
 
