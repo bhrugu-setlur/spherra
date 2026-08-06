@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bhrugusetlur-art/spherra/docs/benchmarks/certificate-soak.schema.json",
+  "title": "Spherra certificate enclosure soak result",
+  "description": "Evidence written by `spherra-bench certify`. A soak that stops early records the completed trial count and the reproducible seed tuple of the first enclosure failure.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "timestamp",
+    "git_commit",
+    "dirty_worktree",
+    "os",
+    "architecture",
+    "cpu",
+    "physical_memory_bytes",
+    "rustc",
+    "cargo_profile",
+    "command",
+    "dimension",
+    "codec_id",
+    "scorer_version",
+    "layout_id",
+    "root_seed",
+    "transform_seed_count",
+    "transform_seeds",
+    "seed_identities",
+    "requested_trials",
+    "completed_trials",
+    "primary_violation_count",
+    "refined_violation_count",
+    "maximum_normalized_primary_slack",
+    "maximum_normalized_refined_slack",
+    "elapsed_seconds",
+    "first_failure"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "git_commit": {
+      "type": "string"
+    },
+    "dirty_worktree": {
+      "type": "boolean"
+    },
+    "os": {
+      "type": "string"
+    },
+    "architecture": {
+      "type": "string"
+    },
+    "cpu": {
+      "type": "string"
+    },
+    "physical_memory_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "rustc": {
+      "type": "string"
+    },
+    "cargo_profile": {
+      "type": "string"
+    },
+    "command": {
+      "type": "string"
+    },
+    "dimension": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "codec_id": {
+      "type": "string"
+    },
+    "scorer_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "layout_id": {
+      "type": "string"
+    },
+    "root_seed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "transform_seed_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "transform_seeds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "seed_identities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/seed_identity"
+      }
+    },
+    "requested_trials": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "completed_trials": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "primary_violation_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "refined_violation_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "maximum_normalized_primary_slack": {
+      "type": "number",
+      "minimum": 0
+    },
+    "maximum_normalized_refined_slack": {
+      "type": "number",
+      "minimum": 0
+    },
+    "elapsed_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "first_failure": {
+      "description": "Null when every completed trial enclosed its certified truth.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/failure"
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "seed_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transform_seed",
+        "transform_id",
+        "quantizer_id",
+        "pq_codebook_id"
+      ],
+      "properties": {
+        "transform_seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "transform_id": {
+          "type": "string"
+        },
+        "quantizer_id": {
+          "type": "string"
+        },
+        "pq_codebook_id": {
+          "type": "string"
+        }
+      }
+    },
+    "failure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["trial", "transform_seed", "vector_seed", "query_seed", "kind"],
+      "properties": {
+        "trial": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "transform_seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "vector_seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "query_seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["primary", "refined"]
+        }
+      }
+    }
+  }
+}
