@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -30,8 +31,22 @@ DIMENSION = 768
 LICENSE = "CC BY-NC 2.0 (BEIR SciFact); model Apache-2.0"
 
 
-def resolve_revisions() -> tuple[str, str]:
+def resolve_revisions(
+    dataset_revision: str | None = None,
+    model_revision: str | None = None,
+) -> tuple[str, str]:
     """Return the immutable dataset and model commit hashes, or exit nonzero."""
+    if (dataset_revision is None) != (model_revision is None):
+        sys.exit("--dataset-revision and --model-revision must be supplied together")
+    if dataset_revision is not None and model_revision is not None:
+        for label, revision in (
+            ("dataset", dataset_revision),
+            ("model", model_revision),
+        ):
+            if re.fullmatch(r"[0-9a-fA-F]{40,64}", revision) is None:
+                sys.exit(f"{label} revision must be a full immutable commit hash")
+        return dataset_revision.lower(), model_revision.lower()
+
     try:
         from huggingface_hub import HfApi
     except ImportError as error:  # pragma: no cover - environment problem
@@ -120,9 +135,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--batch-size", type=int, default=32)
+    parser.add_argument("--dataset-revision")
+    parser.add_argument("--model-revision")
     arguments = parser.parse_args()
 
-    dataset_revision, model_revision = resolve_revisions()
+    dataset_revision, model_revision = resolve_revisions(
+        arguments.dataset_revision,
+        arguments.model_revision,
+    )
     texts = load_corpus_texts(dataset_revision)
     embeddings = embed(texts, model_revision, arguments.batch_size)
 
@@ -139,9 +159,15 @@ def main() -> int:
     if byte_len != expected:
         sys.exit(f"wrote {byte_len} bytes but expected {expected}")
 
+    resolved_vectors_path = vectors_path.resolve()
+    try:
+        descriptor_vectors_path = resolved_vectors_path.relative_to(Path.cwd().resolve())
+    except ValueError:
+        descriptor_vectors_path = resolved_vectors_path
+
     descriptor = {
         "name": "beir-scifact-mpnet-768",
-        "path": str(vectors_path.resolve()),
+        "path": str(descriptor_vectors_path),
         "byte_len": byte_len,
         "blake3": blake3_hex(vectors_path),
         "row_count": int(embeddings.shape[0]),

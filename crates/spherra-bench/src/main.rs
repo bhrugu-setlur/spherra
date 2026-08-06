@@ -25,14 +25,14 @@ use spherra_codec::{
 };
 use spherra_domain::{DIMENSION, ValidatedVector};
 use spherra_testkit::corpus::CorpusDescriptor;
-use spherra_testkit::harness::{CodecFormatRun, codec_id_hex};
+use spherra_testkit::harness::{CodecFormatRun, codec_id_hex, hex};
 use spherra_testkit::machine::{
     CacheState, DURABILITY_MODE_NOT_APPLICABLE, MachineProfile, SourceRevision,
     timestamp_rfc3339_utc,
 };
 use spherra_testkit::results::{
     CertificateSoakResult, CodecFormatMeasurement, SCHEMA_VERSION, SoakFailure, SoakScoreKind,
-    validate_against_schema,
+    SoakSeedIdentity, validate_against_schema,
 };
 
 const LAYOUT_TILED_SOA_32: &str = "tiled-soa-32";
@@ -163,10 +163,9 @@ fn codec_format(options: &Options) -> Result<(), BenchError> {
         .collect();
 
     let document = serde_json::to_value(&measurements).map_err(BenchError::serialize)?;
-    if let Some(schema) = load_schema("codec-format-baseline.schema.json") {
-        validate_against_schema(&schema, &document)
-            .map_err(|violations| BenchError::Schema(violations.to_string()))?;
-    }
+    let schema = load_schema("codec-format-baseline.schema.json")?;
+    validate_against_schema(&schema, &document)
+        .map_err(|violations| BenchError::Schema(violations.to_string()))?;
     write_output(&output, &document)?;
 
     let violations: u64 = measurements
@@ -187,17 +186,24 @@ fn codec_format(options: &Options) -> Result<(), BenchError> {
     Ok(())
 }
 
-/// The schema documents live beside the sources, not beside a deployed binary.
-/// A run from outside the repository still writes its result; the contract test
-/// is what holds the schema and the writer together.
-fn load_schema(name: &str) -> Option<serde_json::Value> {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .nth(2)?
-        .join("docs/benchmarks")
-        .join(name);
-    let bytes = fs::read(path).ok()?;
-    serde_json::from_slice(&bytes).ok()
+/// The result schemas are part of the benchmark binary's behavior, so embed
+/// them instead of silently skipping validation when the source tree is absent.
+fn embedded_schema(name: &str) -> Result<&'static str, BenchError> {
+    match name {
+        "codec-format-baseline.schema.json" => Ok(include_str!(
+            "../../../docs/benchmarks/codec-format-baseline.schema.json"
+        )),
+        "certificate-soak.schema.json" => Ok(include_str!(
+            "../../../docs/benchmarks/certificate-soak.schema.json"
+        )),
+        _ => Err(BenchError::Schema(format!(
+            "unknown embedded schema {name}"
+        ))),
+    }
+}
+
+fn load_schema(name: &str) -> Result<serde_json::Value, BenchError> {
+    serde_json::from_str(embedded_schema(name)?).map_err(BenchError::serialize)
 }
 
 fn certify(options: &Options) -> Result<(), BenchError> {
@@ -224,12 +230,19 @@ fn certify(options: &Options) -> Result<(), BenchError> {
     let mut maximum_primary_slack = 0.0_f64;
     let mut maximum_refined_slack = 0.0_f64;
     let mut first_failure = None;
+    let mut seed_identities = Vec::with_capacity(transform_seed_count as usize);
     let started = Instant::now();
 
     'soak: for (seed_index, transform_seed) in transform_seeds.iter().copied().enumerate() {
         let plan = TransformPlan::from_seed(transform_seed);
         let trials_for_seed = trials_for_seed(requested_trials, transform_seed_count, seed_index);
         let (quantizer, codebook) = soak_fixtures(&plan, transform_seed)?;
+        seed_identities.push(SoakSeedIdentity {
+            transform_seed,
+            transform_id: hex(plan.identity()),
+            quantizer_id: hex(quantizer.identity()),
+            pq_codebook_id: hex(codebook.codebook_id()),
+        });
 
         for trial in 0..trials_for_seed {
             let vector_seed = mix(transform_seed, trial.wrapping_mul(2).wrapping_add(1));
@@ -341,9 +354,14 @@ fn certify(options: &Options) -> Result<(), BenchError> {
             "spherra-bench certify --trials {requested_trials} --seed {root_seed} \
              --transform-seeds {transform_seed_count}"
         ),
+        dimension: DIMENSION as u32,
+        codec_id: codec_id_hex(),
+        scorer_version: scorer.metadata().scorer_version(),
+        layout_id: LAYOUT_TILED_SOA_32.to_owned(),
         root_seed,
         transform_seed_count,
         transform_seeds,
+        seed_identities,
         requested_trials,
         completed_trials: completed,
         primary_violation_count: primary_violations,
@@ -356,10 +374,9 @@ fn certify(options: &Options) -> Result<(), BenchError> {
     result.apply_provenance(&profile, &revision);
 
     let document = serde_json::to_value(&result).map_err(BenchError::serialize)?;
-    if let Some(schema) = load_schema("certificate-soak.schema.json") {
-        validate_against_schema(&schema, &document)
-            .map_err(|violations| BenchError::Schema(violations.to_string()))?;
-    }
+    let schema = load_schema("certificate-soak.schema.json")?;
+    validate_against_schema(&schema, &document)
+        .map_err(|violations| BenchError::Schema(violations.to_string()))?;
     write_output(&output, &document)?;
 
     if let Some(failure) = result.first_failure {
@@ -440,12 +457,10 @@ fn transform_row(
     plan: &TransformPlan,
     row: &[f32; DIMENSION],
 ) -> Result<TransformedDirection, BenchError> {
-    let normalized = normalize_fp64(row).map_err(BenchError::soak)?;
-    let kernel_input: Vec<f32> = normalized.iter().map(|value| *value as f32).collect();
-    let validated = ValidatedVector::new(kernel_input).map_err(BenchError::soak)?;
+    let validated = ValidatedVector::new(row.to_vec()).map_err(BenchError::soak)?;
     let direction = validated
         .normalized_direction()
-        .ok_or_else(|| BenchError::Soak("normalized vector is direction-unreliable".to_owned()))?;
+        .ok_or_else(|| BenchError::Soak("raw vector is direction-unreliable".to_owned()))?;
     Ok(transform(plan, direction))
 }
 
@@ -620,3 +635,59 @@ impl fmt::Display for BenchError {
 }
 
 impl std::error::Error for BenchError {}
+
+#[cfg(test)]
+mod tests {
+    use core::array;
+
+    use spherra_domain::{DIMENSION, ValidatedVector};
+
+    use super::{TransformPlan, embedded_schema, transform, transform_row};
+
+    #[test]
+    fn measurement_schemas_are_embedded_in_the_binary() {
+        assert!(embedded_schema("codec-format-baseline.schema.json").is_ok());
+        assert!(embedded_schema("certificate-soak.schema.json").is_ok());
+        assert!(embedded_schema("unknown.schema.json").is_err());
+    }
+
+    #[test]
+    fn soak_rows_follow_the_single_normalization_ingest_path() {
+        let plan = TransformPlan::from_seed(0x73_6f_61_6b);
+        let mut state = 0x1234_5678_u64;
+        let raw = (0..128)
+            .find_map(|seed| {
+                let values: [f64; DIMENSION] = array::from_fn(|coordinate| {
+                    state = state
+                        .wrapping_mul(6_364_136_223_846_793_005)
+                        .wrapping_add(1_442_695_040_888_963_407);
+                    let fraction = ((state >> 40) as u32) as f64 / (1_u32 << 24) as f64;
+                    let exponent = ((coordinate * 37 + seed * 19) % 151) as i32 - 75;
+                    fraction.mul_add(2.0, -1.0) * 2.0_f64.powi(exponent)
+                });
+                let norm = values
+                    .iter()
+                    .fold(0.0, |sum, value| value.mul_add(*value, sum))
+                    .sqrt();
+                let raw = array::from_fn(|coordinate| (values[coordinate] / norm) as f32);
+                let first = ValidatedVector::new(raw.to_vec()).ok()?;
+                let first = first.normalized_direction()?.as_array();
+                let second = ValidatedVector::new(first.to_vec()).ok()?;
+                (first != second.normalized_direction()?.as_array()).then_some(raw)
+            })
+            .expect("fixture search finds a vector whose second normalization drifts");
+        let validated = ValidatedVector::new(raw.to_vec()).expect("finite 768D fixture");
+        let expected = transform(
+            &plan,
+            validated
+                .normalized_direction()
+                .expect("fixture has a reliable direction"),
+        );
+
+        assert_eq!(
+            transform_row(&plan, &raw).expect("fixture transforms"),
+            expected,
+            "the soak row was normalized more than once",
+        );
+    }
+}

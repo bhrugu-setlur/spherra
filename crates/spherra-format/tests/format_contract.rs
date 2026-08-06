@@ -54,6 +54,23 @@ fn minimal_primary_and_residual_files_open_and_expose_their_rows() {
 }
 
 #[test]
+fn the_writer_rejects_certificate_terms_the_reader_cannot_accept() {
+    let mut primary = primary_segment();
+    primary.primary_certificate.epsilon = f64::NAN;
+    assert!(matches!(
+        encode_primary_segment(&primary),
+        Err(FormatError::InvalidStoredValue { .. })
+    ));
+
+    let mut primary = primary_segment();
+    primary.refined_certificate.eta_serving_score = -1.0;
+    assert!(matches!(
+        encode_primary_segment(&primary),
+        Err(FormatError::InvalidStoredValue { .. })
+    ));
+}
+
+#[test]
 fn the_v1_header_places_every_field_at_its_documented_offset() {
     let bytes = primary_bytes();
 

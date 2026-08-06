@@ -57,7 +57,7 @@ const REQUIRED_MEASUREMENT_FIELDS: [&str; 39] = [
     "refined_bound_width_percentiles",
 ];
 
-const REQUIRED_SOAK_FIELDS: [&str; 22] = [
+const REQUIRED_SOAK_FIELDS: [&str; 27] = [
     "schema_version",
     "timestamp",
     "git_commit",
@@ -69,9 +69,14 @@ const REQUIRED_SOAK_FIELDS: [&str; 22] = [
     "rustc",
     "cargo_profile",
     "command",
+    "dimension",
+    "codec_id",
+    "scorer_version",
+    "layout_id",
     "root_seed",
     "transform_seed_count",
     "transform_seeds",
+    "seed_identities",
     "requested_trials",
     "completed_trials",
     "primary_violation_count",
@@ -80,6 +85,13 @@ const REQUIRED_SOAK_FIELDS: [&str; 22] = [
     "maximum_normalized_refined_slack",
     "elapsed_seconds",
     "first_failure",
+];
+
+const REQUIRED_SOAK_SEED_IDENTITY_FIELDS: [&str; 4] = [
+    "transform_seed",
+    "transform_id",
+    "quantizer_id",
+    "pq_codebook_id",
 ];
 
 fn repository_root() -> PathBuf {
@@ -200,6 +212,23 @@ fn omitting_any_required_soak_field_is_rejected() {
         assert!(
             validate_against_schema(&schema, &soak).is_err(),
             "a soak result missing {field} must be rejected"
+        );
+    }
+}
+
+#[test]
+fn every_soak_seed_identity_requires_all_representation_ids() {
+    let schema = soak_schema();
+    for field in REQUIRED_SOAK_SEED_IDENTITY_FIELDS {
+        let mut soak = sample_soak();
+        soak["seed_identities"][0]
+            .as_object_mut()
+            .expect("a seed identity is an object")
+            .remove(field)
+            .unwrap_or_else(|| panic!("the generated seed identity must contain {field}"));
+        assert!(
+            validate_against_schema(&schema, &soak).is_err(),
+            "a seed identity missing {field} must be rejected"
         );
     }
 }

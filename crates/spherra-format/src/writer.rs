@@ -39,12 +39,22 @@ pub struct StoredErrorCertificate {
 }
 
 impl StoredErrorCertificate {
-    fn encode(&self) -> [u8; ERROR_CERTIFICATE_BYTE_LEN] {
+    fn encode(&self) -> Result<[u8; ERROR_CERTIFICATE_BYTE_LEN], FormatError> {
+        if self
+            .fields()
+            .iter()
+            .any(|value| !value.is_finite() || *value < 0.0)
+        {
+            return Err(FormatError::InvalidStoredValue {
+                value: "certificate error term",
+            });
+        }
+
         let mut bytes = [0; ERROR_CERTIFICATE_BYTE_LEN];
         for (slot, value) in bytes.chunks_exact_mut(8).zip(self.fields()) {
             slot.copy_from_slice(&value.to_le_bytes());
         }
-        bytes
+        Ok(bytes)
     }
 
     pub(crate) fn decode(bytes: &[u8]) -> Result<Self, FormatError> {
@@ -166,11 +176,11 @@ pub fn encode_primary_segment(segment: &PrimarySegment) -> Result<Vec<u8>, Forma
             (SectionKind::Int4QuantizerTable, quantizer),
             (
                 SectionKind::PrimaryCertificate,
-                segment.primary_certificate.encode().to_vec(),
+                segment.primary_certificate.encode()?.to_vec(),
             ),
             (
                 SectionKind::RefinedCertificate,
-                segment.refined_certificate.encode().to_vec(),
+                segment.refined_certificate.encode()?.to_vec(),
             ),
         ],
     )

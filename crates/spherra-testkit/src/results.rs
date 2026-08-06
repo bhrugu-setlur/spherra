@@ -174,6 +174,15 @@ pub enum SoakScoreKind {
     Refined,
 }
 
+/// Durable identities of the transform and trained tables used for one soak seed.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
+pub struct SoakSeedIdentity {
+    pub transform_seed: u64,
+    pub transform_id: String,
+    pub quantizer_id: String,
+    pub pq_codebook_id: String,
+}
+
 /// The result of `spherra-bench certify`.
 #[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub struct CertificateSoakResult {
@@ -188,9 +197,14 @@ pub struct CertificateSoakResult {
     pub rustc: String,
     pub cargo_profile: String,
     pub command: String,
+    pub dimension: u32,
+    pub codec_id: String,
+    pub scorer_version: u32,
+    pub layout_id: String,
     pub root_seed: u64,
     pub transform_seed_count: u32,
     pub transform_seeds: Vec<u64>,
+    pub seed_identities: Vec<SoakSeedIdentity>,
     pub requested_trials: u64,
     pub completed_trials: u64,
     pub primary_violation_count: u64,
@@ -215,9 +229,21 @@ impl CertificateSoakResult {
             rustc: "rustc 1.88.0".to_owned(),
             cargo_profile: "release".to_owned(),
             command: "spherra-bench certify".to_owned(),
+            dimension: 768,
+            codec_id: "0".repeat(64),
+            scorer_version: 1,
+            layout_id: "tiled-soa-32".to_owned(),
             root_seed: 20_260_804,
             transform_seed_count: 4,
             transform_seeds: vec![0, 1, 2, 3],
+            seed_identities: (0..4)
+                .map(|transform_seed| SoakSeedIdentity {
+                    transform_seed,
+                    transform_id: "0".repeat(64),
+                    quantizer_id: "0".repeat(64),
+                    pq_codebook_id: "0".repeat(64),
+                })
+                .collect(),
             requested_trials: 2_000_000,
             completed_trials: 2_000_000,
             primary_violation_count: 0,

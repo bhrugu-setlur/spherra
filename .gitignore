@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 
 /target/
+/corpora/**/*.f32
 /.worktrees/
 /.idea/
 /.vscode/

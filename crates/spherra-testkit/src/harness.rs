@@ -286,10 +286,27 @@ impl CodecFormatRun {
             let exact = self.oracle.top_k_normalized(&normalized_query, 100);
 
             let mut ranked = Vec::with_capacity(row_count as usize);
+            let mut serving_scores = Vec::with_capacity(row_count as usize);
             let started = Instant::now();
             for row in 0..row_count {
+                let primary = self
+                    .layout
+                    .code_at(row as usize)
+                    .ok_or(HarnessError::MissingPrimaryRow { row })?;
+                serving_scores.push(self.scorer.score_primary(&prepared, &primary));
+            }
+            scan_seconds += started.elapsed().as_secs_f64();
+            scanned_rows += serving_scores.len() as u64;
+
+            for (row, serving_score) in (0..row_count).zip(serving_scores) {
                 let candidate = block.candidate(row)?;
                 let score = certificate.score_primary(&self.scorer, &prepared, &candidate)?;
+                if score.raw() != serving_score.raw() {
+                    return Err(HarnessError::ServingScoreMismatch {
+                        row,
+                        kind: "primary",
+                    });
+                }
                 ranked.push(Neighbor {
                     row,
                     score: score.as_f64(),
@@ -304,8 +321,6 @@ impl CodecFormatRun {
                 }
                 primary_widths.push(bounds.upper - bounds.lower);
             }
-            scan_seconds += started.elapsed().as_secs_f64();
-            scanned_rows += u64::from(row_count);
 
             sort_by_score_then_row(&mut ranked);
             rankings.push(ranked);
@@ -353,6 +368,7 @@ impl CodecFormatRun {
                             .prepare_candidate(PrimaryScore::for_row(0), self.residual_codes[0]);
                         candidate_rows.len()
                     ];
+                let mut serving_scores = Vec::with_capacity(candidate_rows.len());
 
                 let started = Instant::now();
                 let written = rerank_candidates(
@@ -364,9 +380,25 @@ impl CodecFormatRun {
                     &mut prepared_candidates,
                 )
                 .map_err(|error| HarnessError::Rerank(error.to_string()))?;
+                for prepared_candidate in prepared_candidates.iter().take(written) {
+                    let row = prepared_candidate.row();
+                    let primary = self
+                        .layout
+                        .code_at(row as usize)
+                        .ok_or(HarnessError::MissingPrimaryRow { row })?;
+                    serving_scores.push(self.scorer.score_prepared_candidate(
+                        prepared,
+                        &primary,
+                        prepared_candidate,
+                    )?);
+                }
+                rerank_seconds += started.elapsed().as_secs_f64();
+                reranked += written as u64;
 
                 let mut refined: Vec<Neighbor> = Vec::with_capacity(written);
-                for prepared_candidate in prepared_candidates.iter().take(written) {
+                for (prepared_candidate, serving_score) in
+                    prepared_candidates.iter().take(written).zip(serving_scores)
+                {
                     let candidate = block.candidate(prepared_candidate.row())?;
                     let score = certificate.score_refined(
                         &self.scorer,
@@ -374,6 +406,12 @@ impl CodecFormatRun {
                         &candidate,
                         prepared_candidate,
                     )?;
+                    if score.raw() != serving_score.raw() {
+                        return Err(HarnessError::ServingScoreMismatch {
+                            row: prepared_candidate.row(),
+                            kind: "refined",
+                        });
+                    }
                     refined.push(Neighbor {
                         row: prepared_candidate.row(),
                         score: score.as_f64(),
@@ -390,8 +428,6 @@ impl CodecFormatRun {
                     }
                     refined_widths.push(bounds.upper - bounds.lower);
                 }
-                rerank_seconds += started.elapsed().as_secs_f64();
-                reranked += written as u64;
 
                 sort_by_score_then_row(&mut refined);
                 recall_10 += recall_at(&exact_neighbors[index], &refined, 10);
@@ -426,15 +462,13 @@ fn throughput(items: u64, seconds: f64) -> f64 {
     }
 }
 
-/// Normalizes in FP64, converts once into the FP32 kernel input, and transforms
-/// through the only public entry point — the same path serving would take.
+/// Validates and normalizes the raw FP32 row exactly once, then transforms it
+/// through the public ingest path.
 fn transform_row(
     plan: &TransformPlan,
     row: &[f32; DIMENSION],
 ) -> Result<TransformedDirection, HarnessError> {
-    let normalized = normalize_fp64(row)?;
-    let kernel_input: Vec<f32> = normalized.iter().map(|value| *value as f32).collect();
-    let validated = ValidatedVector::new(kernel_input)?;
+    let validated = ValidatedVector::new(row.to_vec())?;
     let direction = validated
         .normalized_direction()
         .ok_or(HarnessError::UnreliableDirection)?;
@@ -505,7 +539,9 @@ pub enum HarnessError {
     BlockTooLarge(usize),
     ShortSegment,
     UnreliableDirection,
+    MissingPrimaryRow { row: u32 },
     MissingOracleRow { row: u32 },
+    ServingScoreMismatch { row: u32, kind: &'static str },
     QuantizerTraining(String),
     CodebookTraining(String),
     ResidualEncode(String),
@@ -535,9 +571,16 @@ impl fmt::Display for HarnessError {
                 formatter,
                 "a corpus row normalizes to an unreliable direction",
             ),
+            Self::MissingPrimaryRow { row } => {
+                write!(formatter, "TILED_SOA_32 has no primary row {row}")
+            }
             Self::MissingOracleRow { row } => {
                 write!(formatter, "the exact oracle has no row {row}")
             }
+            Self::ServingScoreMismatch { row, kind } => write!(
+                formatter,
+                "{kind} TILED_SOA_32 score for row {row} disagrees with the certified block",
+            ),
             Self::QuantizerTraining(message) => {
                 write!(formatter, "quantizer training failed: {message}")
             }
@@ -579,5 +622,74 @@ impl From<CertificateError> for HarnessError {
 impl From<FormatError> for HarnessError {
     fn from(error: FormatError) -> Self {
         Self::Format(error)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use core::array;
+
+    use spherra_domain::{DIMENSION, ValidatedVector};
+
+    use spherra_codec::{DirectCode, TiledSoa32};
+
+    use crate::corpus::CorpusDescriptor;
+
+    use super::{CodecFormatRun, HarnessError, TransformPlan, transform, transform_row};
+
+    #[test]
+    fn corpus_rows_follow_the_single_normalization_ingest_path() {
+        let plan = TransformPlan::from_seed(0x69_6e_67_65_73_74);
+        let mut state = 0x1234_5678_u64;
+        let raw = (0..128)
+            .find_map(|seed| {
+                let values: [f64; DIMENSION] = array::from_fn(|coordinate| {
+                    state = state
+                        .wrapping_mul(6_364_136_223_846_793_005)
+                        .wrapping_add(1_442_695_040_888_963_407);
+                    let fraction = ((state >> 40) as u32) as f64 / (1_u32 << 24) as f64;
+                    let exponent = ((coordinate * 37 + seed * 19) % 151) as i32 - 75;
+                    fraction.mul_add(2.0, -1.0) * 2.0_f64.powi(exponent)
+                });
+                let norm = values
+                    .iter()
+                    .fold(0.0, |sum, value| value.mul_add(*value, sum))
+                    .sqrt();
+                let raw = array::from_fn(|coordinate| (values[coordinate] / norm) as f32);
+                let first = ValidatedVector::new(raw.to_vec()).ok()?;
+                let first = first.normalized_direction()?.as_array();
+                let second = ValidatedVector::new(first.to_vec()).ok()?;
+                (first != second.normalized_direction()?.as_array()).then_some(raw)
+            })
+            .expect("fixture search finds a vector whose second normalization drifts");
+        let validated = ValidatedVector::new(raw.to_vec()).expect("finite 768D fixture");
+        let expected = transform(
+            &plan,
+            validated
+                .normalized_direction()
+                .expect("fixture has a reliable direction"),
+        );
+
+        assert_eq!(
+            transform_row(&plan, &raw).expect("fixture transforms"),
+            expected,
+            "the corpus row was normalized more than once",
+        );
+    }
+
+    #[test]
+    fn measurement_scores_the_selected_tiled_layout() {
+        let splits = CorpusDescriptor::resolve("generated-gaussian-768x256")
+            .expect("generated descriptor")
+            .load(17, 1)
+            .expect("small disjoint corpus");
+        let mut run = CodecFormatRun::prepare(splits, 17).expect("small run prepares");
+        let replacement = DirectCode::from_nibbles([0; DIMENSION]).expect("four-bit code");
+        run.layout = TiledSoa32::from_codes(&vec![replacement; run.primary_codes.len()]);
+
+        assert!(matches!(
+            run.measure(&[1]),
+            Err(HarnessError::ServingScoreMismatch { .. })
+        ));
     }
 }
