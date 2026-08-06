@@ -1,0 +1,23 @@
+{
+  "artifact_version": 1,
+  "fixture": {
+    "generator": "scale-probe-lcg64-v1",
+    "transform_seed": "0x515343414c455f31",
+    "calibration_seed": "0x515343414c455f32",
+    "calibration_rows": 256,
+    "pq_training_seed": "0x515343414c455f33",
+    "query_seeds": ["0x515343414c456001", "0x515343414c456002", "0x515343414c456003"]
+  },
+  "selected_fractional_bits": 24,
+  "comparison_scale": 16777216,
+  "primary_terms": 768,
+  "residual_terms": 96,
+  "refined_terms": 864,
+  "measured_maximum_absolute_primary_lookup_entry": 354993,
+  "measured_maximum_absolute_residual_lookup_entry": 93965,
+  "measured_maximum_absolute_lookup_entry": 354993,
+  "measured_worst_case_absolute_i64_sum": 306713952,
+  "admissible_maximum_absolute_table_entry": 10675199116730064,
+  "admissible_worst_case_absolute_i64_sum": 9223372036854775296,
+  "i64_max": 9223372036854775807
+}

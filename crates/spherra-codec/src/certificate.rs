@@ -483,6 +483,7 @@ pub fn build_exhaustive_certificate(
         scorer.metadata().scorer_version(),
     );
     let delta_t = scorer.metadata().transform_delta();
+    let query_norm_upper = scorer.metadata().query_norm_upper();
     let mut maximum_primary_error = 0.0_f64;
     let mut maximum_refined_error = 0.0_f64;
     let mut maximum_primary_norm = 0.0_f64;
@@ -525,7 +526,6 @@ pub fn build_exhaustive_certificate(
     }
 
     let eta_transform_dot = upward_add(upward_mul(2.0, delta_t), upward_mul(delta_t, delta_t));
-    let query_norm_upper = upward_add(1.0, delta_t);
     let primary_serving_error = scorer.primary_serving_error(maximum_primary_norm);
     let refined_serving_error =
         scorer.refined_serving_error(maximum_primary_norm, maximum_residual_norm);
@@ -578,8 +578,14 @@ fn epsilon(
 fn outward_l2_primary(transformed: &[f32; DIMENSION], primary: &[f32; DIMENSION]) -> f64 {
     let mut squared_sum = 0.0;
     for coordinate in 0..DIMENSION {
-        let difference = f64::from(transformed[coordinate]) - f64::from(primary[coordinate]);
-        squared_sum = upward_add(squared_sum, upward_mul(difference.abs(), difference.abs()));
+        let absolute_difference = outward_absolute_difference(
+            f64::from(transformed[coordinate]),
+            f64::from(primary[coordinate]),
+        );
+        squared_sum = upward_add(
+            squared_sum,
+            upward_mul(absolute_difference, absolute_difference),
+        );
     }
     upward_sqrt(squared_sum)
 }
@@ -595,11 +601,59 @@ fn outward_l2_refined(
 ) -> f64 {
     let mut squared_sum = 0.0;
     for coordinate in 0..DIMENSION {
-        let reconstruction = f64::from(primary[coordinate]) + f64::from(residual[coordinate]);
-        let difference = f64::from(transformed[coordinate]) - reconstruction;
-        squared_sum = upward_add(squared_sum, upward_mul(difference.abs(), difference.abs()));
+        let absolute_difference = outward_absolute_refined_difference(
+            f64::from(transformed[coordinate]),
+            f64::from(primary[coordinate]),
+            f64::from(residual[coordinate]),
+        );
+        squared_sum = upward_add(
+            squared_sum,
+            upward_mul(absolute_difference, absolute_difference),
+        );
     }
     upward_sqrt(squared_sum)
+}
+
+/// Returns an upward endpoint for `|transformed - primary|`.
+///
+/// Every input is a finite FP32 value lifted exactly into FP64.  Therefore the
+/// additions below cannot overflow or underflow in FP64, and Knuth's `two_sum`
+/// expansion gives the exact real difference as `difference + roundoff`.
+/// Bounding the sum of both absolute expansion terms before squaring prevents
+/// a nearest-FP64 subtraction from shrinking a certificate endpoint.
+fn outward_absolute_difference(transformed: f64, primary: f64) -> f64 {
+    let (difference, roundoff) = two_sum(transformed, -primary);
+    upward_add(difference.abs(), roundoff.abs())
+}
+
+/// Returns an upward endpoint for `|transformed - (primary + residual)|`.
+///
+/// The two error-free expansions establish, in real arithmetic,
+/// `primary + residual = reconstruction + reconstruction_roundoff` and
+/// `transformed - reconstruction = difference + difference_roundoff`.
+/// Consequently the requested difference is exactly
+/// `difference + difference_roundoff - reconstruction_roundoff`; its absolute
+/// value is at most the outward sum of the three expansion magnitudes.
+fn outward_absolute_refined_difference(transformed: f64, primary: f64, residual: f64) -> f64 {
+    let (reconstruction, reconstruction_roundoff) = two_sum(primary, residual);
+    let (difference, difference_roundoff) = two_sum(transformed, -reconstruction);
+    let upper = upward_add(difference.abs(), difference_roundoff.abs());
+    upward_add(upper, reconstruction_roundoff.abs())
+}
+
+/// Error-free sum of two finite FP64 values whose exact sum is in FP64 range.
+///
+/// This is Knuth's `two_sum`: it returns `(sum, roundoff)` satisfying the
+/// exact-real identity `left + right == sum + roundoff`. The callers provide
+/// only finite FP32 values promoted to FP64, so their sums are far below the
+/// FP64 overflow threshold and any nonzero residual is representable without
+/// FP64 underflow.
+fn two_sum(left: f64, right: f64) -> (f64, f64) {
+    let sum = left + right;
+    let right_virtual = sum - left;
+    let left_roundoff = left - (sum - right_virtual);
+    let right_roundoff = right - right_virtual;
+    (sum, left_roundoff + right_roundoff)
 }
 
 fn outward_l2_norm(values: &[f32; DIMENSION]) -> f64 {
@@ -609,4 +663,66 @@ fn outward_l2_norm(values: &[f32; DIMENSION]) -> f64 {
         squared_sum = upward_add(squared_sum, upward_mul(value, value));
     }
     upward_sqrt(squared_sum)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{outward_l2_primary, outward_l2_refined};
+    use spherra_domain::DIMENSION;
+
+    #[test]
+    fn refined_reconstruction_interval_preserves_an_exact_lost_dyadic_addend() {
+        let mut transformed = [0.0; DIMENSION];
+        let mut primary = [0.0; DIMENSION];
+        let mut residual = [0.0; DIMENSION];
+        transformed[0] = 1.0;
+        primary[0] = 1.0;
+        residual[0] = 2.0_f32.powi(-80);
+
+        // Exactly: 1 - (1 + 2^-80) = -2^-80.  The operands are FP32
+        // dyadics, so this is an independent exact-rational oracle rather
+        // than a sampled floating-point estimate.
+        let exact_distance = 2.0_f64.powi(-80);
+        let upper = outward_l2_refined(&transformed, &primary, &residual);
+
+        assert!(
+            upper >= exact_distance,
+            "the reconstruction interval must retain the exact split addend lost by nearest f64 addition"
+        );
+    }
+
+    #[test]
+    fn primary_reconstruction_interval_preserves_an_exact_exponent_gap() {
+        let mut transformed = [0.0; DIMENSION];
+        let mut primary = [0.0; DIMENSION];
+        transformed[0] = 1.0;
+        primary[0] = -2.0_f32.powi(-80);
+
+        // The exact dyadic distance is 1 + 2^-80, strictly greater than one.
+        // A binary64 nearest subtraction alone rounds it down to one.
+        let upper = outward_l2_primary(&transformed, &primary);
+
+        assert!(
+            upper > 1.0,
+            "the primary interval must retain an exponent-gap subtraction remainder"
+        );
+    }
+
+    #[test]
+    fn refined_reconstruction_interval_covers_exact_primary_residual_cancellation() {
+        let transformed = [0.0; DIMENSION];
+        let mut primary = [0.0; DIMENSION];
+        let mut residual = [0.0; DIMENSION];
+        primary[0] = 1.0;
+        // This FP32 dyadic is exactly -1 + 2^-24.
+        residual[0] = f32::from_bits(0xbf7f_ffff);
+
+        let exact_distance = 2.0_f64.powi(-24);
+        let upper = outward_l2_refined(&transformed, &primary, &residual);
+
+        assert!(
+            upper >= exact_distance,
+            "the reconstruction interval must retain a primary/residual cancellation remainder"
+        );
+    }
 }

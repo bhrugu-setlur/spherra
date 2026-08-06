@@ -19,8 +19,8 @@ pub use pq96::{
     PrimaryCodes, PrimaryScore, ResidualCodes, ResidualVector, rerank_candidates, scan_primary,
 };
 pub use scorer::{
-    FixedPointScore, FixedPointScorer, LookupTable, PreparedScorerQuery, ScoreKind,
-    ScoreProvenance, ScorerError, ScorerMetadata, dot_f64, normalize_fp64,
+    FixedPointScore, FixedPointScorer, LookupScaleMeasurement, LookupTable, PreparedScorerQuery,
+    ScoreKind, ScoreProvenance, ScorerError, ScorerMetadata, dot_f64, normalize_fp64,
 };
 pub use spec::TransformSpec;
 pub use tiled_soa::TiledSoa32;

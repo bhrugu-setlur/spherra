@@ -379,6 +379,39 @@ impl Pq96Codebook {
         codebook
     }
 
+    /// Magnitude used by [`Self::fuzz_cancellation_fixture`] to produce an
+    /// exactly representable primary/residual cancellation case while keeping
+    /// every Q24 lookup and all 864 `i64` additions in the checked range.
+    #[cfg(feature = "fuzzing")]
+    pub const FUZZ_CANCELLATION_MAGNITUDE: f32 = 1_048_576.0;
+
+    /// A deterministic, wide-range codebook reserved for certificate fuzzing.
+    ///
+    /// Code zero decodes to `-FUZZ_CANCELLATION_MAGNITUDE` in every lane. A
+    /// fuzz target can pair it with the high direct-int4 endpoint to exercise
+    /// primary/residual cancellation after reconstruction interval expansion.
+    #[cfg(feature = "fuzzing")]
+    pub fn fuzz_cancellation_fixture() -> Self {
+        let mut centroids = Box::new(
+            [[[0.0; Pq96Code::SUBVECTOR_DIMENSION]; Pq96Code::CENTROIDS]; Pq96Code::SUBQUANTIZERS],
+        );
+        for subquantizer in 0..Pq96Code::SUBQUANTIZERS {
+            for code in 0..Pq96Code::CENTROIDS {
+                let fraction = code as f32 / (Pq96Code::CENTROIDS - 1) as f32;
+                let value = (-Self::FUZZ_CANCELLATION_MAGNITUDE)
+                    .mul_add(1.0 - fraction, Self::FUZZ_CANCELLATION_MAGNITUDE * fraction);
+                centroids[subquantizer][code] = [value; Pq96Code::SUBVECTOR_DIMENSION];
+            }
+        }
+        let mut codebook = Self {
+            centroids,
+            codebook_id: [0; PQ_CODEBOOK_ID_LEN],
+            training_diagnostics: Pq96TrainingDiagnostics::default(),
+        };
+        codebook.codebook_id = *blake3::hash(&codebook.canonical_bytes()).as_bytes();
+        codebook
+    }
+
     pub fn encode(&self, residual: &ResidualVector) -> Result<Pq96Code, CodecError> {
         for (coordinate, value) in residual.iter().enumerate() {
             if !value.is_finite() {
@@ -725,6 +758,19 @@ mod tests {
         assert_ne!(
             second.centroid(0, 0).expect("valid fixture centroid"),
             second.centroid(0, 1).expect("valid fixture centroid"),
+        );
+    }
+
+    #[cfg(feature = "fuzzing")]
+    #[test]
+    fn fuzz_cancellation_fixture_exposes_an_exact_negative_endpoint() {
+        let fixture = super::Pq96Codebook::fuzz_cancellation_fixture();
+        let decoded = fixture.decode(&super::Pq96Code::from_bytes([0; super::Pq96Code::BYTE_LEN]));
+
+        assert!(
+            decoded
+                .iter()
+                .all(|value| *value == -super::Pq96Codebook::FUZZ_CANCELLATION_MAGNITUDE)
         );
     }
 }

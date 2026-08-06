@@ -19,6 +19,15 @@ const REFINED_TERMS: usize = DIMENSION + Pq96Code::SUBQUANTIZERS;
 const MAX_ABSOLUTE_TABLE_ENTRY: i64 = i64::MAX / REFINED_TERMS as i64;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
+struct TransformErrorBudget {
+    normalization_l2_error: f64,
+    kernel_input_l2_error: f64,
+    transform_round_l2_error: f64,
+    transform_delta: f64,
+    query_norm_upper: f64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ScorerMetadata {
     scorer_version: u32,
     fractional_bits: u32,
@@ -26,7 +35,11 @@ pub struct ScorerMetadata {
     primary_terms: usize,
     refined_terms: usize,
     maximum_absolute_table_entry: i64,
+    normalization_l2_error: f64,
+    kernel_input_l2_error: f64,
+    transform_round_l2_error: f64,
     transform_delta: f64,
+    query_norm_upper: f64,
 }
 
 impl ScorerMetadata {
@@ -54,8 +67,31 @@ impl ScorerMetadata {
         self.maximum_absolute_table_entry
     }
 
+    /// Outward L2 error of the FP64 norm reduction, square root, and divisions
+    /// relative to exact-real normalization of the finite FP32 input.
+    pub const fn normalization_l2_error(self) -> f64 {
+        self.normalization_l2_error
+    }
+
+    /// Outward L2 error from exact-real normalization through the one allowed
+    /// FP64-to-FP32 kernel-input conversion.
+    pub const fn kernel_input_l2_error(self) -> f64 {
+        self.kernel_input_l2_error
+    }
+
+    /// Outward L2 error of the two scalar transformed-space rounds after the
+    /// kernel-input error has been accounted for.
+    pub const fn transform_round_l2_error(self) -> f64 {
+        self.transform_round_l2_error
+    }
+
     pub const fn transform_delta(self) -> f64 {
         self.transform_delta
+    }
+
+    /// Constructive upper bound for the norm of a transformed serving query.
+    pub const fn query_norm_upper(self) -> f64 {
+        self.query_norm_upper
     }
 
     /// The proof input used by the checked fixed-point accumulation path.
@@ -204,6 +240,30 @@ impl FixedPointScore {
 /// Primary entries are coordinate-by-four-bit-code lookups. Residual entries
 /// are subquantizer-by-byte-code lookups, so a refined candidate is accumulated
 /// in a fixed coordinate/subquantizer order with 768 + 96 `i64` terms.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct LookupScaleMeasurement {
+    maximum_primary_lookup_entry: i64,
+    maximum_residual_lookup_entry: i64,
+}
+
+impl LookupScaleMeasurement {
+    pub const fn maximum_primary_lookup_entry(self) -> i64 {
+        self.maximum_primary_lookup_entry
+    }
+
+    pub const fn maximum_residual_lookup_entry(self) -> i64 {
+        self.maximum_residual_lookup_entry
+    }
+
+    pub const fn maximum_lookup_entry(self) -> i64 {
+        if self.maximum_primary_lookup_entry > self.maximum_residual_lookup_entry {
+            self.maximum_primary_lookup_entry
+        } else {
+            self.maximum_residual_lookup_entry
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct PreparedScorerQuery {
     transformed: [f32; DIMENSION],
@@ -211,6 +271,7 @@ pub struct PreparedScorerQuery {
     residual_lookup: Box<[[i64; Pq96Code::CENTROIDS]; Pq96Code::SUBQUANTIZERS]>,
     primary_score_error: f64,
     refined_score_error: f64,
+    lookup_scale_measurement: LookupScaleMeasurement,
     provenance: ScoreProvenance,
 }
 
@@ -227,6 +288,15 @@ impl PreparedScorerQuery {
     /// A constructive bound for the scalar transformed-space refined oracle.
     pub const fn refined_score_error(&self) -> f64 {
         self.refined_score_error
+    }
+
+    /// Measured absolute lookup-entry maxima for this prepared query.
+    ///
+    /// The values are evidence for choosing the fixed-point scale; the
+    /// scorer's independent admissible maximum still proves every 768 + 96
+    /// accumulation fits in `i64` for arbitrary checked lookups.
+    pub const fn lookup_scale_measurement(&self) -> LookupScaleMeasurement {
+        self.lookup_scale_measurement
     }
 
     pub const fn provenance(&self) -> ScoreProvenance {
@@ -247,6 +317,7 @@ impl Default for FixedPointScorer {
 
 impl FixedPointScorer {
     pub fn new() -> Self {
+        let transform_errors = transform_error_budget();
         Self {
             metadata: ScorerMetadata {
                 scorer_version: FIXED_POINT_SCORER_VERSION,
@@ -255,7 +326,11 @@ impl FixedPointScorer {
                 primary_terms: PRIMARY_TERMS,
                 refined_terms: REFINED_TERMS,
                 maximum_absolute_table_entry: MAX_ABSOLUTE_TABLE_ENTRY,
-                transform_delta: transform_delta(),
+                normalization_l2_error: transform_errors.normalization_l2_error,
+                kernel_input_l2_error: transform_errors.kernel_input_l2_error,
+                transform_round_l2_error: transform_errors.transform_round_l2_error,
+                transform_delta: transform_errors.transform_delta,
+                query_norm_upper: transform_errors.query_norm_upper,
             },
         }
     }
@@ -275,6 +350,7 @@ impl FixedPointScorer {
         let transformed = transform_normalized_fp64(plan, &normalized)?;
 
         let mut primary_maximum_absolute_product = 0.0_f64;
+        let mut maximum_primary_lookup_entry = 0_i64;
         let mut primary_lookup = Box::new([[0_i64; PRIMARY_CODES_PER_COORDINATE]; DIMENSION]);
         for coordinate in 0..DIMENSION {
             for code in 0..PRIMARY_CODES_PER_COORDINATE {
@@ -284,12 +360,15 @@ impl FixedPointScorer {
                 let product = f64::from(transformed[coordinate]) * f64::from(center);
                 primary_maximum_absolute_product =
                     primary_maximum_absolute_product.max(product.abs());
-                primary_lookup[coordinate][code] =
-                    quantize_lookup(product, LookupTable::Primary, coordinate * 16 + code)?;
+                let entry = quantize_lookup(product, LookupTable::Primary, coordinate * 16 + code)?;
+                maximum_primary_lookup_entry =
+                    maximum_primary_lookup_entry.max(absolute_lookup_entry(entry));
+                primary_lookup[coordinate][code] = entry;
             }
         }
 
         let mut residual_maximum_absolute_product_sum = 0.0_f64;
+        let mut maximum_residual_lookup_entry = 0_i64;
         let mut residual_error = None;
         let residual_lookup = Box::new(array::from_fn(|subquantizer| {
             array::from_fn(|code| {
@@ -312,7 +391,11 @@ impl FixedPointScorer {
                     LookupTable::Residual,
                     subquantizer * Pq96Code::CENTROIDS + code,
                 ) {
-                    Ok(value) => value,
+                    Ok(value) => {
+                        maximum_residual_lookup_entry =
+                            maximum_residual_lookup_entry.max(absolute_lookup_entry(value));
+                        value
+                    }
                     Err(error) => {
                         residual_error = Some(error);
                         0
@@ -340,6 +423,10 @@ impl FixedPointScorer {
                 primary_absolute_sum,
                 residual_absolute_sum,
             ),
+            lookup_scale_measurement: LookupScaleMeasurement {
+                maximum_primary_lookup_entry,
+                maximum_residual_lookup_entry,
+            },
             provenance: ScoreProvenance::new(
                 *plan.identity(),
                 *quantizer.identity(),
@@ -431,7 +518,7 @@ impl FixedPointScorer {
             PRIMARY_TERMS,
             reconstruction_norm,
             0.0,
-            self.metadata.transform_delta,
+            self.metadata.query_norm_upper,
         )
     }
 
@@ -440,7 +527,7 @@ impl FixedPointScorer {
             REFINED_TERMS,
             primary_norm,
             residual_norm,
-            self.metadata.transform_delta,
+            self.metadata.query_norm_upper,
         )
     }
 }
@@ -485,15 +572,44 @@ pub(crate) fn transform_normalized_fp64(
     Ok(*transform_kernel_input(plan, &kernel_input).as_array())
 }
 
-pub(crate) fn transform_delta() -> f64 {
-    // `normalize_fp64` has already produced the exact proof input x with
-    // ||x||2 = 1 under the contract's FP64 reduction/division order. The
-    // private `KernelInputDirection` route performs exactly one conversion per
-    // coordinate and never recomputes a norm, square root, or division. For
-    // each rounded component, the conservative absolute conversion envelope is
-    // u32; summing 768 coordinate envelopes in L2 gives sqrt(768) * u32. This
-    // also dominates FP32 underflow's absolute rounding term for a unit input.
-    let kernel_input_delta = upward_mul(upward_sqrt(DIMENSION as f64), FP32_UNIT_ROUNDOFF);
+/// Constructive L2 error of [`normalize_fp64`] relative to exact-real
+/// normalization of the finite FP32 input.
+///
+/// Each input lifts exactly into FP64. The 768 non-negative FMA accumulation
+/// steps therefore satisfy the standard `gamma(768, u64)` relative bound.
+/// Correctly rounded square root adds one `u64` relative error; replacing the
+/// square-root response to the accumulated-norm perturbation by the larger
+/// `gamma` term is conservative. For the final divisions, inversion of that
+/// norm enclosure and one correctly rounded FP64 division give
+/// `(eta_norm + u64) / (1 - eta_norm)` coordinate-relative error. Its L2 form
+/// has the same bound because the exact normalized direction has L2 norm one.
+/// The raw FP32 range keeps every nonzero norm and every nonzero division
+/// result normal in FP64, so no unmodeled FP64 underflow term is needed.
+pub(crate) fn normalization_l2_error() -> f64 {
+    let reduction = gamma(DIMENSION, FP64_UNIT_ROUNDOFF);
+    let norm_relative_error = upward_add(
+        upward_add(reduction, FP64_UNIT_ROUNDOFF),
+        upward_mul(reduction, FP64_UNIT_ROUNDOFF),
+    );
+    upward_div(
+        upward_add(norm_relative_error, FP64_UNIT_ROUNDOFF),
+        next_down(1.0 - norm_relative_error),
+    )
+}
+
+fn transform_error_budget() -> TransformErrorBudget {
+    let normalization_l2_error = normalization_l2_error();
+    // The private `KernelInputDirection` route performs exactly one conversion
+    // per coordinate and never recomputes a norm, square root, or division.
+    // A normal FP32 conversion has relative error at most u32; its subnormal
+    // absolute error is smaller than u32 as well.  The normalized FP64 vector
+    // has norm at most 1 + normalization_l2_error, so sqrt(768) copies give
+    // this constructive conversion envelope.
+    let conversion_l2_error = upward_mul(
+        upward_sqrt(DIMENSION as f64),
+        upward_mul(upward_add(1.0, normalization_l2_error), FP32_UNIT_ROUNDOFF),
+    );
+    let kernel_input_l2_error = upward_add(normalization_l2_error, conversion_l2_error);
 
     let round_error = normalized_hadamard_error();
     let composed_round_error = match TRANSFORM_ROUNDS {
@@ -503,10 +619,16 @@ pub(crate) fn transform_delta() -> f64 {
         ),
         _ => unreachable!("the frozen transform always has two rounds"),
     };
-    upward_add(
-        kernel_input_delta,
-        upward_mul(upward_add(1.0, kernel_input_delta), composed_round_error),
-    )
+    let transform_round_l2_error =
+        upward_mul(upward_add(1.0, kernel_input_l2_error), composed_round_error);
+    let transform_delta = upward_add(kernel_input_l2_error, transform_round_l2_error);
+    TransformErrorBudget {
+        normalization_l2_error,
+        kernel_input_l2_error,
+        transform_round_l2_error,
+        transform_delta,
+        query_norm_upper: upward_add(1.0, transform_delta),
+    }
 }
 
 /// A normwise enclosure for one scalar normalized H128 application.
@@ -598,6 +720,11 @@ fn quantize_lookup(value: f64, table: LookupTable, index: usize) -> Result<i64, 
     Ok(rounded)
 }
 
+fn absolute_lookup_entry(entry: i64) -> i64 {
+    i64::try_from(entry.unsigned_abs())
+        .expect("quantize_lookup rejects i64::MIN before a table entry can be stored")
+}
+
 fn checked_accumulate(sum: i64, value: i64) -> i64 {
     sum.checked_add(value).expect(
         "the scorer metadata bounds every table entry and proves at most 864 additions fit in i64",
@@ -628,9 +755,8 @@ fn serving_error(
     terms: usize,
     reconstruction_norm: f64,
     residual_norm: f64,
-    transform_delta: f64,
+    query_norm_upper: f64,
 ) -> f64 {
-    let query_norm_upper = upward_add(1.0, transform_delta);
     let primary_absolute_sum = upward_mul(query_norm_upper, reconstruction_norm);
     let residual_absolute_sum = upward_mul(query_norm_upper, residual_norm);
     prepared_score_error(terms, primary_absolute_sum, residual_absolute_sum)
@@ -657,7 +783,58 @@ mod tests {
     use crate::TransformPlan;
     use crate::transform::transform_f64_reference;
 
-    use super::{normalize_fp64, transform_delta, transform_normalized_fp64};
+    use super::{
+        FixedPointScorer, normalization_l2_error, normalize_fp64, transform_normalized_fp64,
+    };
+
+    #[test]
+    fn normalization_error_budget_covers_exact_pythagorean_oracles_at_extreme_exponents() {
+        // These are exact rational reference directions: every nonzero input
+        // pair is a scaled 3-4-5 triangle, so its real normalized components
+        // are exactly 3/5 and 4/5.  The cases exercise ordinary, very large,
+        // very small, and many-term reductions.  They validate the analytical
+        // bound below; they are not its source of truth.
+        let mut ordinary = [0.0; DIMENSION];
+        ordinary[0] = 3.0;
+        ordinary[1] = 4.0;
+
+        let mut large = [0.0; DIMENSION];
+        large[0] = 3.0_f32 * 2.0_f32.powi(100);
+        large[1] = 4.0_f32 * 2.0_f32.powi(100);
+
+        let mut small = [0.0; DIMENSION];
+        small[0] = 3.0_f32 * 2.0_f32.powi(-100);
+        small[1] = 4.0_f32 * 2.0_f32.powi(-100);
+
+        let mut many_terms = [0.0; DIMENSION];
+        for pair in 0..25 {
+            many_terms[pair * 2] = 3.0;
+            many_terms[pair * 2 + 1] = 4.0;
+        }
+
+        for raw in [ordinary, large, small, many_terms] {
+            let normalized = normalize_fp64(&raw).expect("the exact oracle is non-zero");
+            let mut exact = [0.0; DIMENSION];
+            if raw.iter().filter(|value| **value != 0.0).count() == 2 {
+                exact[0] = 3.0 / 5.0;
+                exact[1] = 4.0 / 5.0;
+            } else {
+                for pair in 0..25 {
+                    exact[pair * 2] = 3.0 / 25.0;
+                    exact[pair * 2 + 1] = 4.0 / 25.0;
+                }
+            }
+            let error = normalized
+                .iter()
+                .zip(exact)
+                .fold(0.0, |sum, (actual, expected)| {
+                    let difference = *actual - expected;
+                    difference.mul_add(difference, sum)
+                })
+                .sqrt();
+            assert!(error <= normalization_l2_error());
+        }
+    }
 
     #[test]
     fn constructive_transform_delta_covers_adversarial_and_generated_vectors() {
@@ -680,6 +857,7 @@ mod tests {
                 .mul_add(2.0, -1.0 + coordinate as f32 * 0.000_001)
         });
         let plan = TransformPlan::from_seed(0x1234_5678_9abc_def0);
+        let transform_delta = FixedPointScorer::new().metadata().transform_delta();
 
         for raw in [basis, alternating, dense_equal, generated] {
             let normalized = normalize_fp64(&raw).expect("the adversarial vector is non-zero");
@@ -694,7 +872,7 @@ mod tests {
                         let difference = *reference - f64::from(implemented);
                         difference.mul_add(difference, sum)
                     });
-            assert!(squared_error.sqrt() <= transform_delta());
+            assert!(squared_error.sqrt() <= transform_delta);
         }
     }
 }
