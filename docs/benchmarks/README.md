@@ -88,6 +88,21 @@ BEIR SciFact corpus embedded with `sentence-transformers/all-mpnet-base-v2` at
 commit hashes. If it cannot resolve immutable upstream revisions it exits
 nonzero rather than writing unpinned evidence.
 
+The reviewed corpus is rebuilt with the recorded immutable revisions:
+
+```bash
+uv run --python 3.12 --with mteb --with sentence-transformers \
+  --with huggingface-hub --with numpy --with blake3 \
+  python tools/build_scifact_corpus.py \
+  --output-dir corpora/scifact \
+  --dataset-revision cf10ab6856b15b0e670ef8ae5dae4e266c12d035 \
+  --model-revision e8c3b32edf5434bc2275fc9bab85f82640a19130
+```
+
+The portable descriptor is committed at
+`corpora/scifact/scifact-mpnet-768.json`; the generated FP32 corpus bytes are
+ignored and must reproduce its recorded length and BLAKE3 before loading.
+
 > **SciFact is smoke-scale.** It demonstrates that the harness is correct on
 > real embeddings. It is **not** sufficient evidence for a 10M format freeze.
 > The R7 retrieval-quality gate stays open until results are recorded on
@@ -115,10 +130,14 @@ effect.
 absorbed. `header_bytes` is the real v1 segment header plus its checked section
 directory, read back from an encoded primary segment.
 
-**Throughput.** `primary_scan_vectors_per_second` measures the certified primary
-scan over the whole block. The scan does not depend on the candidate budget, so
-it is measured once and reported identically in every entry of one run; only
-`residual_reranks_per_second` is re-measured per budget.
+**Throughput.** `primary_scan_vectors_per_second` times TILED_SOA code reads and
+the production fixed-point primary scorer over the whole block.
+`residual_reranks_per_second` times candidate preparation, the candidate's one
+permitted residual load, and the production fixed-point refined scorer.
+Certificate construction and FP64-oracle validation remain mandatory but are
+outside both timed regions. The primary scan does not depend on candidate
+budget, so it is measured once and reported identically in every entry of one
+run; only residual reranking is re-measured per budget.
 
 **Bound soundness.** Every primary and refined score on the measured path is a
 certified score, and every one is checked against FP64 truth. The violation
@@ -149,7 +168,7 @@ almost entirely slack — sound, but conservative.
 
 ## Recorded results
 
-Committed under [`results/`](results/), all measured at commit `ada5705` with
+Committed under [`results/`](results/), all measured at commit `2bd12a0` with
 `dirty_worktree: false` on an Apple M1 Pro (32 GiB), `rustc 1.88.0 (6b00bc388
 2025-06-23)`, release profile, `--cache-state warm` (asserted, never enforced).
 
@@ -159,16 +178,13 @@ Committed under [`results/`](results/), all measured at commit `ada5705` with
 | `2026-08-06-codec-format-beir-scifact-mpnet-768.json` | `spherra-bench codec-format --corpus corpora/scifact/scifact-mpnet-768.json --queries 200 --seed 20260804 --candidate-budget 10,20,50,100,200 --layout tiled-soa-32` |
 | `2026-08-06-certificate-soak-2000000.json` | `spherra-bench certify --trials 2000000 --seed 20260804 --transform-seeds 64` |
 
-The `command` field of the SciFact result is **sanitized**: the corpus was built
-into a scratch directory outside the repository, and its absolute path was
-replaced with the relative `corpora/scifact/scifact-mpnet-768.json`. No other
-field was altered. To reproduce, build the corpus anywhere and pass its own
-descriptor path.
+The SciFact result uses the committed relative descriptor path directly; no
+post-run path sanitization was needed.
 
 ### The pinned SciFact corpus
 
-Built by [`tools/build_scifact_corpus.py`](../../tools/build_scifact_corpus.py),
-executed for the first time during this gate:
+Built by [`tools/build_scifact_corpus.py`](../../tools/build_scifact_corpus.py)
+from the immutable revisions shown above:
 
 ```
 name                     beir-scifact-mpnet-768

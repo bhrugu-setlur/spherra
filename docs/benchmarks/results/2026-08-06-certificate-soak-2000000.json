@@ -1,13 +1,16 @@
 {
   "architecture": "aarch64",
   "cargo_profile": "release",
+  "codec_id": "0ceb4208a53bf92938a513426e8a0528c429a9f91ca345ce9ad679df6114df73",
   "command": "spherra-bench certify --trials 2000000 --seed 20260804 --transform-seeds 64",
   "completed_trials": 2000000,
   "cpu": "Apple M1 Pro",
+  "dimension": 768,
   "dirty_worktree": false,
-  "elapsed_seconds": 1130.05868475,
+  "elapsed_seconds": 1174.458371875,
   "first_failure": null,
-  "git_commit": "ada570582e93fbcaf1201a1430cfd0aa2b77ce41",
+  "git_commit": "2bd12a056964a8a3d98c8a296468b36b047f43a8",
+  "layout_id": "tiled-soa-32",
   "maximum_normalized_primary_slack": 0.9999998964706608,
   "maximum_normalized_refined_slack": 0.9999999199846653,
   "os": "Darwin 26.5.2",
@@ -18,7 +21,394 @@
   "root_seed": 20260804,
   "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)",
   "schema_version": 1,
-  "timestamp": "2026-08-06T18:34:50Z",
+  "scorer_version": 1,
+  "seed_identities": [
+    {
+      "pq_codebook_id": "7e7bb43874b55c00118148ef1f09aadfe178d7ed1ee08a8aba99bee8b40d8fdc",
+      "quantizer_id": "1a269934192c45c875bf76e10695817d4baf1bc34b9c718e4158f93b92dcf56f",
+      "transform_id": "976c5d5d7a71faf06d2aa86cb48c3c4f77c79cbd26f6b8ebebb0b46e3f68b080",
+      "transform_seed": 15403722393794147701
+    },
+    {
+      "pq_codebook_id": "d6ff188177f8e06dc1994bd14e3706a05bba82b708ac04a3d0d95172d5522da6",
+      "quantizer_id": "f9dcfba0d0f41c39a6a507ab87911017ec8b1d5b30fac9686a56f59368cbf1fd",
+      "transform_id": "a562ca60e47e4a55ee8f58d1cc5ed829a254797db24025f27b907a04e7641077",
+      "transform_seed": 14073343611374830644
+    },
+    {
+      "pq_codebook_id": "0c0e60f0c0df0ac3f1c4ddafcbc2746c76049ced12f671fc88603bd156dba215",
+      "quantizer_id": "3e8c910c68439d00d6775135b2bb204a9a73718800b7fcbd81d56af6a6ca652d",
+      "transform_id": "974313492de78af17bf5f2ff9e404bba0d7f3285af0bf5d87df61fef4e2bc50b",
+      "transform_seed": 11889672105821290785
+    },
+    {
+      "pq_codebook_id": "a5d97f42211dc1172f2c790651234f28b695426754862a5956462bdafdc9c185",
+      "quantizer_id": "c6c40d39a9b93266d2a41cfe7e6a9e0296797c8d3a56aaa96068237dc9607c5f",
+      "transform_id": "26bde416931daee3c964a98373cfffa014842affe63d5c93cbf8aa72d8b908ed",
+      "transform_seed": 649464358019750549
+    },
+    {
+      "pq_codebook_id": "d677864ae631598ffbcb43131399344502e782aa3877ee1d4fab8130c594a632",
+      "quantizer_id": "681cd54010c83fe954546a68af1ac7e2ef1b71483df9674ca6f720b312656d5f",
+      "transform_id": "772969b8877af931fc2bad29ff0d3fbe150697e257dc18029470d4c964184fa2",
+      "transform_seed": 17628559166715270982
+    },
+    {
+      "pq_codebook_id": "4dbec5b4f896f49f2c40cb96388a0611ff724bd68736c743007d0ead5e08e85f",
+      "quantizer_id": "01cfb882000cff76573bbe8e814260b66038c9f7533f0665888b2ee4fd7a2322",
+      "transform_id": "12b444cb71107c9476cc828706d50e9f4c6b9af41d16f6d002774f8b4531f172",
+      "transform_seed": 4769922968490415562
+    },
+    {
+      "pq_codebook_id": "1d01b57ddaf6cdde869f34069cb7673087dcb27dae0bd769e1f0a6a8ce14fe84",
+      "quantizer_id": "811f9ca7c8e6cbb303d18e906f0f1314f107241093ef0f16656c92fba5db6cdb",
+      "transform_id": "fa8276563b046556ea05c9d2954bd6795f0eb98dae31d435597ed8e7233247b3",
+      "transform_seed": 16910521484936894646
+    },
+    {
+      "pq_codebook_id": "b56a2107ee786d56fe4727830a724ca6fff3b1afc2eb4e7e1c872f69071d77c9",
+      "quantizer_id": "bd3a445f37b92b98c19879fa4b9fb6731a97df315a98ef531546d15e18140504",
+      "transform_id": "95cfb2a175a863c077bebcd42dfff1acb6445abb66a4fa729653188130ed9d76",
+      "transform_seed": 5360410688523303925
+    },
+    {
+      "pq_codebook_id": "02787ba56c886d5b484698abce702bcee011250bef6730bf9be5e4ce07075ddb",
+      "quantizer_id": "dbbaf94485e02f32c663b7ff539cccde4379ed1c382ab31487b5effc2c6ae968",
+      "transform_id": "8d9c19e69f47c5c3de72907a0e179c9de9b1e8886166ce434db33520f7668b5f",
+      "transform_seed": 6587151156499046461
+    },
+    {
+      "pq_codebook_id": "7c582b3e07b6d2a4dc396fcfad3fee4c36417b361b0dc73837d9f2993f3f34de",
+      "quantizer_id": "5c3b73ffdfe8d9a3bcf583fa475c8e88eba46a02f4f9fe037902a2b0f64b7691",
+      "transform_id": "88286b86df5b907f7ec0862b3de28077707b75b537bd18f43a107699e37dd40c",
+      "transform_seed": 288299486192793451
+    },
+    {
+      "pq_codebook_id": "a84f3ab28a86653bef1013a252eb79b5a8a23caee297f91fdff0b4b0d0557765",
+      "quantizer_id": "71c2d9293c22773c3f367e0866bccc18c876f0df92756df00ecd65cf7940da75",
+      "transform_id": "dab545278daab098d04e7b8264d8cc0f84d45b87e8f3f3f4019aab0d8ae4ec36",
+      "transform_seed": 13890316817865030251
+    },
+    {
+      "pq_codebook_id": "5909e1589d3212b6a5a6ad3591832dfeebabf64ab78cd3f57f1cde7a5f505483",
+      "quantizer_id": "5d09d79bb53cef12b11702523bbd80a7a541454e6942f39a59d32240cc378902",
+      "transform_id": "2a1d46044c114a128be207870a368b104e28ad3a4d09620c78d5c4c663bf7100",
+      "transform_seed": 9963571339526094965
+    },
+    {
+      "pq_codebook_id": "3a79f6d24ece6d4ff9cff29387a16e58d414e0ad711d75c67dd08e6676753367",
+      "quantizer_id": "b331396c57ff43765f10dabee5bd7cd0987af6f4358b2d42c4fda7c97d375400",
+      "transform_id": "17e13ffeb85052fd55a53128ca78af49bc23b810b0d1bfdef024502b709af78b",
+      "transform_seed": 4896688425847905849
+    },
+    {
+      "pq_codebook_id": "6310df9c920d67bbea0f69633ff3e5e2d1fd70fc1508280d86225b2b21f64657",
+      "quantizer_id": "cb7ca6022b5f18e493c3b19da9cf4e11653ae83b798d9eb0d6e9929d8fd61237",
+      "transform_id": "f6b4f900dbf4923b816eb34dd10261ba96cf48dd06ef9ad8b2f0b4452a274ca8",
+      "transform_seed": 14562166533633030874
+    },
+    {
+      "pq_codebook_id": "d81b95a221b30bd51f7856665f2d60b73c3156070798ca7fe0f9253d2ab2435f",
+      "quantizer_id": "722d71fb086fa0679c93f2e50d1715a0ebdc17059a63836b6abc43b2ccc0fdcf",
+      "transform_id": "30451998105607153bff436d92bf243cea95b388ea4437b682c5575d0d84fb2d",
+      "transform_seed": 3264951895752514371
+    },
+    {
+      "pq_codebook_id": "3930407b5e71e0f28f19c690311dc045a7b4b284252dfe3698fac996e9f34244",
+      "quantizer_id": "769d20272ed3a0e3436fe6e66c9d5a701861363277f7cd10cc47290162ddc5a5",
+      "transform_id": "8ff551d35588496040c246b82637daf8f65c257915deb3b15ba4696c9b2f2e02",
+      "transform_seed": 1906315975102640236
+    },
+    {
+      "pq_codebook_id": "5d66bee0558b784af48c7a180cfc65a637090db947f12871aba01de0935d2531",
+      "quantizer_id": "81778dac96ec005aa4d248420484a7d84dadf679f3eaa5eb7399355813dcd0ad",
+      "transform_id": "d8c79ea05bde64d248c7496798df66e3324f1fbd9c6d386c91cc77d52adf00ff",
+      "transform_seed": 18391494931859305809
+    },
+    {
+      "pq_codebook_id": "0613781a7f40382825d8ebd1c1a1c5212811b48d0ee1542ad1fb8d7992894846",
+      "quantizer_id": "60b9a08eab5662aa63465f521b2e1f32864c55f44e1c219d638366143cce7539",
+      "transform_id": "f96eae9777792e97743876d22539154b958601da6710adabc1fcccc50b027fb7",
+      "transform_seed": 11812238077696488011
+    },
+    {
+      "pq_codebook_id": "54ac8d3d36d297d8742da48313d993992f956cf6eb45c9230ee96419742ad8ca",
+      "quantizer_id": "0d8bfc31bc1fbcb3be6a099268dadbe5798b2c00ca721eeb8801f8414f35adbc",
+      "transform_id": "63180b8f3c7e00184de1dc2c07b608a06f1dae76aaa195cd1d06d940e70216d2",
+      "transform_seed": 11846807244347298593
+    },
+    {
+      "pq_codebook_id": "3388cb1c8ada09fddb36c20d9c6de48fcf2ff73af5aaf3c0280b115cc86a2f6f",
+      "quantizer_id": "1a214cce3ba744f2ef61416012ad94ac1e5fce37de7329b0e8188f9d7e89cc25",
+      "transform_id": "de50a16519456102dcb2560b2b4898f70fc867645200c4881541559964dd1886",
+      "transform_seed": 11833333016055327289
+    },
+    {
+      "pq_codebook_id": "5e698e1d48b318b6b86c998c277c658ef9cb864f65933c2dcad8faaafb287430",
+      "quantizer_id": "9abb445403088e988d46f9f0772f4c884d9a9fb9e2c035d22a51b001d782f9f1",
+      "transform_id": "9638374c077cfcd5c331c8f4532a40ba47c7c644597c4091a0bda30ff3cf1aea",
+      "transform_seed": 9340621086231162524
+    },
+    {
+      "pq_codebook_id": "217372b17d5c8cc2fdad773f6d4c6cbafd66922cd5adb960220edd0d2ee8c231",
+      "quantizer_id": "f800bccdd3bbb8dd6324082c40a0fbadcddec7ed10f53f026cc6d00a86cc02b2",
+      "transform_id": "0e3ab3cb273d1217dbfe994c0852fadca4ed94f895cc9ddf0ba8b1fb2e36a75f",
+      "transform_seed": 5201853882473158032
+    },
+    {
+      "pq_codebook_id": "f5bd8600303f6e83abf5272d174849f089a01491fdab14fec39b3c092d71ec19",
+      "quantizer_id": "a9077f60ebd46d76f6e7e59525e5bf6f09e69ad03e8535979c748d2bd80eec01",
+      "transform_id": "382e6538a0ffb482cd53e9ba70b221ffa2302160632cde5066b17e321a1a942c",
+      "transform_seed": 4161468173448717112
+    },
+    {
+      "pq_codebook_id": "ad9f57a0f268db1eed4adce4c0b9989a0fd991344890b153089436dd45126ed3",
+      "quantizer_id": "ebbd04fe87e361235254eec95acf3fd9ec8fb2c6b425c142e86be10f7603b21c",
+      "transform_id": "c30a40c4d36daefce0805389aba3f19d2f524759408e1482ea73ae6427f534c9",
+      "transform_seed": 1922642718844611771
+    },
+    {
+      "pq_codebook_id": "3a29ddee9e1e2109a60d04b8642637a9acb982cc922889002d43c4e4a52c7ec5",
+      "quantizer_id": "2e92dc0f46f82df0ccc28eda4210de38267440cdeb0e10be96c99e93a6eefa7e",
+      "transform_id": "4af77166741416a4cd26393a66eed9c0f7fa66ee7fb46688b3c250614456a50a",
+      "transform_seed": 14119570246296825300
+    },
+    {
+      "pq_codebook_id": "29d0c8a04068d301df2f222fb79f2d9f33b05b13792f2278f5e03ac07cc0aaba",
+      "quantizer_id": "7763b83de4674ed45cc2e178cb6dcf94941b1e20efda32f119f7cc41a989ae27",
+      "transform_id": "e9ad19ed18c3ff23abbb3b2a4b2e3cab5ec036adea598a5625b7680244c2aacd",
+      "transform_seed": 18217727476334734018
+    },
+    {
+      "pq_codebook_id": "5403590d8188e9344d98102271f3793c46593bad1f74edfa6d3321c6c48758f1",
+      "quantizer_id": "bbdb93a01a41eb4e05124d18f04eb585fa54b02ab10bf0fe5f9c22e84b7c36d1",
+      "transform_id": "bb34c7e70d92c318891386d965e022f31d54e760a5dfd381a1d7baf950fc8004",
+      "transform_seed": 13034195485990664038
+    },
+    {
+      "pq_codebook_id": "ec051e8529f481af41161c211052df2fa376699ac926a368b5a8821522e96b5d",
+      "quantizer_id": "580465be0276b2a4850d1f34af5f94973d9f10a49e4537e962031c557f8c17fd",
+      "transform_id": "a932f7af130518da51f214ad51166a4550858dcfaf64675177f27c7a868c8190",
+      "transform_seed": 16992652946913784052
+    },
+    {
+      "pq_codebook_id": "e6a789dbc26411e9da0b4aaeded42d0a51f5386db110991c30d4f3178a32089e",
+      "quantizer_id": "c3f1a0d14a0d46354ba304030acc5113a58bb0a867b471cde13d6e98398f3714",
+      "transform_id": "9fd3180313a2f6626d1f72304f7f0ee8e8e5020c14679ff89a42dd07c0f61a76",
+      "transform_seed": 17334818985695589252
+    },
+    {
+      "pq_codebook_id": "730700575ce171d2391232e6d58864ee1de18efb5d0757ed9c44883abd982595",
+      "quantizer_id": "5a3abac596dbc9fd1a9a17e4f510950a5995d233f01ddda13a97c80dc9dabede",
+      "transform_id": "483b4c9c8ea2ede66a271889be67a5b9c7311c97d0fea786b9d5f5b698252a75",
+      "transform_seed": 11643851090752217707
+    },
+    {
+      "pq_codebook_id": "18fc2fabdc6981f7907dea573588ecb05216f5394dbc05f6331cb49d41d70238",
+      "quantizer_id": "d400d9b39cfaec23796961e14f6b34f73803500a35dc9a643f2a90334b60d556",
+      "transform_id": "b0ad7ddaf06494ed35edab1cccd75cd559989bbdb416104a718afe44dd6ded49",
+      "transform_seed": 12960371315895933651
+    },
+    {
+      "pq_codebook_id": "8305b1d3282d942d1d77087c4644ccbc13047f3c3d55ff283bec636f0eec261c",
+      "quantizer_id": "cdd5b276f51a4d74e228486aef8ff65b9b144461c98d746924347a9c05cf26a5",
+      "transform_id": "afa69f878eedfd0cadc56f798a4af7a09b276d0ba35440621d026d44efe17d92",
+      "transform_seed": 14723584607486508668
+    },
+    {
+      "pq_codebook_id": "5fd0b7ad22b42a3fed103a74760a9c91c9f34ccd8cb8b4944689aed844440fec",
+      "quantizer_id": "38244976e8378b0739b532433ebd724398032404586cf5a5360566b725f9db60",
+      "transform_id": "21788448c7dabd56b2694d38b101d2819fbf8c40ee461980186e0d2ea3d0de6f",
+      "transform_seed": 13402917948257464917
+    },
+    {
+      "pq_codebook_id": "b5edb48ea344c4ab8bcb0ae183a11f325db0e3ac89f51a99b6c30633963229f2",
+      "quantizer_id": "e4fcf287fd72a3e4db2839d364ca53020e0387fc72fe7bf32b5dfd21eecb4b4b",
+      "transform_id": "b62f9279fec613e60a1ab2eaa1ff00a2ed2867134cd8b1a55e1b3478e4dc22a2",
+      "transform_seed": 11387404208233806139
+    },
+    {
+      "pq_codebook_id": "30189ff1c9fb45d191acfe3dc32305a6ff1649b31e58900a4e003d192a2ee428",
+      "quantizer_id": "a247731b072e01b7bcfd1836036d9b580213bfd57f177d9d1de34017aed0c8a9",
+      "transform_id": "293426a95aa8da4152b2878613914be954dcb0c725eb5334ffe7480790a2013b",
+      "transform_seed": 5246581532894480242
+    },
+    {
+      "pq_codebook_id": "363607bee14620346f18e161c809e3b7d31279fa91e0f265a3c824d7ef68ba16",
+      "quantizer_id": "514207c56d2140fae9ad5ab839c08ef721bff84351d1b1a54da55855a00e4bc2",
+      "transform_id": "e34113340986e9c8d1e5b2acdbe14718c23d933e66fd20a669d02c43a508f94c",
+      "transform_seed": 16526918368759139606
+    },
+    {
+      "pq_codebook_id": "47605ba9a503ca17a04b1470a9ea8820bbfb20d29e01c6aab3d503adc53f02c4",
+      "quantizer_id": "e835fd0265948d913f33d53a0abf0142eab0de101986e329a66fd8a667ce17b0",
+      "transform_id": "1bb536d78612f8dec44ff9ff2f0798bcaf060b7db66e7b9aa687c4f06ab42a78",
+      "transform_seed": 12541807802039935411
+    },
+    {
+      "pq_codebook_id": "98722152aee90a676cbcf88b523be310cafda31a5b3b1918e95fb4e2836ae375",
+      "quantizer_id": "c4d0dab800fb61d2d6e0a7852492b21aa39de087fadf20b8bbff270e7de917d0",
+      "transform_id": "0c81be178a139f3583831177f15561fb552e629bcd53a3930c2f2e13bce2e403",
+      "transform_seed": 2698515327004718622
+    },
+    {
+      "pq_codebook_id": "ed5e11ad0fb9f7a3cba71225e812ed727946f14bcfba3c3fb95081a74a67ee0c",
+      "quantizer_id": "477ccc70503d04e4d6795c388d1be03ef5c92ef76dfcd2ad398c37f164eaf658",
+      "transform_id": "e4deba5d2c84650a537c89dab61a56a3ff2a2e8794961bac766b1487d93c4231",
+      "transform_seed": 4486806657876316160
+    },
+    {
+      "pq_codebook_id": "1a1fe24fc2bdbc07a484944b38556ab12a6fbe5f45dd9ae0d2b1bcd65f226d18",
+      "quantizer_id": "37e934589ae05775cfd2b3593377092d956e3a5f99bc1e4d65eac05b5d9bf29d",
+      "transform_id": "5f8fcf18439e3626c0fd27b9827c50eb930f5bb2141e95902f443fa2f7195732",
+      "transform_seed": 11357477008623095089
+    },
+    {
+      "pq_codebook_id": "320089564ab898ba2e6867de402439c31b0a3d6565f893d1e736aaa973bc3ebf",
+      "quantizer_id": "6518dd34a0985dc23a82b4e19a28b5e7ba25b50cb675333a8a07e8dcebd3ec43",
+      "transform_id": "c7c8bdfa2a6a1caf7ca1172b009b92b083ad0e32f5c28b6969d3514d7a7122f9",
+      "transform_seed": 1431945418750683985
+    },
+    {
+      "pq_codebook_id": "b05c23c1785587e5d5367cde0cb160920d0add4588c7205590d6f81771f46326",
+      "quantizer_id": "430a55efbcdade6a5d20116e9494185aebb0ee8ce221d2cb26e1aa81de5c377f",
+      "transform_id": "407b68eb2c72bd2db86cfa984353f67d779aaf3dcf7cf3e173b32a4ca079fafa",
+      "transform_seed": 17857883943127231365
+    },
+    {
+      "pq_codebook_id": "8cce52e3db8e24138849af50ce0052ab490083e81f515f67fd8264c497f0f4ba",
+      "quantizer_id": "086bcd232f1c91607b2497dd2f0cfb024d6c1097d1671138e51d326cc99c9c29",
+      "transform_id": "ac8bac49c335eb524f54b1620d50dec771a838bfe1472dcdaefbad482b063afd",
+      "transform_seed": 15831567028390278093
+    },
+    {
+      "pq_codebook_id": "4c63d706f23c62d7af24341aa6ef8d23674d7bd7016e14b41e9d4ee01f38632c",
+      "quantizer_id": "6b43d0952cd2ea0ed0ae681c0797089cf0c51cc38e685d0a1a3b6c90495b5dac",
+      "transform_id": "2d9b1192d24b7e55c849fd6272c7711d830e2a6464e732ce73d347d3b72de3df",
+      "transform_seed": 11534355735025129524
+    },
+    {
+      "pq_codebook_id": "554ecd61c4809516948122b8a94536449ab62e4877e21d5d5239412edcfe19ff",
+      "quantizer_id": "8a38689576061b1b8ba3686aa2ea2f1f39b8eaf8dbd0bedfd3c7f5582c93334f",
+      "transform_id": "aaa4c6831a4885c2402e374018dc679252517ed582d2e6f7be45ecf5c91a61db",
+      "transform_seed": 13055403222483534830
+    },
+    {
+      "pq_codebook_id": "9e54bbde432598acb476d51769276bbec3bd9cca0eb290ad6f2b46cd6e37a643",
+      "quantizer_id": "62beda8eca36bd47d782aa752eadd0d30aa78ea88d103ba94fcd3e94d8489e3c",
+      "transform_id": "97526b11fe502714e8997f6e6bfe251691fafa6fe3d59b317771759186799681",
+      "transform_seed": 3077458573808575139
+    },
+    {
+      "pq_codebook_id": "29f05e0463230fdbb9f6203efafe45cc4cb213381cf8b3e88e27e2c5e0951bbe",
+      "quantizer_id": "387367d137ee64e2fce476450947bfdeee27f0cb26477b7031bb0c8b3793978a",
+      "transform_id": "4f83a110d68dfab8d6297beb400c5c50a920efd22083864eaf6c83c5ac8514c4",
+      "transform_seed": 3671490586788510109
+    },
+    {
+      "pq_codebook_id": "cefe3b7014599597b7c60db6b5d0a1274625d10244ad65495712cafe6e79b2de",
+      "quantizer_id": "a0513585888e3d4185cd7ffeca48bbecdb8533526d89e13039c2cebf348f4280",
+      "transform_id": "8a40745e8ab8c6e36cb9d713e60d1c6530f58ef88090acd98c899eb2297a481c",
+      "transform_seed": 2547127530958601064
+    },
+    {
+      "pq_codebook_id": "a0f8b90a8385f0f33f1c7503482efd3daed2bd1cf1eb93d0da2f079329d2fdaa",
+      "quantizer_id": "4ebadb3ce3cdc90be76f3db793fad3616ae2a71e882a160a460c100bb6326a22",
+      "transform_id": "7f974ed4c9d36c2f6ca97dc5af79891ae641c2a8a3ffd17cc9d8f8f94c945fb5",
+      "transform_seed": 9292824544356668765
+    },
+    {
+      "pq_codebook_id": "1d69e2319509ac2a5115a8495b332a2ccc572aaf8083a1c57aa341a161829b6a",
+      "quantizer_id": "c5f30ba6c23f206f2dfc35c805b58958d4c2406b0eb679dc07da58f2b98338d8",
+      "transform_id": "cf301eabeec3bf3f3026ec8008f61131c48a42e7147fa48ed6a2e42b6b273c6d",
+      "transform_seed": 17501047069520211787
+    },
+    {
+      "pq_codebook_id": "89f7bce59a27442fa7f64d699e22de4a4352ab4defbabf9b8da0f9bc0f4ac25f",
+      "quantizer_id": "968da81ea17287ffd54276f962389068cebff35b2d92848fca8229ed104814da",
+      "transform_id": "044753c2d81b48325dc876057b3e951b7329e81e236952daf1e4a2905ffe7a49",
+      "transform_seed": 1502301453323103803
+    },
+    {
+      "pq_codebook_id": "5a387fe776546a8b34a1c3349930485da902da0b5c60e1e426044a976434bc4e",
+      "quantizer_id": "88952d493ff24b99a4c72af35d10a6e2f2c079f45a239503edbe63440832d864",
+      "transform_id": "027689706677d52179d46c7de596d485da1fb8d6d225ef2a4df9ae40ad2365c6",
+      "transform_seed": 16079888874785251924
+    },
+    {
+      "pq_codebook_id": "963acb00089a6343f69c999284953b3bbe1fcfa89294d03ebdc3ecd556319eb4",
+      "quantizer_id": "3cb425c241d71ce0ecd596bd583667f967cec8b0bafb887cf497d294831f84dc",
+      "transform_id": "a4b0dbd4b056199b4034356c3b41604d797c98814a074121837227f2796dd11b",
+      "transform_seed": 7259106845742828709
+    },
+    {
+      "pq_codebook_id": "7afd714906268eebfa23d4f0ded592047a29a5d3627d7da4d9f7fad4a674558d",
+      "quantizer_id": "b970089b5a6d4b13101a5988914f481fc404950fbd82bbf845110932706d30e2",
+      "transform_id": "95750160e8ce2c22114f36b2ba38675d41cf2189e7d669db26eeb0c8222e71fa",
+      "transform_seed": 2885861181248934554
+    },
+    {
+      "pq_codebook_id": "1c78509602ed15df6936e8593ca9cc0c43a70eeca5da072956c80d91616bac59",
+      "quantizer_id": "5e8af54818cdce0c13b2932b1c93848968fffe85be63f716628bcd9a136f97a0",
+      "transform_id": "67ce2ff13b58abd8603b0cacf9e8791d034513b4cb9980fd265c01e6f9821ab7",
+      "transform_seed": 3521471251746955072
+    },
+    {
+      "pq_codebook_id": "e8ad64627c95d2eb2e2399264af29fc8288ef07d2694195a5748273adc1f3e84",
+      "quantizer_id": "ef9674491a80ae1be868200b4b86a1fd5ef45c96dba944f76c781db690668991",
+      "transform_id": "85f7e725dcceb717fded3f3701519822acc8ea7b54be8b75c2d996cbb3f426a8",
+      "transform_seed": 9034565510045668875
+    },
+    {
+      "pq_codebook_id": "4998a823a47bbcc82f82c0cf3675232db2bb60707d67e9cdfffbc0bc29f59e08",
+      "quantizer_id": "842d7978413f92556e6c704c036d8401a0c40f80ffbcea9706f8dea0fb9d8b10",
+      "transform_id": "331719bcfdc454433e3a5b5a6df95d37258799c45946d5287c819e2a35583f47",
+      "transform_seed": 9327811864649369057
+    },
+    {
+      "pq_codebook_id": "ed15c4bbb75f8a65bb5173b1f7061be79e6781fd63eb2592cec45ca902acdbec",
+      "quantizer_id": "8c861049c5ab253723d52f71df6d80cb153792c5b880dc5abfa20b185feadb74",
+      "transform_id": "11b8d9b0b18a9efb2c567c1be2e1257eecb2a940f24a8bbfaf18eb686b8ba376",
+      "transform_seed": 9708174684227074076
+    },
+    {
+      "pq_codebook_id": "93e813da01b4ab56738fa26abf88f3e9049c2ee6327e34c4d895ee0eb7f6c606",
+      "quantizer_id": "d54fa658b3273b4a66cbcecef9c0b9625bda323cf098cac49e540d8a5f54fee8",
+      "transform_id": "667878d96dd0234ea2a5f5c2ebe8181b4c011f396750b33bb3d3b4f1cc215980",
+      "transform_seed": 14163529209288479689
+    },
+    {
+      "pq_codebook_id": "99f30f2ec4644d50c4c073919a981b186b02628fe7d553c15539007a97998903",
+      "quantizer_id": "cc79ed1de3d8f631e6aa9e199de714914dd90bb018aab77c71ee8d5cc0989124",
+      "transform_id": "e0391025fd63ab934c3a1a6cb05e7b10be044d4f70ccc6ace2ffe8735c5d3fcf",
+      "transform_seed": 15515543526746275637
+    },
+    {
+      "pq_codebook_id": "5b06788141d6eeb1bdd7df87739ab9a1967cf92501b9ea4c16f5140a3fe184d3",
+      "quantizer_id": "a4e01b9693bcc403281043845bb890695525d7f781ff3b25eb01803ea17318b8",
+      "transform_id": "7e3b70b5091e80bf91246a0808c4a97f391a248a453660be53d102b475bbccbc",
+      "transform_seed": 6440690622580673431
+    },
+    {
+      "pq_codebook_id": "2017a2a05f31386e8017672f33000729207e22ecb77301144fea74ccb7685664",
+      "quantizer_id": "e65eaddede494da5bf68cebbae600a3f7eec3d030669e8a2f5cd9cf81391a80c",
+      "transform_id": "9a348b27e53873f8a3367e84f04b98956efbc1e522e984622534b359311c2a3a",
+      "transform_seed": 16041300167791825968
+    },
+    {
+      "pq_codebook_id": "aa497fdd6075e1e3b0a025a554328dbec5a4fc150eaf21a7a6f3594cbf304f6c",
+      "quantizer_id": "d0eb5e5af3ac6fa7e06fa60f53c169faba3242556faf82b9d1c4243dc3c0dcd4",
+      "transform_id": "9ae0219e983315518b5ce79f83ff6dd800b884a6254b0550c7126034d2a43422",
+      "transform_seed": 8890163475939497033
+    },
+    {
+      "pq_codebook_id": "5e6e5c57a5d967cdb3813e54f13ca5a1e625dc27eeecbc451f245b83c785a075",
+      "quantizer_id": "385a3c4a76d039ffd74307fa97bd253b8a370b51c2538470aa438b95a2a9c9c1",
+      "transform_id": "5348361f487dc021f76cfa1dcf32879457f22f842e0d5fff016de88f23746f74",
+      "transform_seed": 17829593889691404117
+    }
+  ],
+  "timestamp": "2026-08-06T20:05:49Z",
   "transform_seed_count": 64,
   "transform_seeds": [
     15403722393794147701,
