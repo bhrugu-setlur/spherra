@@ -144,7 +144,12 @@ fn q24_scale_selection_snapshot_is_reproducible_and_i64_safe() {
     let metadata = scorer.metadata();
     assert!(maximum_primary_lookup_entry <= metadata.maximum_absolute_table_entry());
     assert!(maximum_residual_lookup_entry <= metadata.maximum_absolute_table_entry());
-    assert!(metadata.worst_case_refined_sum() <= i64::MAX);
+    assert_eq!(
+        metadata
+            .maximum_absolute_table_entry()
+            .checked_mul(metadata.refined_terms() as i64),
+        Some(metadata.worst_case_refined_sum()),
+    );
 
     assert_eq!(
         render_artifact(
