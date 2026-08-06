@@ -1,0 +1,225 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bhrugusetlur-art/spherra/docs/benchmarks/codec-format-baseline.schema.json",
+  "title": "Spherra codec/format baseline measurement",
+  "description": "One JSON array entry per measured candidate budget. Every identity, corpus, byte-accounting, and bound-soundness field is required: a result that omits one is not admissible evidence.",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "$ref": "#/$defs/measurement"
+  },
+  "$defs": {
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "timestamp",
+        "git_commit",
+        "dirty_worktree",
+        "os",
+        "architecture",
+        "cpu",
+        "physical_memory_bytes",
+        "rustc",
+        "cargo_profile",
+        "cache_state",
+        "durability_mode",
+        "command",
+        "seed",
+        "corpus_name",
+        "corpus_hash",
+        "dimension",
+        "vector_count",
+        "query_count",
+        "transform_id",
+        "codec_id",
+        "scorer_version",
+        "quantizer_id",
+        "pq_codebook_id",
+        "layout_id",
+        "logical_primary_bytes_per_vector",
+        "physical_primary_bytes",
+        "tail_padding_bytes",
+        "logical_residual_bytes_per_vector",
+        "header_bytes",
+        "recall_at_10",
+        "recall_at_100",
+        "candidate_budget",
+        "primary_scan_vectors_per_second",
+        "residual_reranks_per_second",
+        "primary_bound_violation_count",
+        "refined_bound_violation_count",
+        "primary_bound_width_percentiles",
+        "refined_bound_width_percentiles"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "RFC 3339 UTC instant at which the measurement was written."
+        },
+        "git_commit": {
+          "type": "string",
+          "description": "Full commit hash of the measured worktree, or \"unknown\" when it cannot be resolved."
+        },
+        "dirty_worktree": {
+          "type": "boolean"
+        },
+        "os": {
+          "type": "string"
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "physical_memory_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rustc": {
+          "type": "string"
+        },
+        "cargo_profile": {
+          "type": "string"
+        },
+        "cache_state": {
+          "type": "string",
+          "enum": ["cold", "warm", "hot"]
+        },
+        "durability_mode": {
+          "type": "string",
+          "description": "M1 emits \"not-applicable\"; later storage milestones replace it with the actual fsync mode."
+        },
+        "command": {
+          "type": "string"
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "corpus_name": {
+          "type": "string"
+        },
+        "corpus_hash": {
+          "type": "string",
+          "description": "Lowercase hex BLAKE3 over the canonical little-endian FP32 corpus bytes."
+        },
+        "dimension": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "vector_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "query_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "transform_id": {
+          "type": "string"
+        },
+        "codec_id": {
+          "type": "string"
+        },
+        "scorer_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "quantizer_id": {
+          "type": "string"
+        },
+        "pq_codebook_id": {
+          "type": "string"
+        },
+        "layout_id": {
+          "type": "string"
+        },
+        "logical_primary_bytes_per_vector": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "physical_primary_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tail_padding_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "logical_residual_bytes_per_vector": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "header_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Primary segment header plus its checked section directory."
+        },
+        "recall_at_10": {
+          "type": "number",
+          "minimum": 0
+        },
+        "recall_at_100": {
+          "type": "number",
+          "minimum": 0
+        },
+        "candidate_budget": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "primary_scan_vectors_per_second": {
+          "type": "number",
+          "minimum": 0
+        },
+        "residual_reranks_per_second": {
+          "type": "number",
+          "minimum": 0
+        },
+        "primary_bound_violation_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "refined_bound_violation_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "primary_bound_width_percentiles": {
+          "$ref": "#/$defs/percentiles"
+        },
+        "refined_bound_width_percentiles": {
+          "$ref": "#/$defs/percentiles"
+        }
+      }
+    },
+    "percentiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p50", "p90", "p99", "max"],
+      "properties": {
+        "p50": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p90": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p99": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

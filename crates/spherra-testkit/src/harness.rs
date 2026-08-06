@@ -1,0 +1,583 @@
+//! The measured codec/format path: train, encode, scan, rerank, and verify.
+//!
+//! Two rules shape this module.
+//!
+//! First, **training never sees the rows being measured.** The quantizer and
+//! the PQ codebook are trained on the disjoint calibration split, so a recall
+//! number here is not the codec grading its own homework.
+//!
+//! Second, **every score on the measured path is certified.** Scores come from
+//! [`BlockCertificate`], not from the raw scorer, and every primary and refined
+//! score is checked against the FP64 original-space truth its bounds claim to
+//! enclose. A violation is counted and surfaced; the caller exits nonzero
+//! rather than publishing a result that quietly failed its own soundness
+//! property.
+
+use std::sync::LazyLock;
+use std::time::Instant;
+use std::{fmt, ops::Range};
+
+use spherra_codec::{
+    CertificateBlockId, CertificateError, CertificateRow, DirectCode, ExhaustiveBlock,
+    FixedPointScorer, Pq96Code, Pq96Codebook, PreparedQuery, PrimaryCodes, PrimaryScore,
+    QuantizerTable, ResidualCodes, ScorerError, TiledSoa32, TransformPlan, TransformedDirection,
+    build_exhaustive_certificate, normalize_fp64, rerank_candidates, transform,
+};
+use spherra_domain::{ChunkId, DIMENSION, DocumentId, DomainError, PutSeq, ValidatedVector};
+use spherra_format::{
+    DIRECTORY_ENTRY_LEN, FormatError, HEADER_LEN, LayoutId, PrimarySegment, RowEntry,
+    SegmentHeader, SegmentIdentity, StoredErrorCertificate, encode_primary_segment,
+};
+
+use crate::corpus::CorpusSplits;
+use crate::exact::{ExactOracle, Neighbor, recall_at, sort_by_score_then_row};
+use crate::results::PercentileSummary;
+
+/// The provisional M1 representation identity.
+///
+/// `codec_id` owns representation while `scorer_version` owns comparison scale,
+/// so this hash covers exactly the representation choices a stored byte depends
+/// on. It is provisional: the direct-int4 tables, the PQ codebook shape, and the
+/// layout are all still benchmark-selected, and a change to any of them must
+/// change this identity.
+pub static M1_CODEC_ID: LazyLock<[u8; 32]> = LazyLock::new(|| {
+    let mut hasher = blake3::Hasher::new();
+    hasher.update(b"spherra.codec.id.v1");
+    hasher.update(&(DIMENSION as u32).to_le_bytes());
+    hasher.update(b"direct-int4-nibble-low-even-high-odd");
+    hasher.update(b"pq96x8-u8");
+    hasher.update(b"tiled-soa-32");
+    *hasher.finalize().as_bytes()
+});
+
+pub fn codec_id_hex() -> String {
+    hex(&*M1_CODEC_ID)
+}
+
+pub fn hex(bytes: &[u8]) -> String {
+    bytes.iter().fold(String::new(), |mut text, byte| {
+        use fmt::Write;
+        let _ = write!(text, "{byte:02x}");
+        text
+    })
+}
+
+/// A resident primary-code source over the measured `TILED_SOA_32` block.
+///
+/// The Task 5 primary capability identifies rows; the certified fixed-point
+/// comparison belongs to the scorer. Reading the code out of the layout is
+/// still the point: a row the layout cannot produce must not reach a rerank.
+struct ResidentPrimary<'a> {
+    layout: &'a TiledSoa32,
+}
+
+impl PrimaryCodes for ResidentPrimary<'_> {
+    fn scan_primary(
+        &self,
+        rows: Range<u32>,
+        _query: &PreparedQuery,
+        out: &mut [PrimaryScore],
+    ) -> Result<usize, spherra_codec::CodecError> {
+        let mut written = 0;
+        for row in rows {
+            if written == out.len() || self.layout.code_at(row as usize).is_none() {
+                break;
+            }
+            out[written] = PrimaryScore::for_row(row);
+            written += 1;
+        }
+        Ok(written)
+    }
+}
+
+/// A candidate-only residual source. It is handed to `rerank_candidates` and
+/// nowhere else, which is what keeps residual rows off the primary scan path.
+struct CandidateResiduals<'a> {
+    codes: &'a [Pq96Code],
+}
+
+impl ResidualCodes for CandidateResiduals<'_> {
+    fn load_residual(&self, row: u32) -> Result<Pq96Code, spherra_codec::CodecError> {
+        self.codes
+            .get(row as usize)
+            .copied()
+            .ok_or(spherra_codec::CodecError::RowOverflow { row })
+    }
+}
+
+/// One prepared, encoded, and certified corpus, ready to be measured at any
+/// candidate budget.
+pub struct CodecFormatRun {
+    splits: CorpusSplits,
+    plan: TransformPlan,
+    quantizer: QuantizerTable,
+    codebook: Pq96Codebook,
+    scorer: FixedPointScorer,
+    primary_codes: Vec<DirectCode>,
+    residual_codes: Vec<Pq96Code>,
+    layout: TiledSoa32,
+    oracle: ExactOracle,
+    header_bytes: u64,
+}
+
+/// What one candidate budget produced, before it is dressed as a result record.
+#[derive(Clone, Debug, PartialEq)]
+pub struct BudgetOutcome {
+    pub candidate_budget: u64,
+    pub recall_at_10: f64,
+    pub recall_at_100: f64,
+    pub primary_scan_vectors_per_second: f64,
+    pub residual_reranks_per_second: f64,
+    pub primary_bound_violation_count: u64,
+    pub refined_bound_violation_count: u64,
+    pub primary_bound_width_percentiles: PercentileSummary,
+    pub refined_bound_width_percentiles: PercentileSummary,
+}
+
+impl CodecFormatRun {
+    /// Trains on the calibration split, encodes the indexed rows, and computes
+    /// the exhaustive certificate for the whole block.
+    pub fn prepare(splits: CorpusSplits, seed: u64) -> Result<Self, HarnessError> {
+        let plan = TransformPlan::from_seed(seed);
+
+        let calibration: Vec<TransformedDirection> = splits
+            .calibration()
+            .iter()
+            .map(|row| transform_row(&plan, row))
+            .collect::<Result<_, _>>()?;
+        if calibration.is_empty() {
+            return Err(HarnessError::EmptyCalibration);
+        }
+
+        let quantizer = QuantizerTable::train(
+            &calibration
+                .iter()
+                .map(|direction| *direction.as_array())
+                .collect::<Vec<_>>(),
+        )
+        .map_err(|error| HarnessError::QuantizerTraining(error.to_string()))?;
+
+        let calibration_residuals: Vec<[f32; DIMENSION]> = calibration
+            .iter()
+            .map(|direction| residual_of(&quantizer, direction))
+            .collect();
+        let codebook = Pq96Codebook::train(&calibration_residuals, seed)
+            .map_err(|error| HarnessError::CodebookTraining(error.to_string()))?;
+
+        let mut primary_codes = Vec::with_capacity(splits.indexed().len());
+        let mut residual_codes = Vec::with_capacity(splits.indexed().len());
+        for row in splits.indexed() {
+            let transformed = transform_row(&plan, row)?;
+            let primary = quantizer.encode(&transformed);
+            let residual = residual_of(&quantizer, &transformed);
+            let residual = codebook
+                .encode(&residual)
+                .map_err(|error| HarnessError::ResidualEncode(error.to_string()))?;
+            primary_codes.push(primary);
+            residual_codes.push(residual);
+        }
+
+        let layout = TiledSoa32::from_codes(&primary_codes);
+        let oracle = ExactOracle::new(splits.indexed())?;
+        let scorer = FixedPointScorer::new();
+        let header_bytes = measure_header_bytes(&plan, &quantizer, &codebook, &primary_codes)?;
+
+        Ok(Self {
+            splits,
+            plan,
+            quantizer,
+            codebook,
+            scorer,
+            primary_codes,
+            residual_codes,
+            layout,
+            oracle,
+            header_bytes,
+        })
+    }
+
+    pub fn splits(&self) -> &CorpusSplits {
+        &self.splits
+    }
+
+    pub fn transform_id(&self) -> String {
+        hex(self.plan.identity())
+    }
+
+    pub fn quantizer_id(&self) -> String {
+        hex(self.quantizer.identity())
+    }
+
+    pub fn pq_codebook_id(&self) -> String {
+        hex(self.codebook.codebook_id())
+    }
+
+    pub fn scorer_version(&self) -> u32 {
+        self.scorer.metadata().scorer_version()
+    }
+
+    pub const fn header_bytes(&self) -> u64 {
+        self.header_bytes
+    }
+
+    pub fn logical_primary_bytes(&self) -> u64 {
+        self.layout.logical_direction_bytes() as u64
+    }
+
+    pub fn physical_primary_bytes(&self) -> u64 {
+        self.layout.physical_direction_bytes() as u64
+    }
+
+    pub fn tail_padding_bytes(&self) -> u64 {
+        self.layout.padding_direction_bytes() as u64
+    }
+
+    /// Scans every query once against the whole block, then reranks at each
+    /// requested budget.
+    ///
+    /// The primary scan does not depend on the budget, so it is measured once
+    /// and reported identically for each entry; only the rerank stage is
+    /// re-run per budget.
+    pub fn measure(&self, budgets: &[u64]) -> Result<Vec<BudgetOutcome>, HarnessError> {
+        if budgets.is_empty() {
+            return Err(HarnessError::NoBudgets);
+        }
+        let row_count = u32::try_from(self.primary_codes.len())
+            .map_err(|_| HarnessError::BlockTooLarge(self.primary_codes.len()))?;
+
+        let block = ExhaustiveBlock::from_rows(
+            CertificateBlockId::from_bytes(*M1_CODEC_ID),
+            row_count,
+            self.splits
+                .indexed()
+                .iter()
+                .zip(&self.primary_codes)
+                .zip(&self.residual_codes)
+                .enumerate()
+                .map(|(row, ((original, primary), residual))| {
+                    CertificateRow::new(row as u32, original, primary, residual)
+                }),
+        )?;
+        let certificate = build_exhaustive_certificate(
+            &self.scorer,
+            &self.plan,
+            &self.quantizer,
+            &self.codebook,
+            &block,
+        )?;
+
+        let mut primary_widths = Vec::new();
+        let mut primary_violations = 0_u64;
+        let mut scanned_rows = 0_u64;
+        let mut scan_seconds = 0.0_f64;
+
+        // Per query: the certified primary ranking, retained so that every
+        // budget reranks the same scan rather than re-scanning.
+        let mut rankings: Vec<Vec<Neighbor>> = Vec::with_capacity(self.splits.queries().len());
+        let mut prepared_queries = Vec::with_capacity(self.splits.queries().len());
+        let mut normalized_queries = Vec::with_capacity(self.splits.queries().len());
+        let mut exact_neighbors = Vec::with_capacity(self.splits.queries().len());
+
+        for query in self.splits.queries() {
+            let prepared =
+                self.scorer
+                    .prepare_query(&self.plan, query, &self.quantizer, &self.codebook)?;
+            let normalized_query = normalize_fp64(query)?;
+            let exact = self.oracle.top_k_normalized(&normalized_query, 100);
+
+            let mut ranked = Vec::with_capacity(row_count as usize);
+            let started = Instant::now();
+            for row in 0..row_count {
+                let candidate = block.candidate(row)?;
+                let score = certificate.score_primary(&self.scorer, &prepared, &candidate)?;
+                ranked.push(Neighbor {
+                    row,
+                    score: score.as_f64(),
+                });
+                let bounds = certificate.primary_bounds(score)?;
+                let truth = self
+                    .oracle
+                    .true_score(&normalized_query, row as usize)
+                    .ok_or(HarnessError::MissingOracleRow { row })?;
+                if truth < bounds.lower || truth > bounds.upper {
+                    primary_violations += 1;
+                }
+                primary_widths.push(bounds.upper - bounds.lower);
+            }
+            scan_seconds += started.elapsed().as_secs_f64();
+            scanned_rows += u64::from(row_count);
+
+            sort_by_score_then_row(&mut ranked);
+            rankings.push(ranked);
+            prepared_queries.push(prepared);
+            normalized_queries.push(normalized_query);
+            exact_neighbors.push(exact);
+        }
+
+        let primary_scan_vectors_per_second = throughput(scanned_rows, scan_seconds);
+        let primary_bound_width_percentiles = PercentileSummary::from_samples(&mut primary_widths);
+
+        let mut outcomes = Vec::with_capacity(budgets.len());
+        for budget in budgets.iter().copied() {
+            let budget_rows = usize::try_from(budget)
+                .unwrap_or(usize::MAX)
+                .min(row_count as usize);
+            if budget_rows == 0 {
+                return Err(HarnessError::ZeroBudget);
+            }
+
+            let mut refined_widths = Vec::new();
+            let mut refined_violations = 0_u64;
+            let mut reranked = 0_u64;
+            let mut rerank_seconds = 0.0_f64;
+            let mut recall_10 = 0.0_f64;
+            let mut recall_100 = 0.0_f64;
+
+            for (index, ranking) in rankings.iter().enumerate() {
+                let prepared = &prepared_queries[index];
+                let normalized_query = &normalized_queries[index];
+                let candidate_rows: Vec<u32> =
+                    ranking.iter().take(budget_rows).map(|n| n.row).collect();
+
+                let primary_source = ResidentPrimary {
+                    layout: &self.layout,
+                };
+                let residual_source = CandidateResiduals {
+                    codes: &self.residual_codes,
+                };
+                let rerank_query = PreparedQuery::from_transformed(*prepared.transformed())
+                    .map_err(|error| HarnessError::ResidualEncode(error.to_string()))?;
+                let mut prepared_candidates =
+                    vec![
+                        self.codebook
+                            .prepare_candidate(PrimaryScore::for_row(0), self.residual_codes[0]);
+                        candidate_rows.len()
+                    ];
+
+                let started = Instant::now();
+                let written = rerank_candidates(
+                    &primary_source,
+                    &residual_source,
+                    &self.codebook,
+                    &rerank_query,
+                    &candidate_rows,
+                    &mut prepared_candidates,
+                )
+                .map_err(|error| HarnessError::Rerank(error.to_string()))?;
+
+                let mut refined: Vec<Neighbor> = Vec::with_capacity(written);
+                for prepared_candidate in prepared_candidates.iter().take(written) {
+                    let candidate = block.candidate(prepared_candidate.row())?;
+                    let score = certificate.score_refined(
+                        &self.scorer,
+                        prepared,
+                        &candidate,
+                        prepared_candidate,
+                    )?;
+                    refined.push(Neighbor {
+                        row: prepared_candidate.row(),
+                        score: score.as_f64(),
+                    });
+                    let bounds = certificate.refined_bounds(score)?;
+                    let truth = self
+                        .oracle
+                        .true_score(normalized_query, prepared_candidate.row() as usize)
+                        .ok_or(HarnessError::MissingOracleRow {
+                            row: prepared_candidate.row(),
+                        })?;
+                    if truth < bounds.lower || truth > bounds.upper {
+                        refined_violations += 1;
+                    }
+                    refined_widths.push(bounds.upper - bounds.lower);
+                }
+                rerank_seconds += started.elapsed().as_secs_f64();
+                reranked += written as u64;
+
+                sort_by_score_then_row(&mut refined);
+                recall_10 += recall_at(&exact_neighbors[index], &refined, 10);
+                recall_100 += recall_at(&exact_neighbors[index], &refined, 100);
+            }
+
+            let queries = rankings.len() as f64;
+            outcomes.push(BudgetOutcome {
+                candidate_budget: budget,
+                recall_at_10: recall_10 / queries,
+                recall_at_100: recall_100 / queries,
+                primary_scan_vectors_per_second,
+                residual_reranks_per_second: throughput(reranked, rerank_seconds),
+                primary_bound_violation_count: primary_violations,
+                refined_bound_violation_count: refined_violations,
+                primary_bound_width_percentiles,
+                refined_bound_width_percentiles: PercentileSummary::from_samples(
+                    &mut refined_widths,
+                ),
+            });
+        }
+
+        Ok(outcomes)
+    }
+}
+
+fn throughput(items: u64, seconds: f64) -> f64 {
+    if seconds > 0.0 {
+        items as f64 / seconds
+    } else {
+        0.0
+    }
+}
+
+/// Normalizes in FP64, converts once into the FP32 kernel input, and transforms
+/// through the only public entry point — the same path serving would take.
+fn transform_row(
+    plan: &TransformPlan,
+    row: &[f32; DIMENSION],
+) -> Result<TransformedDirection, HarnessError> {
+    let normalized = normalize_fp64(row)?;
+    let kernel_input: Vec<f32> = normalized.iter().map(|value| *value as f32).collect();
+    let validated = ValidatedVector::new(kernel_input)?;
+    let direction = validated
+        .normalized_direction()
+        .ok_or(HarnessError::UnreliableDirection)?;
+    Ok(transform(plan, direction))
+}
+
+fn residual_of(quantizer: &QuantizerTable, direction: &TransformedDirection) -> [f32; DIMENSION] {
+    let reconstruction = quantizer.decode(&quantizer.encode(direction));
+    let values = direction.as_array();
+    std::array::from_fn(|coordinate| values[coordinate] - reconstruction[coordinate])
+}
+
+/// Encodes a real primary segment and reads back what the durable header and
+/// its checked section directory actually cost.
+fn measure_header_bytes(
+    plan: &TransformPlan,
+    quantizer: &QuantizerTable,
+    codebook: &Pq96Codebook,
+    primary_codes: &[DirectCode],
+) -> Result<u64, HarnessError> {
+    let identity = SegmentIdentity {
+        collection_id: [0; 16],
+        segment_id: [0; 16],
+        codec_id: *M1_CODEC_ID,
+        scorer_version: FixedPointScorer::new().metadata().scorer_version(),
+        transform_id: *plan.identity(),
+        quantizer_id: *quantizer.identity(),
+        pq_codebook_id: *codebook.codebook_id(),
+        layout: LayoutId::TiledSoa32,
+    };
+    let zero_certificate = StoredErrorCertificate {
+        max_reconstruction_l2_error: 0.0,
+        eta_transform_dot: 0.0,
+        query_norm_upper: 0.0,
+        eta_serving_score: 0.0,
+        epsilon: 0.0,
+    };
+    let segment = PrimarySegment {
+        identity,
+        rows: (0..primary_codes.len())
+            .map(|row| {
+                Ok(RowEntry {
+                    chunk_id: ChunkId::from_u128(row as u128),
+                    document_id: DocumentId::from_u128(row as u128),
+                    put_seq: PutSeq::new(0, row as u64)?,
+                })
+            })
+            .collect::<Result<Vec<_>, DomainError>>()?,
+        radius_flags: vec![[0; 4]; primary_codes.len()],
+        primary_codes: primary_codes.iter().map(|code| *code.as_bytes()).collect(),
+        quantizer_table: quantizer.centers().to_vec(),
+        primary_certificate: zero_certificate,
+        refined_certificate: zero_certificate,
+    };
+
+    let bytes = encode_primary_segment(&segment)?;
+    let mut header = [0_u8; HEADER_LEN];
+    header.copy_from_slice(bytes.get(..HEADER_LEN).ok_or(HarnessError::ShortSegment)?);
+    let header = SegmentHeader::decode(&header)?;
+    Ok(HEADER_LEN as u64 + u64::from(header.section_count) * DIRECTORY_ENTRY_LEN as u64)
+}
+
+#[derive(Debug)]
+pub enum HarnessError {
+    EmptyCalibration,
+    NoBudgets,
+    ZeroBudget,
+    BlockTooLarge(usize),
+    ShortSegment,
+    UnreliableDirection,
+    MissingOracleRow { row: u32 },
+    QuantizerTraining(String),
+    CodebookTraining(String),
+    ResidualEncode(String),
+    Rerank(String),
+    Domain(DomainError),
+    Scorer(ScorerError),
+    Certificate(CertificateError),
+    Format(FormatError),
+}
+
+impl fmt::Display for HarnessError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::EmptyCalibration => {
+                write!(formatter, "the calibration split contains no rows")
+            }
+            Self::NoBudgets => write!(formatter, "at least one candidate budget is required"),
+            Self::ZeroBudget => write!(formatter, "a candidate budget of zero measures nothing"),
+            Self::BlockTooLarge(rows) => {
+                write!(
+                    formatter,
+                    "a block of {rows} rows exceeds the u32 row space"
+                )
+            }
+            Self::ShortSegment => write!(formatter, "the encoded segment is shorter than a header"),
+            Self::UnreliableDirection => write!(
+                formatter,
+                "a corpus row normalizes to an unreliable direction",
+            ),
+            Self::MissingOracleRow { row } => {
+                write!(formatter, "the exact oracle has no row {row}")
+            }
+            Self::QuantizerTraining(message) => {
+                write!(formatter, "quantizer training failed: {message}")
+            }
+            Self::CodebookTraining(message) => {
+                write!(formatter, "PQ codebook training failed: {message}")
+            }
+            Self::ResidualEncode(message) => {
+                write!(formatter, "residual encoding failed: {message}")
+            }
+            Self::Rerank(message) => write!(formatter, "candidate rerank failed: {message}"),
+            Self::Domain(error) => write!(formatter, "{error}"),
+            Self::Scorer(error) => write!(formatter, "{error}"),
+            Self::Certificate(error) => write!(formatter, "{error}"),
+            Self::Format(error) => write!(formatter, "{error}"),
+        }
+    }
+}
+
+impl std::error::Error for HarnessError {}
+
+impl From<DomainError> for HarnessError {
+    fn from(error: DomainError) -> Self {
+        Self::Domain(error)
+    }
+}
+
+impl From<ScorerError> for HarnessError {
+    fn from(error: ScorerError) -> Self {
+        Self::Scorer(error)
+    }
+}
+
+impl From<CertificateError> for HarnessError {
+    fn from(error: CertificateError) -> Self {
+        Self::Certificate(error)
+    }
+}
+
+impl From<FormatError> for HarnessError {
+    fn from(error: FormatError) -> Self {
+        Self::Format(error)
+    }
+}

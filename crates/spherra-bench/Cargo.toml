@@ -13,3 +13,4 @@ spherra-domain = { path = "../spherra-domain" }
 spherra-codec = { path = "../spherra-codec" }
 spherra-format = { path = "../spherra-format" }
 spherra-testkit = { path = "../spherra-testkit" }
+serde_json.workspace = true
