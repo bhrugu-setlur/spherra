@@ -49,3 +49,17 @@ uv run --python 3.12 --with numpy --with scipy \
 The experiment keeps queries at high precision and uses one shared latent projection for correlated calibration, corpus, and query samples. At equal 4 bits/component, direct and recursive codes were effectively tied on recall, cone behavior, and reconstruction. The combined result—similar quality but lower dependency and higher serving throughput—supports direct direction codes for the primary representation.
 
 The next implementation phase must replace these scalar kernels with production NEON/LUT kernels and run the real-corpus and residual-rerank gates in the approved design.
+
+## Re-verification during the M1 gate (2026-08-06)
+
+Both correctness commands above were re-run unchanged at commit `ada5705` on the
+target M1 Pro. The native suite printed `codec tests passed`; the Python suite
+reported `Ran 5 tests ... OK`. No source in this directory was modified.
+
+This re-run confirms the historical experiment still reproduces. It does **not**
+promote that experiment into production evidence: the throughput table above
+remains a comparative scalar prototype, and the recall table in the design
+specification remains synthetic. The residual-rerank and real-corpus gates named
+in the last paragraph are now measured by `spherra-bench`, and their recorded
+outcomes — including which R7 gates are still unmet — live in
+[`docs/benchmarks/README.md`](../../docs/benchmarks/README.md).

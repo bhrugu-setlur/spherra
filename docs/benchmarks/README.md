@@ -146,3 +146,88 @@ almost entirely slack — sound, but conservative.
   a result is not admissible as gate evidence.
 * Never claim performance, recall, crash safety, or compatibility without a
   fresh command that produced it.
+
+## Recorded results
+
+Committed under [`results/`](results/), all measured at commit `ada5705` with
+`dirty_worktree: false` on an Apple M1 Pro (32 GiB), `rustc 1.88.0 (6b00bc388
+2025-06-23)`, release profile, `--cache-state warm` (asserted, never enforced).
+
+| File | Command |
+| --- | --- |
+| `2026-08-06-codec-format-generated-correlated-768x20000.json` | `spherra-bench codec-format --corpus generated-correlated-768x20000 --queries 200 --seed 20260804 --candidate-budget 10,20,50,100,200 --layout tiled-soa-32` |
+| `2026-08-06-codec-format-beir-scifact-mpnet-768.json` | `spherra-bench codec-format --corpus corpora/scifact/scifact-mpnet-768.json --queries 200 --seed 20260804 --candidate-budget 10,20,50,100,200 --layout tiled-soa-32` |
+| `2026-08-06-certificate-soak-2000000.json` | `spherra-bench certify --trials 2000000 --seed 20260804 --transform-seeds 64` |
+
+The `command` field of the SciFact result is **sanitized**: the corpus was built
+into a scratch directory outside the repository, and its absolute path was
+replaced with the relative `corpora/scifact/scifact-mpnet-768.json`. No other
+field was altered. To reproduce, build the corpus anywhere and pass its own
+descriptor path.
+
+### The pinned SciFact corpus
+
+Built by [`tools/build_scifact_corpus.py`](../../tools/build_scifact_corpus.py),
+executed for the first time during this gate:
+
+```
+name                     beir-scifact-mpnet-768
+row_count                5183          (3688 indexed after the disjoint split)
+dimension                768
+byte_len                 15922176      (5183 x 768 x 4)
+blake3                   8a20ab21c26a201c42a7d491101f0391cc416b3b869cb61e768ac4e9ddefa4ff
+source_dataset_revision  mteb/scifact@cf10ab6856b15b0e670ef8ae5dae4e266c12d035
+embedding_model_revision sentence-transformers/all-mpnet-base-v2@e8c3b32edf5434bc2275fc9bab85f82640a19130
+normalization            l2-unit
+license                  CC BY-NC 2.0 (BEIR SciFact); model Apache-2.0
+```
+
+The corpus file itself is **not committed** — the descriptor and hashes are the
+reproducible artifact, and the BEIR license does not invite redistribution here.
+
+`corpus_hash` is `d164a143...` for `--queries 200`. Per the split rule, a
+different `--queries` changes the indexed split and therefore this hash on a
+file-backed corpus; it is not a property of the pinned file alone.
+
+### Measured recall
+
+Generated `correlated` (20,000 rows, 0 tail padding):
+
+| Budget | recall@10 | recall@100 |
+| ---: | ---: | ---: |
+| 10 | 0.8540 | 0.1000 |
+| 20 | 0.9330 | 0.2000 |
+| 50 | 0.9370 | 0.4995 |
+| 100 | 0.9370 | 0.8968 |
+| 200 | 0.9370 | 0.9552 |
+
+BEIR SciFact (3,688 indexed rows, 9,216 tail-padding bytes — a partial tail tile
+the generated corpus does not exercise):
+
+| Budget | recall@10 | recall@100 |
+| ---: | ---: | ---: |
+| 10 | 0.9425 | 0.1000 |
+| 20 | 0.9775 | 0.2000 |
+| 50 | 0.9775 | 0.5000 |
+| 100 | 0.9775 | 0.9582 |
+| 200 | 0.9775 | 0.9817 |
+
+Every entry in both files reports `primary_bound_violation_count: 0` and
+`refined_bound_violation_count: 0`.
+
+## R7 quality-gate scoring
+
+Scored against [design spec](../design/2026-08-04-polar-lsm-router-design.md)
+§11.1. **The R7 quality gate as a whole remains open.** One sub-gate has passing
+evidence at smoke scale; the rest are unmeasured.
+
+| §11.1 gate | Verdict | Basis |
+| --- | --- | --- |
+| Several real 768D corpora plus synthetic | **FAIL** | One real corpus only (SciFact, 3,688 indexed rows). The policy above requires several real corpora including one with >= 100,000 vectors; the largest measured is 27x short. |
+| Recall@10 >= 0.90 after residual rerank | **PASS (smoke scale only)** | 0.9775 SciFact and 0.9370 generated, at budget >= 20. At budget 10 SciFact is 0.9425 and generated is 0.8540, so the gate is budget-dependent. Truth is an exhaustive FP64 oracle, which is at least as strict as the spec's "exact FP32". |
+| Fast/approximate cone recall >= 0.95 | **INSUFFICIENT EVIDENCE** | No cone path exists in M1. PolarRouter, cells, and fanout are later milestones; nothing was measured. |
+| Filtered recall across selectivity bands | **INSUFFICIENT EVIDENCE** | No metadata filters exist in M1. Nothing was measured. |
+| Oversampling and validation inside memory budgets | **FAIL** | The harness holds an FP64 oracle of `rows x 768 x 8` bytes plus per-query lookup tables — roughly 350 MB at 20,000 rows and about 61 GB of oracle alone at the 10M target, against a 20 GiB RSS cap. The measurement path cannot reach target scale in its current form. |
+
+Consequently the primary/residual codec, transform rounds, layout, and candidate
+budget **are not frozen** by this milestone. They remain provisional.
