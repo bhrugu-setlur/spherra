@@ -62,8 +62,18 @@ thousand.
 Certified epsilon is **3.8x** the largest error actually observed over 200
 queries x 3,688 rows (0.2146 against 0.0562). On synthetic data it is 5.2x.
 
-This corrects a belief recorded on 2026-08-07 that roughly 99.999990% of the
-error budget was unused. That is not what the data shows. The bound is within a
+This corrects a belief recorded in the project guide caveat 3 and repeated on
+2026-08-07: that `maximum_normalized_primary_slack` of 0.99999990 showed
+roughly seven orders of magnitude of unused error budget.
+
+That reads the statistic backwards. `normalized_slack` is 1.0 when a trial had
+zero error and 0.0 when it consumed the whole budget, and the soak records the
+**maximum** over 2,000,000 trials. A maximum near 1.0 only says that at least
+one trial out of two million happened to have almost no error, which is
+expected and says nothing about tightness. The statistic that measures
+tightness is the **minimum** slack. This experiment supplies it: the worst
+observed trial consumed about 26% of the budget (slack ~0.74), not one ten
+millionth of it. The bound is within a
 small constant factor of the true worst case, which means:
 
 - Tightening cannot rescue this. Even a perfect bound — one exactly equal to
