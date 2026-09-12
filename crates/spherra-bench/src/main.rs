@@ -25,7 +25,7 @@ use spherra_codec::{
 };
 use spherra_domain::{DIMENSION, ValidatedVector};
 use spherra_testkit::corpus::CorpusDescriptor;
-use spherra_testkit::harness::{CodecFormatRun, codec_id_hex, hex};
+use spherra_testkit::harness::{CodecFormatRun, PruneOutcome, codec_id_hex, hex};
 use spherra_testkit::machine::{
     CacheState, DURABILITY_MODE_NOT_APPLICABLE, MachineProfile, SourceRevision,
     timestamp_rfc3339_utc,
@@ -57,6 +57,7 @@ fn run(arguments: &[String]) -> Result<(), BenchError> {
     match subcommand.as_str() {
         "codec-format" => codec_format(&options),
         "certify" => certify(&options),
+        "prune-rate" => prune_rate(&options),
         other => Err(BenchError::UnknownSubcommand(other.to_owned())),
     }
 }
@@ -184,6 +185,118 @@ fn codec_format(options: &Options) -> Result<(), BenchError> {
         output.display()
     );
     Ok(())
+}
+
+/// Measures what certified bounds alone can prove out of the top-k, with no
+/// candidate budget and no rerank. See
+/// `docs/experiments/2026-09-12-certified-prune-rate-preregistration.md` for
+/// the decision rule this feeds.
+fn prune_rate(options: &Options) -> Result<(), BenchError> {
+    let corpus = options.require("corpus")?;
+    let query_count: usize = options.require_parsed("queries")?;
+    let seed: u64 = options.require_parsed("seed")?;
+    let k: usize = options.require_parsed("k")?;
+    let output = PathBuf::from(options.require("output")?);
+
+    let descriptor = CorpusDescriptor::resolve(corpus).map_err(BenchError::corpus)?;
+    let splits = descriptor
+        .load(seed, query_count)
+        .map_err(BenchError::corpus)?;
+    let corpus_name = splits.name().to_owned();
+    let corpus_hash = splits.hash().to_owned();
+
+    let run = CodecFormatRun::prepare(splits, seed).map_err(BenchError::harness)?;
+    let outcome = run.measure_prune(k).map_err(BenchError::harness)?;
+
+    let profile = MachineProfile::capture();
+    let revision = SourceRevision::capture();
+    let document = serde_json::json!({
+        "timestamp": timestamp_rfc3339_utc(),
+        "git_commit": revision.commit,
+        "dirty_worktree": revision.dirty,
+        "cpu": profile.cpu,
+        "command": format!(
+            "spherra-bench prune-rate --corpus {corpus} --queries {query_count} \
+             --seed {seed} --k {k}"
+        ),
+        "seed": seed,
+        "corpus_name": corpus_name,
+        "corpus_hash": corpus_hash,
+        "transform_id": run.transform_id(),
+        "quantizer_id": run.quantizer_id(),
+        "pq_codebook_id": run.pq_codebook_id(),
+        "codec_id": codec_id_hex(),
+        "scorer_version": run.scorer_version(),
+        "outcome": &outcome,
+    });
+    write_output(&output, &document)?;
+    report(&outcome);
+
+    if outcome.soundness_failures > 0 {
+        return Err(BenchError::BoundViolations(outcome.soundness_failures));
+    }
+    Ok(())
+}
+
+fn report(outcome: &PruneOutcome) {
+    println!(
+        "corpus rows {}, queries {}, k {}",
+        outcome.row_count, outcome.query_count, outcome.k
+    );
+    println!(
+        "survivors   p50 {:.0}  p90 {:.0}  p99 {:.0}  max {:.0}",
+        outcome.survivors.p50, outcome.survivors.p90, outcome.survivors.p99, outcome.survivors.max
+    );
+    println!(
+        "prune rate  p50 {:.4}  p90 {:.4}  p99 {:.4}  max {:.4}",
+        outcome.prune_rate.p50,
+        outcome.prune_rate.p90,
+        outcome.prune_rate.p99,
+        outcome.prune_rate.max
+    );
+    println!(
+        "per-row     p50 {:.0}  p90 {:.0}  p99 {:.0}  max {:.0}   (prune p50 {:.4})",
+        outcome.per_row_survivors.p50,
+        outcome.per_row_survivors.p90,
+        outcome.per_row_survivors.p99,
+        outcome.per_row_survivors.max,
+        outcome.per_row_prune_rate.p50
+    );
+    println!(
+        "per-row epsilon  p50 {:.4e}  p90 {:.4e}  p99 {:.4e}  max {:.4e}",
+        outcome.per_row_epsilon.p50,
+        outcome.per_row_epsilon.p90,
+        outcome.per_row_epsilon.p99,
+        outcome.per_row_epsilon.max
+    );
+    println!("soundness failures {}", outcome.soundness_failures);
+    for (label, attribution) in [
+        ("primary", &outcome.primary_attribution),
+        ("refined", &outcome.refined_attribution),
+    ] {
+        let epsilon = attribution.epsilon;
+        println!(
+            "{label} epsilon {:.6e}  = transform {:.3e} ({:.4}%) + reconstruction {:.3e} ({:.4}%) \
+             + serving {:.3e} ({:.4}%)",
+            epsilon,
+            attribution.transform_dot_term,
+            100.0 * attribution.transform_dot_term / epsilon,
+            attribution.reconstruction_term,
+            100.0 * attribution.reconstruction_term / epsilon,
+            attribution.serving_term,
+            100.0 * attribution.serving_term / epsilon,
+        );
+    }
+    println!(
+        "observed |certified - truth|  p50 {:.3e}  p99 {:.3e}  max {:.3e}",
+        outcome.observed_primary_error.p50,
+        outcome.observed_primary_error.p99,
+        outcome.observed_primary_error.max
+    );
+    println!(
+        "tightness: certified epsilon is {:.1}x the largest observed error",
+        outcome.primary_attribution.epsilon / outcome.observed_primary_error.max.max(f64::MIN_POSITIVE)
+    );
 }
 
 /// The result schemas are part of the benchmark binary's behavior, so embed

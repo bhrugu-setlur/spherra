@@ -2,7 +2,7 @@
   "name": "beir-scifact-mpnet-768",
   "path": "corpora/scifact/scifact-mpnet-768.f32",
   "byte_len": 15922176,
-  "blake3": "8a20ab21c26a201c42a7d491101f0391cc416b3b869cb61e768ac4e9ddefa4ff",
+  "blake3": "b2e549ce3a605944e44c21fb93bd912a130ffbe1ba914ac70befddf6eaa0e254",
   "row_count": 5183,
   "dimension": 768,
   "normalization": "l2-unit",

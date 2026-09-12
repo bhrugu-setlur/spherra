@@ -15,7 +15,9 @@ pub mod results;
 
 pub use corpus::{CorpusDescriptor, CorpusError, CorpusSplits};
 pub use exact::{ExactOracle, Neighbor, recall_at};
-pub use harness::{CodecFormatRun, HarnessError, M1_CODEC_ID, codec_id_hex};
+pub use harness::{
+    CodecFormatRun, EpsilonAttribution, HarnessError, M1_CODEC_ID, PruneOutcome, codec_id_hex,
+};
 pub use machine::{CacheState, MachineProfile, SourceRevision};
 pub use results::{
     CertificateSoakResult, CodecFormatMeasurement, PercentileSummary, SCHEMA_VERSION,

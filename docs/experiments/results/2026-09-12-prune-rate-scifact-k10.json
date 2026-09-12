@@ -1,0 +1,73 @@
+{
+  "codec_id": "0ceb4208a53bf92938a513426e8a0528c429a9f91ca345ce9ad679df6114df73",
+  "command": "spherra-bench prune-rate --corpus corpora/scifact/scifact-mpnet-768.json --queries 200 --seed 7 --k 10",
+  "corpus_hash": "afc66e01da14096b7639f760237dbae6b1b53a4058d3e31a75ffd2c154d8b34c",
+  "corpus_name": "beir-scifact-mpnet-768",
+  "cpu": "Apple M1 Pro",
+  "dirty_worktree": true,
+  "git_commit": "e0a3290c5500aace7314c1b8c3486882e3e233e1",
+  "outcome": {
+    "k": 10,
+    "observed_primary_error": {
+      "max": 0.05620804101982746,
+      "p50": 0.0048788004654510275,
+      "p90": 0.012385662355783124,
+      "p99": 0.021233989346155974
+    },
+    "per_row_epsilon": {
+      "max": 0.2145746320130934,
+      "p50": 0.15600350084555184,
+      "p90": 0.17894612640996146,
+      "p99": 0.19947011193231975
+    },
+    "per_row_prune_rate": {
+      "max": 0.9915943600867679,
+      "p50": 0.7424078091106291,
+      "p90": 0.8888286334056399,
+      "p99": 0.9883405639913232
+    },
+    "per_row_survivors": {
+      "max": 3688.0,
+      "p50": 943.0,
+      "p90": 3425.0,
+      "p99": 3688.0
+    },
+    "primary_attribution": {
+      "epsilon": 0.21457463201309696,
+      "max_reconstruction_l2_error": 0.2144653520716804,
+      "query_norm_upper": 1.00001145038027,
+      "reconstruction_term": 0.21446780778151636,
+      "serving_term": 0.00008392333992972647,
+      "transform_dot_term": 0.00002290089165078333
+    },
+    "prune_rate": {
+      "max": 0.97912147505423,
+      "p50": 0.31344902386117135,
+      "p90": 0.6971258134490239,
+      "p99": 0.9571583514099783
+    },
+    "query_count": 200,
+    "refined_attribution": {
+      "epsilon": 0.10744232072917509,
+      "max_reconstruction_l2_error": 0.10733140648920955,
+      "query_norm_upper": 1.00001145038027,
+      "reconstruction_term": 0.10733263547462876,
+      "serving_term": 0.00008678436289549903,
+      "transform_dot_term": 0.00002290089165078333
+    },
+    "row_count": 3688,
+    "soundness_failures": 0,
+    "survivors": {
+      "max": 3688.0,
+      "p50": 2530.0,
+      "p90": 3688.0,
+      "p99": 3688.0
+    }
+  },
+  "pq_codebook_id": "2902cd19b6bc74f201275a3f59aa541f4bc35077990df292fb954a5ef5dbd53a",
+  "quantizer_id": "1980abb793f4df6d79baf4905b800420c376d8c8240669a780c48ae84c758fb7",
+  "scorer_version": 1,
+  "seed": 7,
+  "timestamp": "2026-09-12T14:37:12Z",
+  "transform_id": "84e9fac10523be248d8381320ba54fa783df2f5117270d9c896c31cab3a1418d"
+}

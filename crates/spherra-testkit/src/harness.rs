@@ -134,6 +134,70 @@ pub struct BudgetOutcome {
     pub refined_bound_width_percentiles: PercentileSummary,
 }
 
+/// The three terms an `epsilon` is built from, so a loose bound can be
+/// attributed rather than guessed at.
+///
+/// `epsilon = transform_dot_term + reconstruction_term + serving_term`, where
+/// `reconstruction_term = query_norm_upper * max_reconstruction_l2_error`.
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize)]
+pub struct EpsilonAttribution {
+    pub epsilon: f64,
+    pub transform_dot_term: f64,
+    pub reconstruction_term: f64,
+    pub serving_term: f64,
+    pub max_reconstruction_l2_error: f64,
+    pub query_norm_upper: f64,
+}
+
+impl EpsilonAttribution {
+    fn of(certificate: spherra_codec::ErrorCertificate) -> Self {
+        Self {
+            epsilon: certificate.epsilon(),
+            transform_dot_term: certificate.eta_transform_dot(),
+            reconstruction_term: certificate.query_norm_upper()
+                * certificate.max_reconstruction_l2_error(),
+            serving_term: certificate.eta_serving_score(),
+            max_reconstruction_l2_error: certificate.max_reconstruction_l2_error(),
+            query_norm_upper: certificate.query_norm_upper(),
+        }
+    }
+}
+
+/// What certified pruning achieved at one `k`.
+///
+/// A row is pruned when its certified upper bound falls below the k-th largest
+/// certified lower bound: no such row can be in the true top-k. `survivors` is
+/// what a certified search would still have to refine, and is the number that
+/// decides whether the bound is useful — a prune rate is only its complement.
+#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+pub struct PruneOutcome {
+    pub k: usize,
+    pub row_count: u64,
+    pub query_count: u64,
+    /// Fraction of rows pruned, one sample per query.
+    pub prune_rate: PercentileSummary,
+    /// Rows left to refine, one sample per query.
+    pub survivors: PercentileSummary,
+    /// Times a true top-k row was pruned. Any value above zero means the bound
+    /// is unsound, not merely loose, and the result must not be published.
+    pub soundness_failures: u64,
+    /// Observed `|certified score - FP64 truth|` over every row and query.
+    pub observed_primary_error: PercentileSummary,
+    pub primary_attribution: EpsilonAttribution,
+    pub refined_attribution: EpsilonAttribution,
+    /// The same measurement with one certificate per row instead of one per
+    /// block. This is the E3 "per-row certificates" lever, measured rather
+    /// than assumed: the block certificate uses the worst reconstruction error
+    /// in the block for every row in it, so per-row bounds are the obvious
+    /// first tightening.
+    pub per_row_survivors: PercentileSummary,
+    pub per_row_prune_rate: PercentileSummary,
+    /// The spread of per-row primary epsilons. If this is narrow, per-row
+    /// certificates cannot help, because the block maximum was already close
+    /// to the typical row.
+    pub per_row_epsilon: PercentileSummary,
+}
+
 impl CodecFormatRun {
     /// Trains on the calibration split, encodes the indexed rows, and computes
     /// the exhaustive certificate for the whole block.
@@ -230,6 +294,160 @@ impl CodecFormatRun {
 
     pub fn tail_padding_bytes(&self) -> u64 {
         self.layout.padding_direction_bytes() as u64
+    }
+
+    /// Measures how much of the corpus certified bounds can prove out of the
+    /// top-`k`, using the same scan the serving path already performs.
+    ///
+    /// This does not rerank and does not use a candidate budget: the point is
+    /// what the certificate alone can establish, before any heuristic is
+    /// applied.
+    pub fn measure_prune(&self, k: usize) -> Result<PruneOutcome, HarnessError> {
+        if k == 0 {
+            return Err(HarnessError::ZeroBudget);
+        }
+        let row_count = u32::try_from(self.primary_codes.len())
+            .map_err(|_| HarnessError::BlockTooLarge(self.primary_codes.len()))?;
+
+        let block = ExhaustiveBlock::from_rows(
+            CertificateBlockId::from_bytes(*M1_CODEC_ID),
+            row_count,
+            self.splits
+                .indexed()
+                .iter()
+                .zip(&self.primary_codes)
+                .zip(&self.residual_codes)
+                .enumerate()
+                .map(|(row, ((original, primary), residual))| {
+                    CertificateRow::new(row as u32, original, primary, residual)
+                }),
+        )?;
+        let certificate = build_exhaustive_certificate(
+            &self.scorer,
+            &self.plan,
+            &self.quantizer,
+            &self.codebook,
+            &block,
+        )?;
+
+        // One single-row block per row, so each row gets a certificate built
+        // from its own reconstruction error rather than the block maximum.
+        // Certificates do not depend on the query, so this is built once.
+        let mut row_blocks = Vec::with_capacity(row_count as usize);
+        for row in 0..row_count {
+            let index = row as usize;
+            row_blocks.push(ExhaustiveBlock::from_rows(
+                CertificateBlockId::from_bytes(*M1_CODEC_ID),
+                1,
+                std::iter::once(CertificateRow::new(
+                    0,
+                    &self.splits.indexed()[index],
+                    &self.primary_codes[index],
+                    &self.residual_codes[index],
+                )),
+            )?);
+        }
+        let row_certificates = row_blocks
+            .iter()
+            .map(|block| {
+                build_exhaustive_certificate(
+                    &self.scorer,
+                    &self.plan,
+                    &self.quantizer,
+                    &self.codebook,
+                    block,
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut row_epsilons: Vec<f64> = row_certificates
+            .iter()
+            .map(|certificate| certificate.primary().epsilon())
+            .collect();
+
+        let mut prune_rates = Vec::with_capacity(self.splits.queries().len());
+        let mut survivor_counts = Vec::with_capacity(self.splits.queries().len());
+        let mut per_row_prune_rates = Vec::with_capacity(self.splits.queries().len());
+        let mut per_row_survivor_counts = Vec::with_capacity(self.splits.queries().len());
+        let mut observed_errors = Vec::new();
+        let mut soundness_failures = 0_u64;
+
+        for query in self.splits.queries() {
+            let prepared =
+                self.scorer
+                    .prepare_query(&self.plan, query, &self.quantizer, &self.codebook)?;
+            let normalized_query = normalize_fp64(query)?;
+
+            let mut lowers = Vec::with_capacity(row_count as usize);
+            let mut uppers = Vec::with_capacity(row_count as usize);
+            let mut row_lowers = Vec::with_capacity(row_count as usize);
+            let mut row_uppers = Vec::with_capacity(row_count as usize);
+            for row in 0..row_count {
+                let candidate = block.candidate(row)?;
+                let score = certificate.score_primary(&self.scorer, &prepared, &candidate)?;
+                let estimate = score.as_f64();
+                let bounds = certificate.primary_bounds(score)?;
+                let truth = self
+                    .oracle
+                    .true_score(&normalized_query, row as usize)
+                    .ok_or(HarnessError::MissingOracleRow { row })?;
+                observed_errors.push((estimate - truth).abs());
+                lowers.push(bounds.lower);
+                uppers.push(bounds.upper);
+
+                let row_certificate = &row_certificates[row as usize];
+                let row_candidate = row_blocks[row as usize].candidate(0)?;
+                let row_score =
+                    row_certificate.score_primary(&self.scorer, &prepared, &row_candidate)?;
+                let row_bounds = row_certificate.primary_bounds(row_score)?;
+                row_lowers.push(row_bounds.lower);
+                row_uppers.push(row_bounds.upper);
+            }
+
+            // The k-th largest lower bound. Nothing certified below it can
+            // displace the k rows that are certified at or above it.
+            let mut sorted_lowers = lowers.clone();
+            sorted_lowers.sort_by(|left, right| right.total_cmp(left));
+            let threshold = sorted_lowers[(k - 1).min(sorted_lowers.len() - 1)];
+
+            let survivors = uppers
+                .iter()
+                .filter(|upper| **upper >= threshold)
+                .count();
+            survivor_counts.push(survivors as f64);
+            prune_rates.push((row_count as f64 - survivors as f64) / row_count as f64);
+
+            let mut sorted_row_lowers = row_lowers.clone();
+            sorted_row_lowers.sort_by(|left, right| right.total_cmp(left));
+            let row_threshold = sorted_row_lowers[(k - 1).min(sorted_row_lowers.len() - 1)];
+            let row_survivors = row_uppers
+                .iter()
+                .filter(|upper| **upper >= row_threshold)
+                .count();
+            per_row_survivor_counts.push(row_survivors as f64);
+            per_row_prune_rates
+                .push((row_count as f64 - row_survivors as f64) / row_count as f64);
+
+            for neighbor in self.oracle.top_k_normalized(&normalized_query, k) {
+                if uppers[neighbor.row as usize] < threshold {
+                    soundness_failures += 1;
+                }
+            }
+        }
+
+        Ok(PruneOutcome {
+            k,
+            row_count: u64::from(row_count),
+            query_count: self.splits.queries().len() as u64,
+            prune_rate: PercentileSummary::from_samples(&mut prune_rates),
+            survivors: PercentileSummary::from_samples(&mut survivor_counts),
+            soundness_failures,
+            observed_primary_error: PercentileSummary::from_samples(&mut observed_errors),
+            primary_attribution: EpsilonAttribution::of(certificate.primary()),
+            refined_attribution: EpsilonAttribution::of(certificate.refined()),
+            per_row_survivors: PercentileSummary::from_samples(&mut per_row_survivor_counts),
+            per_row_prune_rate: PercentileSummary::from_samples(&mut per_row_prune_rates),
+            per_row_epsilon: PercentileSummary::from_samples(&mut row_epsilons),
+        })
     }
 
     /// Scans every query once against the whole block, then reranks at each
