@@ -1,348 +1,594 @@
 # Spherra local index design
 
-Status: **draft for user approval**
+Status: **revision 4; awaiting user approval**
 Date: 2026-09-13
-Supersedes for local scope: the R7 distributed architecture and I4 implementation
-specification. Those documents stay in the repository as the record of the
-stopped database direction; they no longer describe what is being built.
+Scope: replaces, for local scope, the R7 distributed architecture
+(`docs/design/2026-08-04-polar-lsm-router-design.md`) and the I4
+implementation specification. Those documents remain as the record of the
+stopped database direction.
 
-## 1. Why this exists
+## 1. Purpose
 
-The 2026-09-12 certified prune-rate experiment failed its pre-registered rule
-([results](../../experiments/2026-09-12-certified-prune-rate-results.md)).
-Certified bounds cannot replace a candidate budget, and survivor counts grow
-linearly with corpus size. The distributed database direction is closed.
+Turn the existing 768-d codec and segment format into a usable local vector
+index library on one machine: build, open, search, and offline append, with
+honest per-hit error intervals and a measured speed target.
 
-What remains is sound and tested: a 768-d codec that stores each vector in 480
-bytes, a checked segment format, and error certificates. This design turns those
-into a usable local library.
+## 2. Evidence this design rests on
 
-## 2. Product
+- **Certified pruning failed** its pre-registered rule
+  (`docs/experiments/2026-09-12-certified-prune-rate-results.md`). SciFact k=10:
+  block certificates leave a median 2,530 of 3,688 rows; per-row certificates a
+  median 943, p90 3,425; survivors grow about linearly with N. Certificates are
+  therefore not used to select candidates.
+- **Refining more rows does not improve recall.** Measured 2026-09-13 with the
+  existing `spherra-bench codec-format`, seed 20260804, 200 queries:
 
-A Rust library that builds a compressed vector index on disk, opens it, searches
-it quickly, and can have rows appended offline.
+  | Corpus | Budget | recall@10 | recall@100 |
+  |---|---|---|---|
+  | SciFact, rebuilt bytes, 3,688 indexed rows | 200 / 1,000 / 3,688 (all) | 0.9745 | 0.9811 |
+  | generated-correlated 20k | 200 / 1,000 / 20,000 (all) | 0.9370 | 0.9552 |
 
-- 768 dimensions, cosine similarity (direction only).
-- Rows are identified by their `u32` position. The caller maps positions to its
-  own keys.
-- Every search hit carries a certified interval that contains the true
-  full-precision score.
+  Recall@10 already plateaus at budget 20 on both corpora. The limit is the
+  codec's refined score, not the budget.
+- **The rebuilt SciFact bytes differ from August's** (BLAKE3 `b2e549ce…` against
+  `8a20ab21…`), and recall@10 at budget 200 moved from 0.9775 to 0.9745. Quality
+  comparisons must use one archived set of bytes.
+- **Scalar throughput:** primary scan about 370,000–395,000 rows per second per
+  core, including per-row code reconstruction from tiles
+  (`crates/spherra-testkit/src/harness.rs`); PQ decode rerank about 160,000 per
+  second.
+- **Training input limits:** `QuantizerTable::train` needs at least one row;
+  `Pq96Codebook::train` needs at least 256 residual rows
+  (`pq96.rs` `validate_calibration_residuals`). The existing harness trains on
+  a calibration split of `min(4,096, rows / 4)` for file corpora — 1,295 rows for
+  SciFact — and 4,096 rows for generated corpora
+  (`crates/spherra-testkit/src/corpus.rs`). Training memory scales with the
+  training set: the harness holds the transformed rows, a quantizer-training
+  copy, and the residuals (`harness.rs` `CodecFormatRun::prepare`), each
+  `rows × 3,072` bytes, and `Pq96Codebook::train` takes the residuals as one
+  slice with per-row assignment and error vectors (`pq96.rs` `train_subquantizer`).
+- **Canonical values:** `QuantizerTable::train` canonicalizes zeros and takes
+  sorted quantiles, so trained centers are finite, never `-0.0`, and
+  non-decreasing per coordinate; its identity hashes raw bytes (`int4.rs`).
+  `Pq96Codebook` identity hashes `canonicalize_zero` bits (`pq96.rs`
+  `canonical_f32_bits`), so it cannot distinguish `-0.0` from `+0.0`.
+- **Code gaps:** tables can only be trained, not restored; the transform is built
+  only from a seed, and its identity hashes the seed, shape, and round seeds but
+  **not** the generated signs and permutations (`transform.rs`
+  `derive_identity`); `PrimaryFileReader::primary_code` reads a whole tile per
+  row; stored certificate decoding checks only finite and non-negative;
+  `ErrorCertificate` fields and its raw `bounds` are private; staging does not
+  sync or rename; `M1_CODEC_ID` is defined in `spherra-testkit`; there is no
+  search, ingest, or public crate.
+- **Unreliable directions:** `ValidatedVector` accepts a norm below `1e-12` and
+  reports it through `direction_unreliable()`
+  (`crates/spherra-domain/src/record.rs`).
+- **Existing equivalence:** `crates/spherra-codec/tests/scorer_contract.rs`
+  asserts `score_prepared_candidate(...).raw() == score_refined(...).raw()` on its
+  fixtures.
+- **Platform probes on this machine, 2026-09-13, Rust 1.88.0:** `File::sync_all`
+  succeeds on a file and on a directory handle on APFS; `File::lock` is unstable
+  on 1.88. `rustix` 1.1.4 is already in `Cargo.lock` and provides `flock`.
+- **Opening a segment** verifies the header, section directory, every CRC32C
+  block, and the whole-file BLAKE3 before any accessor exists
+  (`crates/spherra-format/src/reader.rs` `SegmentReaderCore::open`). Pairing
+  checks the two files of one segment against each other only.
 
-### Explicitly out of scope
+## 3. Product contract
 
-Deletes, updates, filters, metadata, caller-supplied IDs, concurrent append,
-append while searching, on-disk residual mode, certificate-based pruning, x86
-SIMD, memory mapping, HNSW, multiple segments, recall-drift detection, anything
-distributed.
+- 768 dimensions; cosine similarity on direction only.
+- Rows are identified by an assigned `RowId(u64)`, a dense ordinal starting at 0
+  in commit order. The caller keeps its own mapping. Maximum `2^48 - 1`.
+- A committed generation is immutable, contains at least one row, and is the
+  only thing a search sees.
+- Rows are added only through an offline builder that holds an exclusive lock;
+  no `Index` may be open on the same directory meanwhile, in any process that
+  uses this library.
+- Search returns `min(k, N)` hits ranked by an approximate score. **Results are
+  not the exact cosine top-k** and are never described as such.
+- Every hit carries an interval certified to contain its true full-precision
+  cosine score, under the trust boundary in section 7.
+- A row is rejected with its position, never silently dropped, if any component
+  is non-finite, its norm exceeds the finite FP16 maximum, or
+  `direction_unreliable()` is true.
 
-## 3. Public API
+### Non-goals
 
-One new crate, `spherra`, depending on `spherra-codec`, `spherra-format`, and
-`spherra-domain`.
+Deletes, updates, filters, metadata, caller-supplied IDs, concurrent writers,
+append while searching, certificate-based candidate selection, coarse routing
+(recorded alternative, Appendix A), memory mapping, x86 SIMD, GPU, networking,
+distributed operation.
+
+## 4. Public API
 
 ```rust
-pub struct BuildOptions {
+pub type Vector = [f32; 768];
+pub const MAX_TRAINING_ROWS: usize = 32_768;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct RowId(u64);            // getter `get()`; no public constructor
+
+pub struct CreateOptions {
     pub seed: u64,
-    pub calibration_rows: usize, // provisional default, see section 8
+    pub validation_rows: Option<usize>, // None = min(4,096, training.len() / 4)
 }
 
-pub struct Index { /* resident codes, tables, certificates */ }
+pub struct IndexBuilder { /* holds the exclusive lock */ }
+
+impl IndexBuilder {
+    /// Absent directory only (section 9). Trains and stages a model.
+    /// `training.len()` must be at most `MAX_TRAINING_ROWS`; the caller samples.
+    pub fn create(dir: &Path, training: &[Vector], options: CreateOptions) -> Result<Self, Error>;
+    /// Existing index only. Uses its stored model; never retrains.
+    pub fn append(dir: &Path) -> Result<Self, Error>;
+    /// Stages one row. Not durable until `commit` returns Ok.
+    pub fn push(&mut self, vector: &Vector) -> Result<RowId, Error>;
+    /// Publishes every staged row or none.
+    pub fn commit(self) -> Result<CommitReport, Error>;
+}
+
+pub struct Index { /* holds a shared lock for its lifetime */ }
 
 impl Index {
-    pub fn build(vectors: &[[f32; 768]], options: BuildOptions) -> Result<Index, Error>;
-    pub fn write(&self, directory: &Path) -> Result<(), Error>;
-    pub fn open(directory: &Path) -> Result<Index, Error>;
-    pub fn search(&self, query: &[f32; 768], k: usize) -> Result<Vec<Hit>, Error>;
-    pub fn len(&self) -> u32;
+    pub fn open(dir: &Path) -> Result<Self, Error>;
+    pub fn len(&self) -> u64;
+    pub fn generation(&self) -> u64;
+    pub fn segment_count(&self) -> u32;
+    pub fn search(&self, query: &Vector, options: SearchOptions) -> Result<SearchResult, Error>;
+    pub fn certificates(&self, segment: u32) -> Option<SegmentCertificates>;
 }
 
-pub fn append(directory: &Path, vectors: &[[f32; 768]]) -> Result<AppendReport, Error>;
-
-pub struct Hit { pub row: u32, pub score: f64, pub lower: f64, pub upper: f64 }
-
-pub struct AppendReport {
-    pub rows_added: u32,
-    pub epsilon_before: f64,
-    pub epsilon_after: f64,
-    pub drifted: bool,
+pub struct SearchOptions {
+    pub k: usize,
+    pub candidate_budget: Option<usize>,
 }
 ```
 
-`Index` is `Send + Sync`; any number of threads may search one index.
+Result types have private fields, read-only getters, and no public constructor:
 
-`build` holds its input in memory: 10M FP32 rows are about 30 GB, which does not
-fit on the development machine. A corpus that large is loaded by building from
-a first chunk and appending the rest in chunks.
+- `CommitReport`: `generation()`, `first_row()`, `rows_added()`, `drift()`,
+  `cleanup_complete()`.
+- `SearchResult`: `generation()`, `candidate_budget()`, `rows_scanned()`,
+  `rows_refined()`, `hits() -> &[Hit]`.
+- `Hit`: `row()`, `segment()`, `score()` (refined), `interval() -> (f64, f64)`.
+- `SegmentCertificates`: `first_row()`, `row_count()`, `primary()`, `refined()`,
+  each kind exposing its five terms as getters.
+- `DriftReport`: section 10.
 
-## 4. Search
+`Index` is `Send + Sync`.
 
-There is one path. Residual codes are resident, so every row is refined.
+`Error` variants: `NotFound` (no committed index), `AlreadyExists`, `IndexBusy`,
+`InvalidVector { position }`, `InvalidTraining`, `InvalidOptions`,
+`EmptyCommit`, `RowLimit`, `SegmentLimit`, `Corrupt`, `IdentityMismatch`,
+`CertificateInvalid`, `Unsupported`, `DescriptorLimit { required, available }`,
+`Io`, and `CommitOutcomeUnknown { generation }`.
 
-1. Validate the query with `ValidatedVector`. A non-finite component, a norm
-   above FP16 range, or a norm below the reliable-direction threshold is an error.
-2. `FixedPointScorer::prepare_query` builds both lookup tables once.
-3. Score every row with the fastest kernel from section 5 that is available on
-   this CPU. Every kernel returns the same `i64` score as
-   `FixedPointScorer::score_refined`, bit for bit. Rows are split into contiguous
-   whole-tile chunks across `std::thread::available_parallelism()` scoped
-   threads; each chunk keeps its own top-k; the chunks are merged.
-4. Order by score descending, then row ascending, so results are deterministic
-   for any thread count and any kernel.
-5. Each hit's interval is `score ± refined epsilon`, rounded outward.
+### Option rules
 
-The resident index keeps primary codes in the existing `TiledSoa32` layout and
-residual codes as one contiguous 96-byte-per-row buffer.
+- `CreateOptions`, checked first and before any allocation, lock, or directory
+  change: `training.len() > MAX_TRAINING_ROWS` is `InvalidTraining`. The library
+  does not sample; deterministic sampling is the caller's choice. Then the
+  validation set must have at least 1 row and the remaining
+  training set at least 256 rows; otherwise `InvalidTraining`. This covers an
+  explicit `validation_rows` too.
+- `SearchOptions`, checked in this order: `k == 0` is `InvalidOptions`; the
+  budget is the explicit value or `max(200, 2k)` computed with checked
+  arithmetic, and overflow is `InvalidOptions`; a budget below `k` is
+  `InvalidOptions`; only then is the budget clamped to `N`.
+- `commit` with no staged rows is `EmptyCommit` and publishes nothing.
 
-### Why no candidate budget
+## 5. Search
 
-The two-stage design assumed residuals live on SSD, where each refine is a disk
-read. Held in memory, refining a row costs 96 lookups against a 768-lookup scan,
-so refining everything costs 12.5% over a primary-only scan and removes the
-budget guess. At 10M rows the resident codes are 3.84 GB primary plus 0.96 GB
-residual, 4.8 GB total, inside the 20 GiB process cap.
+For one query:
 
-### Why no certificate pruning
+1. Validate the query with the row rules of section 3; prepare both Q24 lookup
+   tables once with `FixedPointScorer::prepare_query`.
+2. Split every segment's rows into whole-tile ranges and distribute them across a
+   bounded worker pool (default 6; benchmarked at 4, 6, and 8).
+3. Each worker scores its tiles' primary codes and keeps its best `B` rows,
+   ordered by raw `i64` primary score descending, then `RowId` ascending.
+4. Merge worker candidates into the global best `B`. With the same tie rule this
+   is identical to sorting every row's primary score.
+5. For each candidate, read its 96-byte residual code by positional read from its
+   segment's residual file, and compute the refined raw score as the cached
+   primary raw score plus the 96 residual lookup entries, with checked addition.
+   This is the same integer `score_refined` computes.
+6. Rank candidates by refined raw score descending, then `RowId` ascending; keep
+   `k`; attach intervals (section 7).
 
-With no separate primary stage there is nothing to prune before refinement.
-Measured against the stored block certificate, pruning would have skipped a
-median 31% of the refine work, which is about 4% of total query compute, and
-nothing at all for more than 10% of queries. It does not pay for the extra path.
+`RowId` of a scored row is its segment's manifest `first_row` plus its position
+in the segment. Search never reads stored row records.
 
-## 5. Speed
+Per section 2, budgets from 200 to all rows gave identical recall on both
+measured corpora. A larger budget is not guaranteed to improve recall. Residual
+codes are not held in memory. Memory per query is `O(workers × B)`.
 
-### Target, fixed before measuring
+## 6. Speed and memory
 
-On the Apple M1 Pro, using every core, at k=10:
+### Acceptance gates
 
-- p50 query latency **at most 1.0 s at 10M rows**, and
-- p50 query latency **at most 0.1 s at 1M rows**.
+Development machine, k=10, default budget, one query at a time, index open and
+warm, AC power:
 
-Speed work proceeds in stages. After each stage the target is measured, and
-**work stops at the first stage that meets it**. Later stages are not built.
+| Rows | p50 | p99 | Search process peak RSS |
+|---|---|---|---|
+| 1M | ≤ 150 ms | ≤ 300 ms | recorded |
+| 10M | ≤ 1.5 s | ≤ 3 s | ≤ 20 GiB |
 
-The M1 benchmark measured the scalar primary scan at about 395,000 rows per
-second per core, including per-row code unpacking. Unmodified refine-all
-projects to about 5 s per query at 10M rows. Meeting the target needs roughly
-5× more per-core speed on top of threads.
+Builder-owned memory — everything the builder allocates, excluding the caller's
+input vectors — is at most 2 GiB, for both `create` training and staging. It is
+bounded by construction:
 
-### Why faster kernels cannot change results
+- **Training** at `MAX_TRAINING_ROWS` = 32,768: each FP32 row matrix is
+  100.6 MiB; at most four exist at once (validation/training copies,
+  transformed rows, quantizer-training copy, residuals), plus PQ per-row vectors
+  of at most 26 bytes per row per subquantizer in training (`assignments`,
+  `squared_errors`, `reseeded_rows`, `selected`, `minimum_squared_errors`) —
+  under 0.08 GiB even if all 96 subquantizers ran at once. Total about 0.48 GiB.
+- **Staging:** at most one segment of originals (65,536 × 3,072 bytes =
+  0.19 GiB) plus its codes, the growing manifest, and the drift reservoir
+  (at most 0.75 MiB, section 10).
 
-Scores are sums of `i64` table entries. Integer addition gives the same answer
-whatever order or width it is done in, so a faster kernel either returns exactly
-the scalar score or is wrong — there is no rounding drift to hide in. Every
-kernel is tested for exact equality against `score_refined`. The certificates,
+Both are measured as a gate (section 11). A caller passing a 1M-row chunk also
+owns about 3.1 GB of input; that is reported separately and not counted.
+
+At about 395,000 rows per second per core, six ideal workers give about 0.42 s
+at 1M and 4.2 s at 10M, so the latency gates need roughly 2.8× more per-core
+speed. They are targets, not predictions.
+
+### Exactness rule
+
+Every accelerated kernel must return the same `i64` primary score as
+`FixedPointScorer::score_primary` for every row. Scores are integer sums, so a
+correct kernel matches exactly; there is no tolerance. The certificates,
 `codec_id`, and `scorer_version` do not change.
 
-### Stage 1: baseline
+### Stages
 
-Threaded search calling `score_refined` per row (plan Task 8). Measured.
+Work stops at the first stage that meets the latency gates; later stages are not
+built.
 
-### Stage 2: tile kernel, safe Rust
+1. **Reference.** Section 5 using checked `score_primary` per row from
+   tile-decoded codes. Measured.
+2. **Safe tile kernel.** Score a full or partial tile coordinate by coordinate
+   from the tile bytes into up to 32 accumulators, with no `DirectCode`
+   reconstruction and no per-row allocation. Addition is unchecked only after a
+   per-query range proof: with `Mp` the largest absolute primary entry recorded
+   by `LookupScaleMeasurement`, the kernel is admitted when `768 × Mp` computed in
+   `i128` is at most `i64::MAX`, which bounds every partial sum; otherwise the
+   checked reference runs. This kernel is the fallback on every CPU.
+3. **NEON primary kernel.** Admitted per query only when every primary lookup
+   entry lies in `[-2^31, 2^31)`, and only for full 32-row tiles. Each entry is
+   biased by `2^31` to `u32` and split into four bytes, giving four 16-entry byte
+   tables per coordinate. For each coordinate: load the 16 tile bytes; split low
+   nibbles (even lanes) and high nibbles (odd lanes); `vqtbl1q_u8` each byte table
+   for both halves; widen-add into per-row per-byte `u16` sums; flush those into
+   `u32` sums at most every 257 coordinates. A row's score is
+   `Σ_b (u64(sum_b) << 8b)` minus `768 × 2^31`, evaluated in `i64`.
 
-Score one 32-row tile at a time directly from the `TiledSoa32` bytes, coordinate
-by coordinate, into 32 running sums; then add the 96 residual lookups per row.
-This removes per-row `DirectCode` unpacking and keeps each coordinate's 16-entry
-table hot for all 32 rows.
+Residual scoring is 96 lookups for `B` rows per query and is not accelerated.
 
-It uses plain `i64` addition instead of `checked_accumulate`. The scorer already
-proves that 864 entries each at most `MAX_ABSOLUTE_TABLE_ENTRY` cannot overflow
-`i64`; a `debug_assert` keeps the check in test builds. This kernel is also the
-fallback on every CPU without the stage 3 kernel.
+If stage 3 misses the latency gates, stop and report measured results. Coarse
+routing (Appendix A) is then a user decision because it adds recall risk.
 
-### Stage 3: NEON primary kernel
+### Unsafe code
 
-The only unsafe code in the workspace, in one module, `spherra-simd/src/neon.rs`.
+Only stage 3 uses `unsafe`, confined to `crates/spherra-simd/src/neon.rs`,
+compiled only on `aarch64`, behind a safe length-checked interface taking plain
+byte tables and tile slices. Every other module keeps `deny(unsafe_code)`. If
+stage 2 meets the gates, no unsafe code is added. Locking uses `rustix`.
 
-NEON has no gather instruction, so a direct `i64` table lookup does not
-vectorize. It does have a fast 16-entry byte table lookup (`vqtbl1q_u8`), which
-matches one coordinate of a `TiledSoa32` tile: 16 bytes holding 32 nibbles, low
-nibbles for even rows and high nibbles for odd rows.
+## 7. Certificates and intervals
 
-Exact method:
+### Construction
 
-1. With FRACTIONAL_BITS = 24 and unit-length query and table values, every
-   primary entry lies far inside the signed 32-bit range. Each entry is biased by
-   2^31 into an unsigned 32-bit value and split into four bytes, giving four
-   16-entry byte tables per coordinate.
-2. For each coordinate: load the 16 tile bytes, split them into even-row and
-   odd-row nibble indices, look up each of the four byte tables for both halves,
-   and widen-add the results into per-row, per-byte `u16` sums.
-3. The `u16` sums are flushed into `u32` sums at most every 257 coordinates,
-   before 257 × 255 could overflow them.
-4. Each row's score is `Σ byte_sum[b] << 8b` minus 768 × 2^31, which equals the
-   scalar `i64` sum exactly.
+Each segment holds 1 to 65,536 rows and is one certificate block. Its primary
+and refined certificates are built with `build_exhaustive_certificate` while the
+segment's originals are in memory, and stored in the segment's primary file.
 
-`prepare_query` already records the largest absolute primary and residual table
-entries (`LookupScaleMeasurement`). If any primary entry falls outside the
-32-bit range, that query uses the stage 2 kernel. Partial tail tiles use the
-stage 2 kernel.
+### Trust layers
 
-`spherra-simd` sits below `spherra-codec` in the dependency order, so the kernel
-takes plain byte tables and slices. The codec builds the byte tables from its
-lookup tables and calls it.
+1. **Stored terms (untrusted).** `spherra-codec` defines `CertificateTerms`, five
+   plain `f64` values. `spherra` converts each `StoredErrorCertificate` into it;
+   the codec does not depend on the format crate.
+2. **Validated terms (arithmetically consistent, provenance unknown).**
+   `spherra_codec::validate_certificate_terms(terms, kind)` requires finite
+   non-negative values, `eta_transform_dot` and `query_norm_upper` equal to the
+   current scorer's, and a stored `epsilon` equal to its recomputation with the
+   codec's outward arithmetic. It returns `ValidatedTerms`, whose only numeric
+   operation is `arithmetic_interval(raw) -> ArithmeticInterval`, documented as
+   not a certificate: a caller who supplies invented terms gets an interval with
+   no guarantee.
+3. **Bound certificate (certified).** A type private to `spherra` binds
+   `ValidatedTerms` to the index generation, segment index, segment id, row
+   range, model hash, and score kind. Only `Index::open` creates one, after every
+   check in section 8 passes. Only search turns one into a `Hit` interval.
 
-Safety evidence, given that AddressSanitizer cannot run on this machine
-(project guide caveat): every load is from a slice whose length is checked before
-the loop, only full tiles reach the kernel, and exhaustive property tests compare
-it to the scalar path. The project guide currently states that the workspace has no
-unsafe code; that statement is corrected in the same change.
+### Intervals
 
-### Stage 4: NEON residual kernel, conditional
+For a hit: primary interval from the primary bound certificate on the primary raw
+score; refined interval from the refined bound certificate on the refined raw
+score; the reported interval is their intersection. An empty intersection is
+`CertificateInvalid`. Epsilons are never added across kinds or segments. The
+certified truth value and epsilon formula are those of I4 §6.5.
 
-Built only if, after stage 3, residual scoring is more than 25% of measured query
-time and the target is still unmet. Residual codes are byte indices into
-256-entry tables; the same byte-lane method applies using four 64-entry
-`vqtbl4q_u8` lookups per lane.
+### Trust boundary
 
-### Not done
+- The reconstruction-error term cannot be recomputed without the originals,
+  which are not stored. The library guarantees intervals for indexes it built
+  whose files are intact. Checksums and hashes do not prove that a deliberately
+  rewritten and re-hashed file reports an honest bound. There is no API that
+  accepts certificate terms back.
+- Files are verified when opened. The contract assumes index files are not
+  modified outside this library while an `Index` is open; residual reads during
+  search are not re-verified.
 
-x86 AVX2 (the development machine is ARM; other CPUs use the stage 2 kernel),
-memory mapping, and GPU.
-
-## 6. What a certificate means in this library
-
-Hit intervals come from the refined certificate stored in the primary file. On
-open, the library does not trust the stored `epsilon`: it recomputes it from the
-stored terms and requires the transform and query-norm terms to equal the
-current scorer's constants.
-
-The reconstruction term cannot be recomputed without the original vectors,
-which are not stored. It is trusted because the file passed its CRC checks, its
-whole-file BLAKE3, and every codec, transform, quantizer, and codebook identity
-check. A file that was deliberately edited and re-hashed could therefore report
-a false bound. This is stated in the README.
-
-The certificate is never used to claim that results are exact. Refined bounds
-are about 0.107 wide on SciFact, wider than the gaps between close neighbours.
-
-## 7. On-disk layout and crash safety
-
-An index is a directory:
+## 8. On-disk layout
 
 ```
 index/
-  CURRENT                    names the live segment id
-  <segment-id>.primary
-  <segment-id>.residual
+  LOCK                        permanent, never unlinked
+  CURRENT
+  model-<blake3>.bin
+  manifest-<blake3>.bin
+  <segment-id>.primary        segment format v1, unchanged
+  <segment-id>.residual       segment format v1, unchanged
+  *.tmp
 ```
 
-`write` and `append` write a new segment pair under a fresh segment id, sync
-both files, then replace `CURRENT` by write-temp, sync, rename, and directory
-sync. `open` reads `CURRENT` and pairs exactly those two files. A crash at any
-point before the rename leaves the previous index intact. Superseded pairs are
-removed after the rename succeeds; a crash during removal only leaves orphans,
-which `open` ignores.
+All integers little endian. Every container file begins with an 8-byte magic, a
+`u16` version, and a `u64` payload length, and ends with a BLAKE3 over all
+preceding bytes.
 
-## 8. Build
+- **CURRENT:** magic, generation `u64`, manifest BLAKE3, CRC32C over the
+  preceding bytes.
+- **Model:** transform generator version `u16`; seed `u64`; expanded-plan digest
+  (BLAKE3 over both rounds' signs and permutations); transform, quantizer, and
+  codebook identities; `codec_id`; `scorer_version`; layout; quantizer centers
+  and PQ centroids as FP32; validation drift baselines (section 10). Writers
+  store `+0.0` for any zero. Restoring rejects any non-finite value or `-0.0`,
+  and rejects quantizer centers that decrease within a coordinate, so restored
+  bytes are exactly the trained bytes and identities cannot collide on zero
+  signs.
+- **Manifest:** index id `[u8;16]`, chosen at `create`; generation `u64`;
+  previous manifest BLAKE3 (zero for generation 1); model BLAKE3; total rows
+  `u64`; segment count `u32`; per segment: segment id `[u8;16]`, first `RowId`
+  `u64`, row count `u32`, primary and residual file lengths `u64` and whole-file
+  BLAKE3.
+- **Segment headers:** `collection_id` is the index id; `segment_id` is the
+  manifest segment id.
+- **Segment row records** (v1 requires them) are written as `chunk_id = RowId`,
+  `document_id = 0`, `put_seq = PutSeq::new(0, RowId)`, and are
+  **non-authoritative**: `RowId` comes only from the manifest, and no read path
+  uses row records. Radius/flags: FP16 radius in bytes 0–1, zero flags.
+- **Limits:** 1 to 4,096 segments; 1 to 65,536 rows per segment; total rows at
+  most `2^48 - 1`.
 
-1. Validate every input row with `ValidatedVector`. A row without a reliable
-   direction is rejected with its position; it is not silently dropped.
-2. Choose calibration rows deterministically from the seed. The default size is
-   provisional and is set by measurement in the implementation plan.
-3. `TransformPlan::from_seed`, `QuantizerTable::train`, then
-   `Pq96Codebook::train` on the calibration residuals, as the harness does today.
-4. Encode every row.
-5. `build_exhaustive_certificate` over all rows while their originals are in
-   memory.
+### Open
 
-The FP16 radius from `ValidatedVector` is stored in the first two bytes of each
-row's radius/flags word, little endian; the flag bytes are zero. Search does not
-read it.
+1. Take the shared lock; `IndexBusy` if a builder holds it.
+2. No `CURRENT`: `NotFound`. Otherwise decode `CURRENT` and check its CRC.
+3. Read the manifest it names; require its BLAKE3, and require
+   `manifest.generation == CURRENT.generation`.
+4. Read the model the manifest names and require its BLAKE3. Require support,
+   independent of agreement between files: every container version, the
+   transform generator version, `codec_id`, `scorer_version`, and layout must
+   equal the values compiled into this library (`Unsupported` otherwise).
+   Rebuild the
+   transform from the seed; require the expanded-plan digest and identity to
+   match. Restore both tables through checked constructors; require their
+   identities to match.
+5. Check manifest semantics, all with checked arithmetic: segment count and each
+   row count within limits; segment ids unique; segment 0 starts at row 0; each
+   later segment starts exactly where the previous one ends; the sum of row counts
+   equals total rows; total rows within the limit.
+6. Descriptor check: an open `Index` holds one descriptor per segment (its
+   residual file) plus `LOCK`. Read the soft `RLIMIT_NOFILE` with `rustix`; if
+   `segment_count + 1 + 64` (64 reserved for the caller) exceeds it, return
+   `DescriptorLimit`. The library never changes the limit. At launchd's default
+   soft limit of 256 (processes started outside a shell), this admits 191
+   segments — 12.5M rows of full segments. Shells may set a higher limit; this
+   machine's shell reports 1,048,576 (probed 2026-09-13).
+7. For each entry: open both files by the names derived from its segment id;
+   require each file's length and whole-file BLAKE3 to equal the manifest;
+   require header `segment_id`, `collection_id`, and `row_count` to equal the
+   entry and the index id; require every representation identity to equal the
+   model; pair the files.
+8. Load primary codes tile by tile into owned memory and certificates, then
+   close the primary file before opening the next segment; keep only residual
+   files open for positional reads. `spherra-format` provides this as a
+   consuming `PairedSegmentReaders::into_residual` that drops the primary reader
+   and returns an opaque residual reader that keeps the pairing already
+   verified; it cannot be built from an unpaired file. Peak descriptors during open are
+   `segment_count + 2`.
+9. Validate both certificates of every segment (section 7) and bind them.
 
-## 9. Append
+Any failure is a structured error; no partial `Index` is returned.
 
-Append is offline. The caller must not have the index open for search in the
-same process while it runs.
+## 9. Directory states, commit, and recovery
 
-1. Open the current index.
-2. Validate and encode the new rows with the **existing** transform, quantizer,
-   and codebook. Nothing is retrained.
-3. Build a certificate over the new rows alone, while their originals exist.
-4. Combine it with the stored certificate:
-   - reconstruction error: the maximum of the two, which is sound because it is
-     a per-row maximum;
-   - serving error: recomputed from the maximum primary and residual
-     reconstruction norms over **all** rows, which are recomputable from the
-     stored codes. Taking the larger of the two stored serving terms is not
-     sound: the refined serving term depends jointly on both norms, and the
-     maxima can come from different subsets;
-   - epsilon: recomputed with outward rounding.
-5. Write a new segment pair and swap `CURRENT`.
+### States
 
-`drifted` is true when the refined epsilon after the append exceeds the one
-before by more than 10%. That catches new rows that reconstruct worse than
-anything already indexed, which widens every hit's interval. It does not detect
-a gradual loss of recall; the README says so. The 10% threshold is a starting
-value. When new data differs in kind — a different embedding model or domain —
-the caller should rebuild.
+- **Absent:** no `CURRENT`. The directory may hold `LOCK` and unreferenced files
+  from an interrupted `create`. `open` and `append` return `NotFound`.
+- **Committed:** `CURRENT` names a valid generation.
 
-## 10. Required changes to existing crates
+`create` requires Absent (`AlreadyExists` otherwise), takes the exclusive lock,
+deletes unreferenced files, and proceeds. `append` requires Committed.
 
-**spherra-codec**
-- `QuantizerTable::from_centers` and `Pq96Codebook::from_centroids`: rebuild
-  tables from stored values and recompute their identities with the existing
-  derivations. Today only `train` exists, so a written index cannot be opened.
-- A constructor that turns stored certificate terms into an `ErrorCertificate`,
-  recomputing `epsilon` and rejecting scorer-constant mismatches, plus a public
-  outward-rounded `bounds` for a score.
-- The append combination in section 9, implemented beside
-  `build_exhaustive_certificate` so it reuses the same outward-rounding helpers.
-- The stage 2 tile kernel, and construction of the stage 3 byte-lane tables from
-  a prepared query's lookup tables.
+### Builder lifecycle
 
-**spherra-simd**
-- `neon.rs`, compiled only on `aarch64`, with `unsafe` allowed in that module
-  alone. Every other crate and module keeps the workspace `deny(unsafe_code)`.
-- `proptest` as a dev-dependency.
+Take the exclusive lock non-blocking (`IndexBusy` if held). Stage rows; each
+time 65,536 rows are staged, encode and stage one segment and release those
+originals. Any staging or verification failure poisons the builder: later calls
+return the original error and nothing is published.
 
-**spherra-format**
-- A new required `TransformSeed` section in the primary file. The transform is
-  rebuilt only from its seed and the file stores only the transform identity, so
-  a written index cannot be opened today. The seed is verified by rebuilding the
-  plan and comparing identities. Adding a required section breaks existing
-  files, so the major format version goes from 1 to 2. No segment files exist
-  outside tests.
-- A tile-level primary decode. `PrimaryFileReader::primary_code` reads a whole
-  32-row tile to return one row, which would read each tile 32 times when
-  loading an index.
+### Commit
 
-**Project guide** (needs user approval)
-- The frozen decision "residuals are candidate-only SSD/page-cache data; do not
-  count them as resident scan memory" is amended for the local index: residuals
-  are resident and counted.
-- The caveat stating that the workspace contains no unsafe code is corrected to
-  name `spherra-simd/src/neon.rs` and its evidence.
-- The project paragraph, product contract, frozen decisions, and status are
-  rewritten for the local library.
+1. `EmptyCommit` if no rows are staged. Stage the final partial segment.
+2. For every new file (model on `create`, segments, manifest): write to a unique
+   `.tmp`, reopen and verify it, `sync_all`, rename to its final name, and
+   `sync_all` the directory.
+3. Write and `sync_all` `CURRENT.tmp`, then rename it over `CURRENT`.
+4. `sync_all` the directory.
+5. Best-effort: delete files referenced by no committed manifest. Release the
+   lock.
+
+### Outcomes
+
+| Point of failure | Result | Directory state |
+|---|---|---|
+| Before step 3's rename, or the rename itself returns an error | `Err` (not published) | unchanged: Absent or previous generation |
+| Step 3's rename succeeds, step 4 fails | `CommitOutcomeUnknown { generation }` | new generation visible now; survival of a crash not guaranteed |
+| Step 4 succeeds | `Ok(CommitReport)` | new generation |
+| Step 5 fails | still `Ok`, with `cleanup_complete() == false` | new generation; the next builder retries cleanup |
+
+The caller resolves `CommitOutcomeUnknown` by opening the index and comparing
+`generation()`; it must not retry the same rows before doing so. A crash at any
+point leaves Absent, the previous generation, or the new generation — never a
+mix. Corruption of a committed file is an error, never a silent fallback to an
+older generation.
+
+Durability is qualified on local APFS only. The section 2 probe shows directory
+`sync_all` succeeds; injected-failure and process-kill tests are the evidence.
+Physical power loss is not claimed.
+
+## 10. Build, training, and drift
+
+**Training (`create`).** Reject more than `MAX_TRAINING_ROWS` rows before
+anything else (section 4). Split `training` deterministically by seed into a
+validation set of the resolved `validation_rows` and a disjoint training set
+(section 4 rules). Build the transform from the seed, train the quantizer on the
+transformed training set, and train the PQ codebook on its residuals, as
+`CodecFormatRun::prepare` does. Training rows are not indexed unless pushed.
+
+**Encoding.** Rows within a segment are encoded in parallel. Codes are a function
+of the model and the row only, and are tested to be identical for any batching
+and commit split.
+
+**Drift baselines.** Over the validation set the model stores the p50, p95, and
+p99 of per-row primary and refined reconstruction L2 error, and the fraction of
+transformed coordinates outside the quantizer's outer centers.
+
+**Drift report per commit.** The same statistics over a bounded sample of the
+committed rows: a deterministic reservoir of at most 65,536 rows per commit,
+selected by BLAKE3 of the `RowId` and index id, holding three `f32` values per
+row (at most 0.75 MiB). Percentiles are exact over the sample; the report states
+the sample size. The statistics are computed per commit only and never
+accumulated across segments or generations, plus
+`warned()`, true when refined p95 exceeds 1.25 × the baseline p95 or more than 5%
+of committed rows exceed the baseline refined p99. A commit of fewer than 1,000
+rows reports `insufficient_sample()` instead of a warning. These heuristics
+detect reconstruction change, not recall loss.
 
 ## 11. Verification
 
-- **Round trip.** build → write → open → search returns bit-identical hits to
-  searching the built index.
-- **Refine path equivalence.** For every row, `score_refined` equals
-  `score_prepared_candidate`. The refined certificate was proven against the
-  second path; this ties it to the one search uses.
-- **Kernel equality.** Property tests over random lookup tables — including
-  entries at the edges of the 32-bit range and entries outside it — random tile
-  bytes, and row counts from 1 to 100: the stage 2 and stage 3 kernels equal
-  `score_refined` exactly. The same holds for every row of SciFact and a
-  generated 100k corpus over 20 queries.
-- **Fallback.** A query with a primary entry outside the 32-bit range is routed
-  to the stage 2 kernel and still matches.
-- **Soundness.** Every hit's FP64 truth from `ExactOracle` lies inside its
-  interval, on SciFact and on a generated corpus.
-- **Recall.** recall@10 against `ExactOracle` is at least the best candidate-
-  budget recall recorded on 2026-08-06 for the same corpus and seed. Refining
-  every row must not do worse than refining some of them.
-- **Append.** A codec-level test that the combined certificate equals a
-  certificate built once over all rows under the same tables, bit for bit; and
-  an end-to-end test that appended rows are found by search.
-- **Crash safety.** Failure injected before the `CURRENT` rename leaves the old
-  index openable and unchanged.
-- **Rejection.** A wrong seed, a swapped residual file, a truncated file, and a
-  tampered certificate term each fail `open` with a structured error.
-- **Determinism.** Search results are identical at 1, 2, and 8 threads and with
-  every kernel.
-- **Speed.** p50 and p99 query latency and resident memory at 100k, 1M, and 10M
-  generated rows after each speed stage, judged against section 5. Recall is not
-  measured at 10M: the exact oracle does not fit in memory at that size.
+**Soundness gates, never allowed to fail:**
+- every hit's FP64 truth lies inside its interval;
+- every accelerated kernel equals `score_primary` exactly, and cached-primary
+  refinement equals `score_refined` exactly;
+- after any injected failure the directory is Absent, the previous generation,
+  or the new generation, and the returned outcome matches section 9's table;
+- malformed files, and correctly checksummed files that violate any section 8
+  semantic rule, are rejected with structured errors and no panic;
+- a transform whose expanded plan differs from the model is rejected;
+- a stored epsilon that differs from its recomputation is rejected;
+- an unsupported container version, generator version, `codec_id`,
+  `scorer_version`, or layout is rejected even when every file agrees;
+- restored tables containing `-0.0`, a non-finite value, or decreasing quantizer
+  centers are rejected;
+- more than `MAX_TRAINING_ROWS` training rows are rejected with no directory
+  change;
+- no public API constructs a `Hit`, a bound certificate, or a `RowId`
+  (compile-fail tests).
+
+**Algorithm equality.** The local index returns exactly the hits and raw scores
+of a plain reference search written in the test — checked scalar scoring, full
+sorts, same budget and tie rule — over the index's own restored model and codes.
+
+**Quality and performance, recorded against gates:**
+- **Historical recall**, archived SciFact bytes and generated-correlated 20k:
+  recall@10 at most 0.01 below the pre-implementation `codec-format` measurement
+  on the same bytes and budget. The models differ because `create` holds out
+  validation rows, so exact equality is not expected.
+- **1M recall**, generated-correlated: recorded against a streaming exact
+  reference produced before the index is measured; no historical value exists.
+- Latency and memory gates of section 6; open time, build throughput, and drift
+  behavior on shifted data recorded.
+- **Builder memory gate:** a child process runs `create` with exactly
+  `MAX_TRAINING_ROWS` rows, then pushes and commits 65,537 rows (one full and one
+  partial segment). Its peak RSS minus its RSS before allocating input, minus the
+  input bytes, is at most 2 GiB.
+- **Descriptors:** the open process's descriptor count is recorded at 1M and
+  10M and equals `segment_count + 1` plus the process baseline.
+
+A streaming exact oracle keeps only top-k heaps per query, so a 1M reference does
+not need all normalized rows in memory.
+
+## 12. Alternatives considered
+
+- **Refine every row with resident residuals.** Rejected: identical recall to
+  budget 200 on both measured corpora, with 0.96 GB more memory at 10M.
+- **One segment rewritten on every append, with certificates merged.** Rejected:
+  rewrites the whole index per append and needs a certificate-merge rule whose
+  refined serving term depends jointly on two maxima.
+- **A format v2 transform-seed section.** Rejected in favor of the model file,
+  which also carries the expanded-plan digest and drift baselines without
+  changing segment bytes.
+- **Coarse routing.** Deferred; outlined in Appendix A.
+- **Certificate-driven candidate selection.** Failed its experiment.
+
+## 13. Open questions for the user
+
+- If the 10M latency gate is missed after stage 3, is multi-second search
+  acceptable, or is coarse routing's recall risk acceptable?
+- Which real embedding datasets define acceptable recall beyond SciFact?
+- Expected append batch sizes; very small commits consume the segment limit, and
+  at the default descriptor limit an index opens with at most 191 segments unless
+  the caller raises `ulimit -n`.
+
+## 14. Project guidance changes requiring user approval
+
+- Rewrite the project guide project paragraph, product contract, status, and next
+  step for the local library, and mark the R7/I4 frozen decisions superseded for
+  local scope. The frozen rule that residuals are candidate-only SSD data is
+  unchanged by this design.
+- If stage 3 is built, correct the project guide caveat that says the workspace
+  contains no unsafe code.
+
+## Appendix A. Coarse routing alternative
+
+Considered only if stage 3 misses the 10M gate and the user accepts added recall
+risk.
+
+**Design.** The model gains 4,096 spherical centroids (FP32, about 12.6 MB) over
+transformed directions, trained deterministically at `create`. Within each
+segment, rows are physically ordered by assigned centroid; a per-segment routing
+sidecar stores `4,097` `u32` list offsets and is named by hash in the manifest.
+Because physical order no longer follows `RowId`, stored row records become
+authoritative for `RowId` and are validated on open. Search picks the `nprobe`
+nearest centroids (benchmarked at 16, 32, 64, 128, 256), scans only those lists
+with the same kernels (masking lanes outside a list), and refines the best `B`
+with the same residual path. Certificates, intervals, and the trust layers are
+unchanged: they bound the scores of returned rows and say nothing about rows in
+unvisited lists. Results report `selection = routed` and visited list and row
+counts.
+
+**Append** assigns new rows with the existing centroids; new segments get their
+own sidecars and certificates; commit and recovery are unchanged.
+
+**Failure modes.** Silent recall loss when a true neighbor's list is not probed,
+worse after distribution shift or list skew; certificates cannot detect it.
+Balanced lists at `nprobe = 64` would visit about 156,250 of 10M rows — an
+arithmetic estimate, not a result.
+
+**Implementation outline and gates.**
+1. Centroid training, assignment, sidecar encoding, and open validation of offsets
+   and `RowId` records. Gate: every row belongs to exactly one list; probing all
+   lists returns exactly the full-scan hits.
+2. Probe selection and masked tile schedules. Gate: scored rows' raw scores equal
+   the reference; no selected row skipped or duplicated.
+3. Recall versus full scan at each budget and `nprobe` on the archived corpora
+   and on appended shifted data. Gate: a user-agreed recall floor.
+4. Latency and list-skew qualification. Gate: a measured improvement that
+   justifies the added recall risk.
