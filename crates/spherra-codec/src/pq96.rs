@@ -332,9 +332,15 @@ impl Pq96Codebook {
         let expected =
             Pq96Code::SUBQUANTIZERS * Pq96Code::CENTROIDS * Pq96Code::SUBVECTOR_DIMENSION;
         crate::restore::validate_values(values, expected)?;
-        let mut centroids = Box::new(
-            [[[0.0; Pq96Code::SUBVECTOR_DIMENSION]; Pq96Code::CENTROIDS]; Pq96Code::SUBQUANTIZERS],
-        );
+        // Construct directly on the heap; the full array is 768 KiB.
+        let mut centroids: Box<Centroids> = vec![
+            [[0.0; Pq96Code::SUBVECTOR_DIMENSION];
+                Pq96Code::CENTROIDS];
+            Pq96Code::SUBQUANTIZERS
+        ]
+        .into_boxed_slice()
+        .try_into()
+        .unwrap_or_else(|_| unreachable!("fixed subquantizer count"));
         for (target, source) in centroids.iter_mut().flatten().flatten().zip(values) {
             *target = *source;
         }
@@ -354,9 +360,15 @@ impl Pq96Codebook {
     pub fn train(residuals: &[ResidualVector], seed: u64) -> Result<Self, CodecError> {
         validate_calibration_residuals(residuals)?;
 
-        let mut centroids = Box::new(
-            [[[0.0; Pq96Code::SUBVECTOR_DIMENSION]; Pq96Code::CENTROIDS]; Pq96Code::SUBQUANTIZERS],
-        );
+        // Construct directly on the heap; the full array is 768 KiB.
+        let mut centroids: Box<Centroids> = vec![
+            [[0.0; Pq96Code::SUBVECTOR_DIMENSION];
+                Pq96Code::CENTROIDS];
+            Pq96Code::SUBQUANTIZERS
+        ]
+        .into_boxed_slice()
+        .try_into()
+        .unwrap_or_else(|_| unreachable!("fixed subquantizer count"));
         let mut training_diagnostics = Pq96TrainingDiagnostics::default();
         for subquantizer in 0..Pq96Code::SUBQUANTIZERS {
             let (trained_centroids, subquantizer_diagnostics) =

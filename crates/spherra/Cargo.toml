@@ -21,3 +21,4 @@ rustix.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
+spherra-testkit = { path = "../spherra-testkit" }

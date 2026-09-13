@@ -89,4 +89,9 @@ impl ValidatedVector {
     pub fn radius_f32(&self) -> f32 {
         self.radius.to_f32()
     }
+
+    /// The already-rounded stored FP16 radius, for explicit durable encoding.
+    pub fn radius_f16_bits(&self) -> u16 {
+        self.radius.to_bits()
+    }
 }

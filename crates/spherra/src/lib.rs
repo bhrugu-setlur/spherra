@@ -1,17 +1,10 @@
 //! Local embedded vector index foundation.
 #![deny(unsafe_code)]
 
-// Foundation internals become reachable through the public builder/open API in
-// Tasks 7–8. Keep this temporary allowance local to those internal modules.
-#[allow(dead_code)]
 mod container;
-#[allow(dead_code)]
 mod fs;
-#[allow(dead_code)]
 mod lock;
-#[allow(dead_code)]
 mod manifest;
-#[allow(dead_code)]
 mod model;
 
 /// Decoder entry points available only to the isolated fuzz workspace.
@@ -54,3 +47,15 @@ mod container_tests;
 mod fs_tests;
 #[cfg(test)]
 mod lock_tests;
+
+mod builder;
+mod drift;
+mod error;
+mod storage;
+pub use builder::{CommitReport, CreateOptions, IndexBuilder, MAX_TRAINING_ROWS, RowId, Vector};
+pub use drift::{DriftReport, DriftStatistics};
+pub use error::Error;
+#[cfg(test)]
+mod builder_qualification;
+#[cfg(test)]
+mod drift_tests;

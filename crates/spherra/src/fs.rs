@@ -81,6 +81,7 @@ pub(crate) fn write_all(fs: &dyn FileSystem, file: &mut File, mut bytes: &[u8]) 
 pub(crate) enum Fault {
     Error,
     ShortWrite,
+    #[allow(dead_code)] // Exercised by the Task 9 child-process recovery gate.
     Abort,
 }
 #[cfg(test)]
@@ -103,6 +104,7 @@ impl FaultyFs {
     pub fn calls(&self) -> usize {
         self.count.load(std::sync::atomic::Ordering::SeqCst)
     }
+    #[allow(dead_code)] // Task 9 selects publication boundaries from this log.
     pub fn operations(&self) -> Vec<&'static str> {
         self.log.lock().unwrap().clone()
     }

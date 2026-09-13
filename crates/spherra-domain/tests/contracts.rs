@@ -43,6 +43,7 @@ fn vector_validation_rejects_norms_that_cannot_fit_in_f16() {
     at_limit[0] = 65_504.0;
     let accepted = ValidatedVector::new(at_limit).unwrap();
     assert_eq!(accepted.radius_f32(), 65_504.0);
+    assert_eq!(accepted.radius_f16_bits(), 0x7bff);
 
     let mut rounded_radius = vec![0.0; DIMENSION];
     rounded_radius[0] = 1.0001;
@@ -84,6 +85,7 @@ fn reliable_direction_is_normalized_from_the_fp64_norm() {
     let direction = validated.normalized_direction().unwrap().as_array();
 
     assert_eq!(validated.radius_f32(), 5.0);
+    assert_eq!(validated.radius_f16_bits(), 0x4500);
     assert!((direction[0] - 0.6).abs() <= f32::EPSILON);
     assert!((direction[1] - 0.8).abs() <= f32::EPSILON);
 }

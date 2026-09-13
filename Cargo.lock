@@ -437,6 +437,7 @@ dependencies = [
  "spherra-codec",
  "spherra-domain",
  "spherra-format",
+ "spherra-testkit",
  "tempfile",
 ]
 
