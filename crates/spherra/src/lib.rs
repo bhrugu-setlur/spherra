@@ -57,5 +57,15 @@ pub use drift::{DriftReport, DriftStatistics};
 pub use error::Error;
 #[cfg(test)]
 mod builder_qualification;
+mod certified;
 #[cfg(test)]
 mod drift_tests;
+mod open;
+#[cfg(test)]
+mod open_tests;
+mod search;
+pub use certified::{Certificate, SegmentCertificates};
+pub use open::Index;
+pub use search::{Hit, SearchOptions, SearchResult};
+#[cfg(test)]
+mod search_qualification;

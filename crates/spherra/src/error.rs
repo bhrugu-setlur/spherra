@@ -50,8 +50,25 @@ impl From<crate::container::ContainerError> for Error {
     }
 }
 impl From<spherra_format::FormatError> for Error {
-    fn from(_: spherra_format::FormatError) -> Self {
-        Self::Corrupt
+    fn from(error: spherra_format::FormatError) -> Self {
+        use spherra_format::FormatError::*;
+        match error {
+            Io(e) => e.into(),
+            UnsupportedMajorVersion { .. }
+            | UnsupportedMinorVersion { .. }
+            | UnknownLayout { .. } => Self::Unsupported,
+            CodecMismatch
+            | ScorerVersionMismatch { .. }
+            | TransformMismatch
+            | QuantizerMismatch
+            | CodebookMismatch
+            | LayoutMismatch { .. }
+            | CollectionMismatch
+            | SegmentMismatch
+            | RowCountMismatch { .. }
+            | PairedIdentityMismatch => Self::IdentityMismatch,
+            _ => Self::Corrupt,
+        }
     }
 }
 impl From<spherra_codec::CertificateError> for Error {

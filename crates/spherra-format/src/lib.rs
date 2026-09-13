@@ -20,7 +20,10 @@ pub use header::{
     FileKind, HEADER_LEN, LayoutId, MAJOR_VERSION, MINOR_VERSION, SegmentExpectations,
     SegmentHeader, SegmentIdentity,
 };
-pub use reader::{PairedSegmentReaders, PrimaryFileReader, ResidualFileReader, SegmentSource};
+pub use reader::{
+    PairedResidualReader, PairedSegmentReaders, PrimaryFileReader, ResidualFileReader,
+    SegmentSource,
+};
 pub use section::{
     BLOCK_SIZE, DIRECT_CODE_BYTE_LEN, DIRECTORY_ENTRY_LEN, ERROR_CERTIFICATE_BYTE_LEN,
     PQ_CODEBOOK_VALUE_LEN, PQ96_CODE_BYTE_LEN, QUANTIZER_TABLE_VALUE_LEN, ROW_ENTRY_BYTE_LEN,

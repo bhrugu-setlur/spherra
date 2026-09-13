@@ -684,6 +684,20 @@ impl PairedSegmentReaders {
     pub fn residual_code(&self, row: u32) -> Result<[u8; PQ96_CODE_BYTE_LEN], FormatError> {
         self.residual.residual_code(row)
     }
+
+    /// Retains the validated residual capability and closes the primary source.
+    pub fn into_residual(self) -> PairedResidualReader {
+        PairedResidualReader(self.residual)
+    }
+}
+
+/// A residual reader obtainable only from a successfully paired segment.
+/// Dropping the primary file does not invalidate the pairing already verified.
+pub struct PairedResidualReader(ResidualFileReader);
+impl PairedResidualReader {
+    pub fn residual_code(&self, row: u32) -> Result<[u8; PQ96_CODE_BYTE_LEN], FormatError> {
+        self.0.residual_code(row)
+    }
 }
 
 fn u64_at(bytes: &[u8; ROW_ENTRY_BYTE_LEN], offset: usize) -> u64 {
