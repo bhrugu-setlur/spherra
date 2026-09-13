@@ -1,0 +1,12 @@
+{
+  "name": "beir-scifact-mpnet-768",
+  "path": "corpora/archive/b2e549ce3a605944e44c21fb93bd912a130ffbe1ba914ac70befddf6eaa0e254.f32",
+  "byte_len": 15922176,
+  "blake3": "b2e549ce3a605944e44c21fb93bd912a130ffbe1ba914ac70befddf6eaa0e254",
+  "row_count": 5183,
+  "dimension": 768,
+  "normalization": "l2-unit",
+  "source_dataset_revision": "mteb/scifact@cf10ab6856b15b0e670ef8ae5dae4e266c12d035",
+  "embedding_model_revision": "sentence-transformers/all-mpnet-base-v2@e8c3b32edf5434bc2275fc9bab85f82640a19130",
+  "license": "CC BY-NC 2.0 (BEIR SciFact); model Apache-2.0"
+}
