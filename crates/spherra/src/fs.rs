@@ -81,8 +81,9 @@ pub(crate) fn write_all(fs: &dyn FileSystem, file: &mut File, mut bytes: &[u8]) 
 pub(crate) enum Fault {
     Error,
     ShortWrite,
-    #[allow(dead_code)] // Exercised by the Task 9 child-process recovery gate.
+    CorruptRead,
     Abort,
+    Pause,
 }
 #[cfg(test)]
 pub(crate) struct FaultyFs {
@@ -104,7 +105,6 @@ impl FaultyFs {
     pub fn calls(&self) -> usize {
         self.count.load(std::sync::atomic::Ordering::SeqCst)
     }
-    #[allow(dead_code)] // Task 9 selects publication boundaries from this log.
     pub fn operations(&self) -> Vec<&'static str> {
         self.log.lock().unwrap().clone()
     }
@@ -115,7 +115,17 @@ impl FaultyFs {
             match self.action {
                 Fault::Error => return Err(io::Error::other("injected filesystem failure")),
                 Fault::Abort => std::process::abort(),
-                Fault::ShortWrite => return Ok(true),
+                Fault::Pause => {
+                    // Child-process test rendezvous, outside the index directory.
+                    // The parent sends SIGKILL after this numbered call is reached.
+                    let ready = std::env::var_os("SPHERRA_CRASH_READY")
+                        .expect("pause injection requires a parent rendezvous");
+                    fs::write(ready, b"ready")?;
+                    loop {
+                        std::thread::park();
+                    }
+                }
+                Fault::ShortWrite | Fault::CorruptRead => return Ok(true),
             }
         }
         Ok(false)
@@ -132,7 +142,7 @@ impl FileSystem for FaultyFs {
         RealFs.create(p)
     }
     fn write(&self, f: &mut File, b: &[u8]) -> io::Result<usize> {
-        if self.tick("write")? {
+        if self.tick("write")? && matches!(self.action, Fault::ShortWrite) {
             RealFs.write(f, &b[..(b.len() / 2).max(1)])
         } else {
             RealFs.write(f, b)
@@ -151,8 +161,14 @@ impl FileSystem for FaultyFs {
         RealFs.sync_dir(p)
     }
     fn read(&self, p: &Path, l: usize) -> io::Result<Vec<u8>> {
-        self.tick("read")?;
-        RealFs.read(p, l)
+        let corrupt = self.tick("read")? && matches!(self.action, Fault::CorruptRead);
+        let mut bytes = RealFs.read(p, l)?;
+        if corrupt {
+            if let Some(first) = bytes.first_mut() {
+                *first ^= 1;
+            }
+        }
+        Ok(bytes)
     }
     fn remove(&self, p: &Path) -> io::Result<()> {
         self.tick("remove")?;

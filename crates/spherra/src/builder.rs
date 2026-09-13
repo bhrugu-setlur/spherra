@@ -464,3 +464,7 @@ fn verify_segment(
     PairedSegmentReaders::open(p, r)?;
     Ok(())
 }
+
+#[cfg(test)]
+#[path = "recovery_tests.rs"]
+mod recovery_tests;
