@@ -28,8 +28,13 @@ honest per-hit error intervals and a measured speed target.
   | SciFact, rebuilt bytes, 3,688 indexed rows | 200 / 1,000 / 3,688 (all) | 0.9745 | 0.9811 |
   | generated-correlated 20k | 200 / 1,000 / 20,000 (all) | 0.9370 | 0.9552 |
 
-  Recall@10 already plateaus at budget 20 on both corpora. The limit is the
-  codec's refined score, not the budget.
+  Recall@10 is unchanged across the measured budgets 20, 200, 1,000, and all
+  rows on archived SciFact. On generated correlated 20k it rises from 0.9330 at
+  budget 20 to 0.9370 at budget 200, and is unchanged at 1,000 and all rows.
+  Budgets between 20 and 200 were not measured in this reference. At the
+  measured budgets of 200 and above, the codec's refined ranking limits recall
+  on these two corpora. This factual correction was approved by the user after
+  the [Task 1 measurements](../../benchmarks/2026-09-13-local-index-reference.md).
 - **The rebuilt SciFact bytes differ from August's** (BLAKE3 `b2e549ce…` against
   `8a20ab21…`), and recall@10 at budget 200 moved from 0.9775 to 0.9745. Quality
   comparisons must use one archived set of bytes.

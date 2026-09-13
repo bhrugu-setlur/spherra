@@ -876,3 +876,7 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "restoration_tests.rs"]
+mod restoration_tests;

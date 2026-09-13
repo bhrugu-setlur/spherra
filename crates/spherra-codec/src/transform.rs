@@ -9,6 +9,9 @@ use crate::spec::TransformSpec;
 
 const ROUND_SEED_DERIVATION_CONTEXT: &str = "spherra.transform.round-seed.v1";
 const IDENTITY_DERIVATION_CONTEXT: &str = "spherra.transform.identity.v1";
+/// Version of the seed-to-expanded-plan generator, independent of codec/scorer
+/// identities. Change this when generation rules or digest serialization change.
+pub const GENERATOR_VERSION: u16 = 1;
 const ROUND_COUNT: usize = 2;
 const BLOCKS_PER_ROUND: usize = DIMENSION / HADAMARD_BLOCK_LEN;
 const TRANSFORM_IDENTITY_LEN: usize = 32;
@@ -77,6 +80,25 @@ impl TransformPlan {
             identity: derive_identity(collection_seed, spec, &round_seeds),
             rounds,
         }
+    }
+
+    /// BLAKE3 of both expanded rounds in execution order. Each round contributes
+    /// its 768 sign values as little-endian FP32 followed by its 768 source
+    /// indices as little-endian u16. No native-width fields or padding are hashed.
+    /// The inverse permutation is derived from the forward permutation.
+    ///
+    /// Unlike `identity`, this detects generator drift for an unchanged seed.
+    pub fn expanded_digest(&self) -> [u8; 32] {
+        let mut hasher = blake3::Hasher::new();
+        for round in &self.rounds {
+            for sign in &round.signs {
+                hasher.update(&sign.to_le_bytes());
+            }
+            for source in &round.permutation {
+                hasher.update(&(*source as u16).to_le_bytes());
+            }
+        }
+        *hasher.finalize().as_bytes()
     }
 
     pub const fn identity(&self) -> &[u8; TRANSFORM_IDENTITY_LEN] {
@@ -275,6 +297,40 @@ mod tests {
     use crate::scorer::transform_normalized_fp64;
 
     use super::{TransformPlan, apply_forward_round};
+
+    #[test]
+    fn expanded_digest_has_a_versioned_golden() {
+        assert_eq!(super::GENERATOR_VERSION, 1);
+        let digest = TransformPlan::from_seed(20260804).expanded_digest();
+        let actual: String = digest.iter().map(|byte| format!("{byte:02x}")).collect();
+        assert_eq!(
+            actual,
+            "8f53ca400e020c30b87ef99c98ecf29845ea7e8c37faeda536e9f82f4b3f2ba7"
+        );
+        assert_eq!(digest, TransformPlan::from_seed(20260804).expanded_digest());
+        assert_ne!(digest, TransformPlan::from_seed(20260805).expanded_digest());
+    }
+
+    #[test]
+    fn expanded_digest_covers_every_sign_and_permutation_entry() {
+        let plan = TransformPlan::from_seed(20260804);
+        let expected = plan.expanded_digest();
+        for round in 0..2 {
+            for index in 0..DIMENSION {
+                let mut changed = plan.clone();
+                changed.rounds[round].signs[index] *= -1.0;
+                assert_ne!(expected, changed.expanded_digest(), "sign {round}/{index}");
+                let mut changed = plan.clone();
+                changed.rounds[round].permutation[index] =
+                    (changed.rounds[round].permutation[index] + 1) % DIMENSION;
+                assert_ne!(
+                    expected,
+                    changed.expanded_digest(),
+                    "permutation {round}/{index}"
+                );
+            }
+        }
+    }
 
     #[test]
     fn fp64_normalized_kernel_input_is_not_normalized_a_second_time() {

@@ -94,6 +94,24 @@ pub struct QuantizerTable {
 }
 
 impl QuantizerTable {
+    /// Restores coordinate-major groups of 16 sorted centers without retraining.
+    /// Values must be finite canonical FP32 (positive zero only). Neither sorting
+    /// nor zero normalization is performed, preserving every accepted stored bit.
+    pub fn from_centers(values: &[f32]) -> Result<Self, crate::RestoreError> {
+        crate::restore::validate_values(values, QUANTIZER_TABLE_LEN)?;
+        for (coordinate, centers) in values.chunks_exact(CENTERS_PER_COORDINATE).enumerate() {
+            for code in 1..CENTERS_PER_COORDINATE {
+                if centers[code] < centers[code - 1] {
+                    return Err(crate::RestoreError::DecreasingCenters { coordinate, code });
+                }
+            }
+        }
+        let mut centers = [0.0; QUANTIZER_TABLE_LEN];
+        centers.copy_from_slice(values);
+        let identity = derive_identity(&centers);
+        Ok(Self { centers, identity })
+    }
+
     pub fn train(calibration: &[[f32; DIMENSION]]) -> Result<Self, TrainError> {
         if calibration.is_empty() {
             return Err(TrainError::EmptyCalibration);

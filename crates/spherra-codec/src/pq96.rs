@@ -324,6 +324,29 @@ pub struct Pq96Codebook {
 }
 
 impl Pq96Codebook {
+    /// Restores 96 × 256 × 8 flattened FP32 centroids, in subquantizer, code,
+    /// then lane order. Rejects non-finite values and negative zero; accepted
+    /// values and the codebook identity are preserved exactly. Training
+    /// diagnostics are zero because no training takes place during restoration.
+    pub fn from_centroids(values: &[f32]) -> Result<Self, crate::RestoreError> {
+        let expected =
+            Pq96Code::SUBQUANTIZERS * Pq96Code::CENTROIDS * Pq96Code::SUBVECTOR_DIMENSION;
+        crate::restore::validate_values(values, expected)?;
+        let mut centroids = Box::new(
+            [[[0.0; Pq96Code::SUBVECTOR_DIMENSION]; Pq96Code::CENTROIDS]; Pq96Code::SUBQUANTIZERS],
+        );
+        for (target, source) in centroids.iter_mut().flatten().flatten().zip(values) {
+            *target = *source;
+        }
+        let mut codebook = Self {
+            centroids,
+            codebook_id: [0; PQ_CODEBOOK_ID_LEN],
+            training_diagnostics: Pq96TrainingDiagnostics::default(),
+        };
+        codebook.codebook_id = *blake3::hash(&codebook.canonical_bytes()).as_bytes();
+        Ok(codebook)
+    }
+
     /// Trains on caller-provided transformed residuals, `T(normalize(x)) - p`.
     ///
     /// This API intentionally does not accept original vectors or a direct-code

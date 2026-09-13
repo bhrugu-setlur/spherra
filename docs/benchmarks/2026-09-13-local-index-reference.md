@@ -41,14 +41,14 @@ Raw floating-point values and all provenance are preserved in the
 [SciFact JSON](results/2026-09-13-local-index-reference-beir-scifact-mpnet-768.json)
 and [generated JSON](results/2026-09-13-local-index-reference-generated-correlated-768x20000.json).
 
-## Specification conflict awaiting resolution
+## Specification correction approved by the user
 
 The table in approved design D§2 is reproduced to its displayed precision.
 However, the following sentence is contradicted:
 
 > Recall@10 already plateaus at budget 20 on both corpora.
 
-Proposed replacement, pending user approval:
+Replacement approved by the user and applied to D§2:
 
 > Recall@10 is unchanged across the measured budgets 20, 200, 1,000, and all
 > rows on archived SciFact. On generated correlated 20k it rises from 0.9330 at
@@ -56,14 +56,13 @@ Proposed replacement, pending user approval:
 > Budgets between 20 and 200 were not measured in this reference.
 
 The following design sentence, “The limit is the codec's refined score, not
-the budget,” should consequently read:
+the budget,” now reads:
 
 > At the measured budgets of 200 and above, the codec's refined ranking limits
 > recall on these two corpora.
 
-This correction does not propose changing the search algorithm or its default
-budget of 200. Task 2 has not started: the project guide requires a wrong
-specification to be recorded and resolved with the user first.
+The user approved this factual correction and continuing with Task 2. The
+search algorithm and its default budget of 200 are unchanged.
 
 ## Reproduction
 
