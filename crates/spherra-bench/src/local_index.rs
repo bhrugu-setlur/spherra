@@ -340,6 +340,8 @@ pub(super) fn latency_child(o: &Options) -> Result<(), BenchError> {
         times.push(elapsed);
         if (i + 1) % 100 == 0 {
             on_ac &= ac_power()?;
+        }
+        if (i + 1) % 5 == 0 {
             eprintln!(
                 "query: {}/{} complete, last {:.3} ms",
                 i + 1,
