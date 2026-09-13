@@ -11,9 +11,10 @@ mod tiled_soa;
 mod transform;
 
 pub use certificate::{
-    BlockCertificate, CertificateBlockCandidate, CertificateBlockId, CertificateError,
-    CertificateRow, CertifiedBlockScore, ErrorCertificate, ExhaustiveBlock, ScoreBounds,
-    build_exhaustive_certificate,
+    ArithmeticInterval, BlockCertificate, CertificateBlockCandidate, CertificateBlockId,
+    CertificateError, CertificateRow, CertificateTerms, CertifiedBlockScore, ErrorCertificate,
+    ExhaustiveBlock, ScoreBounds, ValidatedTerms, build_exhaustive_certificate,
+    validate_certificate_terms,
 };
 pub use identity::CODEC_ID;
 pub use int4::{DirectCode, DirectCodeError, QuantizerTable, RadiusFlags};

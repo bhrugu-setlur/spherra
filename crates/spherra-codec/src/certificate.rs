@@ -189,6 +189,110 @@ pub struct ScoreBounds {
     pub upper: f64,
 }
 
+/// Untrusted stored arithmetic terms. These values alone establish no provenance.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CertificateTerms {
+    pub max_reconstruction_l2_error: f64,
+    pub eta_transform_dot: f64,
+    pub query_norm_upper: f64,
+    pub eta_serving_score: f64,
+    pub epsilon: f64,
+}
+
+/// Arithmetically consistent terms, NOT a certificate. Invented reconstruction
+/// errors can pass validation; only a checked index can bind trusted provenance.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ValidatedTerms {
+    terms: CertificateTerms,
+    kind: ScoreKind,
+}
+
+impl ValidatedTerms {
+    pub const fn kind(self) -> ScoreKind {
+        self.kind
+    }
+
+    /// Computes an outward interval without asserting that it encloses truth.
+    pub fn arithmetic_interval(self, raw: i64) -> ArithmeticInterval {
+        let score = raw as f64 / FixedPointScorer::new().metadata().comparison_scale() as f64;
+        ArithmeticInterval {
+            lower: next_down(score - self.terms.epsilon),
+            upper: next_up(score + self.terms.epsilon),
+        }
+    }
+}
+
+/// An arithmetic interval with no certificate or provenance guarantee.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ArithmeticInterval {
+    lower: f64,
+    upper: f64,
+}
+
+impl ArithmeticInterval {
+    pub const fn lower(self) -> f64 {
+        self.lower
+    }
+    pub const fn upper(self) -> f64 {
+        self.upper
+    }
+    pub fn intersection(self, other: Self) -> Result<Self, CertificateError> {
+        let lower = self.lower.max(other.lower);
+        let upper = self.upper.min(other.upper);
+        if lower > upper {
+            return Err(CertificateError::EmptyIntersection);
+        }
+        Ok(Self { lower, upper })
+    }
+}
+
+/// Checks finite, non-negative terms, the current transform/query norm budget,
+/// and exact outward recomputation of epsilon. The caller declares the score
+/// kind; this does not authenticate it or the reconstruction/serving error terms.
+pub fn validate_certificate_terms(
+    terms: CertificateTerms,
+    kind: ScoreKind,
+) -> Result<ValidatedTerms, CertificateError> {
+    for (field, value) in [
+        (
+            "max_reconstruction_l2_error",
+            terms.max_reconstruction_l2_error,
+        ),
+        ("eta_transform_dot", terms.eta_transform_dot),
+        ("query_norm_upper", terms.query_norm_upper),
+        ("eta_serving_score", terms.eta_serving_score),
+        ("epsilon", terms.epsilon),
+    ] {
+        if !value.is_finite() || value < 0.0 {
+            return Err(CertificateError::InvalidTerms { field });
+        }
+    }
+    let metadata = FixedPointScorer::new().metadata();
+    let delta = metadata.transform_delta();
+    let transform_error = upward_add(upward_mul(2.0, delta), upward_mul(delta, delta));
+    if terms.eta_transform_dot != transform_error {
+        return Err(CertificateError::InvalidTerms {
+            field: "eta_transform_dot",
+        });
+    }
+    if terms.query_norm_upper != metadata.query_norm_upper() {
+        return Err(CertificateError::InvalidTerms {
+            field: "query_norm_upper",
+        });
+    }
+    if terms.epsilon
+        != epsilon(
+            terms.eta_transform_dot,
+            terms.query_norm_upper,
+            terms.max_reconstruction_l2_error,
+            terms.eta_serving_score,
+        )
+    {
+        return Err(CertificateError::InvalidTerms { field: "epsilon" });
+    }
+    Ok(ValidatedTerms { terms, kind })
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ErrorCertificate {
     max_reconstruction_l2_error: f64,
@@ -199,6 +303,16 @@ pub struct ErrorCertificate {
 }
 
 impl ErrorCertificate {
+    pub const fn terms(self) -> CertificateTerms {
+        CertificateTerms {
+            max_reconstruction_l2_error: self.max_reconstruction_l2_error,
+            eta_transform_dot: self.eta_transform_dot,
+            query_norm_upper: self.query_norm_upper,
+            eta_serving_score: self.eta_serving_score,
+            epsilon: self.epsilon,
+        }
+    }
+
     pub const fn max_reconstruction_l2_error(self) -> f64 {
         self.max_reconstruction_l2_error
     }
@@ -391,6 +505,8 @@ impl BlockCertificate {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CertificateError {
+    InvalidTerms { field: &'static str },
+    EmptyIntersection,
     EmptyBlock,
     RowCountMismatch { expected: u32, actual: u32 },
     RowOutOfRange { row: u32, expected_row_count: u32 },
@@ -409,6 +525,10 @@ pub enum CertificateError {
 impl fmt::Display for CertificateError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::InvalidTerms { field } => write!(formatter, "invalid certificate term: {field}"),
+            Self::EmptyIntersection => {
+                formatter.write_str("primary and refined intervals do not intersect")
+            }
             Self::EmptyBlock => formatter.write_str(
                 "an exhaustive certificate requires at least one original vector from its block",
             ),
