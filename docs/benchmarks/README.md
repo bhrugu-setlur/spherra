@@ -14,8 +14,11 @@ to make reconstruction possible from the recorded file alone.
 | --- | --- | --- |
 | [`codec-format-baseline.schema.json`](codec-format-baseline.schema.json) | `spherra-bench codec-format` | JSON array, one entry per candidate budget |
 | [`certificate-soak.schema.json`](certificate-soak.schema.json) | `spherra-bench certify` | Single JSON object |
+| [`local-oracle-reference.schema.json`](local-oracle-reference.schema.json) | `spherra-bench oracle-reference` | Streaming exact-reference provenance and artifact hash |
+| [`local-latency.schema.json`](local-latency.schema.json) | `spherra-bench latency` | Build/open timings, 1,000 query samples, RSS and gate result |
+| [`local-build-memory.schema.json`](local-build-memory.schema.json) | `spherra-bench build-memory` | Child-process peak minus baseline and caller inputs |
 
-Both schemas set `additionalProperties: false` and require every field. An
+These schemas set `additionalProperties: false` and require every field. An
 omitted identity, corpus, byte-accounting, or bound-soundness field is a
 validation failure, not a default. `crates/spherra-bench/tests/measurement_contract.rs`
 holds the writer and the schema together: it lists the required fields
@@ -23,6 +26,75 @@ independently and fails if either side drifts.
 
 `spherra-bench` validates its own output against the checked-in schema before
 writing, and exits nonzero on any certificate bound violation.
+
+## Local-index measurement protocol
+
+The local-index commands implement the September local design, independently of
+the historical M1/R7 results below. Run from a clean worktree, with a release
+binary, and write initial output under ignored `target/` paths. Commit reviewed
+JSON evidence afterward. A smoke run never claims to satisfy a full-size gate.
+
+```bash
+cargo run -p spherra-bench --release --locked -- oracle-reference \
+  --rows 1000000 --queries 200 --seed 20260804 \
+  --output target/measure/local-1m-oracle.json
+
+cargo run -p spherra-bench --release --locked -- build-memory \
+  --seed 20260804 --output target/measure/local-build-memory.json
+
+cargo run -p spherra-bench --release --locked -- latency \
+  --rows 1000000 --queries 1000 --warmup 50 --training-rows 4096 \
+  --seed 20260804 --index-dir target/local-index-1m \
+  --output target/measure/local-latency-1m.json
+```
+
+Repeat latency with `--rows 10000000` and a separate index/output path. Subsequent
+kernel measurements use `--reuse true` on the same index. Reuse checks the
+versioned generator descriptor, training size, and full CURRENT hash against
+`benchmark-build.json`; the report distinguishes the original build commit and
+timing from the current search commit. The library treats that benchmark sidecar
+as an unrelated file.
+
+Generated sources concatenate 1M-row chunks. Chunk seeds are the first eight
+little-endian bytes of BLAKE3 derive-key with context
+`spherra.generated-correlated.chunks.v1` and material `(root_seed u64, chunk u64)`.
+Each chunk uses the existing indexed RNG stream and AR(1) generator (rho 0.85).
+Training and queries use the existing, separate calibration/query streams with
+the root seed. Descriptors record every chunk seed. Corpus and query hashes cover
+their raw little-endian FP32 rows. Rows are generated without retaining additional
+calibration/query matrices per chunk.
+
+The streaming oracle retains only normalized queries and bounded top-100 heaps
+per worker, merging in exact FP64 score/row order. The read-only reference artifact
+is `SPHROR01`, row count u64, query count u32, k u32, then per query its actual
+count u32 and `(row u64, score f64)` pairs, all little endian. Its full BLAKE3 and
+generator parameters are committed before index performance/quality evidence.
+
+Latency measures one public `search` at a time, including query preparation and
+residual reads, with k=10 and the default budget. It warms with the last 50 of
+1,050 generated queries and times the first 1,000. Percentiles use nearest rank;
+all raw samples are retained. AC power is checked before warmup, every 100 timed
+queries, and after the run. Gate eligibility requires the clean release build,
+the qualified M1 Pro/32 GiB hardware, and the exact row/query/warmup counts.
+
+`latency` and `build-memory` run a fresh child under macOS `/usr/bin/time -l`.
+The adjacent `.time.txt` retains progress and the raw peak-RSS output in bytes.
+Latency's peak includes the child's build, open, and search, so it is conservative
+for search alone. Build throughput includes generation, training, encoding,
+verification and file/directory synchronization. Open time and retained descriptors
+are measured separately. Stage 1 uses the checked scalar kernel.
+
+The memory probe defaults to exactly 32,768 training inputs and 65,537 pushed
+rows. It records RSS before and after allocating caller inputs, their logical
+bytes and vector capacities, then reports peak RSS minus pre-input RSS minus
+input allocation bytes. A negative estimate is a measurement error; it is never
+clamped to zero. Smaller explicit `--training-rows`/`--rows` runs test the command
+but are not gate evidence. The full builder limit is 2 GiB. A missed eligible
+gate writes its measured result and exits nonzero.
+
+A separate ignored library `worker_probe` compares 4/6/8 workers on the measured
+1M index (20 queries, five warmups). It is a scaling probe, not a substitute for
+the 1,000-query acceptance runs, and does not add an option to the public API.
 
 ## Running the harness
 

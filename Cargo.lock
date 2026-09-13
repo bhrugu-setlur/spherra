@@ -445,11 +445,14 @@ dependencies = [
 name = "spherra-bench"
 version = "0.1.0"
 dependencies = [
+ "blake3",
  "serde_json",
+ "spherra",
  "spherra-codec",
  "spherra-domain",
  "spherra-format",
  "spherra-testkit",
+ "tempfile",
 ]
 
 [[package]]

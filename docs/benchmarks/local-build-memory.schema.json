@@ -1,0 +1,196 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "timestamp",
+    "git_commit",
+    "dirty_worktree",
+    "machine",
+    "command",
+    "source",
+    "pre_input_rss_bytes",
+    "post_input_rss_bytes",
+    "input_bytes",
+    "input_logical_bytes",
+    "training_rows",
+    "pushed_rows",
+    "peak_rss_bytes",
+    "builder_owned_bytes",
+    "limit_bytes",
+    "gate_eligible",
+    "gate_passed",
+    "time_log",
+    "durability_mode"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        1
+      ]
+    },
+    "kind": {
+      "enum": [
+        "build-memory"
+      ]
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "git_commit": {
+      "type": "string"
+    },
+    "dirty_worktree": {
+      "type": "boolean"
+    },
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "architecture",
+        "cpu",
+        "physical_memory_bytes",
+        "rustc",
+        "cargo_profile"
+      ],
+      "properties": {
+        "os": {
+          "type": "string"
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "physical_memory_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rustc": {
+          "type": "string"
+        },
+        "cargo_profile": {
+          "type": "string"
+        }
+      }
+    },
+    "command": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generator_version",
+        "kind",
+        "dimension",
+        "vector_count",
+        "chunk_rows",
+        "seed",
+        "correlation",
+        "seed_derivation",
+        "chunk_seeds"
+      ],
+      "properties": {
+        "generator_version": {
+          "enum": [
+            1
+          ]
+        },
+        "kind": {
+          "enum": [
+            "correlated"
+          ]
+        },
+        "dimension": {
+          "enum": [
+            768
+          ]
+        },
+        "vector_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "chunk_rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "correlation": {
+          "enum": [
+            0.85
+          ]
+        },
+        "seed_derivation": {
+          "enum": [
+            "spherra.generated-correlated.chunks.v1"
+          ]
+        },
+        "chunk_seeds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "pre_input_rss_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "post_input_rss_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "input_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "input_logical_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "training_rows": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "pushed_rows": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "peak_rss_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "builder_owned_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "limit_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gate_eligible": {
+      "type": "boolean"
+    },
+    "gate_passed": {
+      "type": "boolean"
+    },
+    "time_log": {
+      "type": "string"
+    },
+    "durability_mode": {
+      "enum": [
+        "file-and-directory-sync"
+      ]
+    }
+  }
+}

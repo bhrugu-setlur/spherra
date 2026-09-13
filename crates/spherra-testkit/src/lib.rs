@@ -23,3 +23,6 @@ pub use results::{
     CertificateSoakResult, CodecFormatMeasurement, PercentileSummary, SCHEMA_VERSION,
     SchemaViolations, validate_against_schema,
 };
+mod oracle_stream;
+pub use corpus::{ChunkedGeneratedDescriptor, GeneratedChunks};
+pub use oracle_stream::{CanonicalRowHasher, OracleStreamError, StreamingOracle};

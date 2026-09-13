@@ -35,6 +35,8 @@ use spherra_testkit::results::{
     SoakSeedIdentity, validate_against_schema,
 };
 
+mod local_index;
+
 const LAYOUT_TILED_SOA_32: &str = "tiled-soa-32";
 const SOAK_PROGRESS_INTERVAL: u64 = 100_000;
 
@@ -58,6 +60,11 @@ fn run(arguments: &[String]) -> Result<(), BenchError> {
         "codec-format" => codec_format(&options),
         "certify" => certify(&options),
         "prune-rate" => prune_rate(&options),
+        "oracle-reference" => local_index::oracle_reference(&options),
+        "latency" => local_index::measured_child("latency", &options),
+        "build-memory" => local_index::measured_child("build-memory", &options),
+        "latency-child" => local_index::latency_child(&options),
+        "build-memory-child" => local_index::memory_child(&options),
         other => Err(BenchError::UnknownSubcommand(other.to_owned())),
     }
 }

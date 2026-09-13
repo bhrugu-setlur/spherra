@@ -69,3 +69,5 @@ pub use open::Index;
 pub use search::{Hit, SearchOptions, SearchResult};
 #[cfg(test)]
 mod search_qualification;
+#[cfg(test)]
+mod worker_probe;

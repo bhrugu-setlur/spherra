@@ -455,3 +455,106 @@ impl fmt::Display for CorpusError {
 }
 
 impl std::error::Error for CorpusError {}
+
+/// Versioned deterministic concatenation. Each indexed chunk gets a derived
+/// seed; calibration and queries use separate root-seed streams. Changing the
+/// total row count preserves existing full chunks and query/training prefixes.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChunkedGeneratedDescriptor {
+    pub generator_version: u16,
+    pub kind: GeneratedKind,
+    pub dimension: usize,
+    pub vector_count: u64,
+    pub chunk_rows: usize,
+    pub seed: u64,
+    pub correlation: f64,
+    pub seed_derivation: String,
+    pub chunk_seeds: Vec<u64>,
+}
+#[derive(Clone, Debug)]
+pub struct GeneratedChunks {
+    descriptor: ChunkedGeneratedDescriptor,
+}
+#[derive(Clone, Debug)]
+pub enum ChunkError {
+    InvalidShape,
+    ChunkOutOfRange,
+}
+impl std::fmt::Display for ChunkError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
+impl std::error::Error for ChunkError {}
+impl GeneratedChunks {
+    pub fn new(vector_count: u64, chunk_rows: usize, seed: u64) -> Result<Self, ChunkError> {
+        if vector_count == 0 || vector_count > u64::from(u32::MAX) || chunk_rows == 0 {
+            return Err(ChunkError::InvalidShape);
+        }
+        let chunks = vector_count.div_ceil(chunk_rows as u64);
+        if chunks > 4096 {
+            return Err(ChunkError::InvalidShape);
+        }
+        let context = "spherra.generated-correlated.chunks.v1";
+        let chunk_seeds = (0..chunks)
+            .map(|chunk| {
+                let mut input = [0; 16];
+                input[..8].copy_from_slice(&seed.to_le_bytes());
+                input[8..].copy_from_slice(&chunk.to_le_bytes());
+                u64::from_le_bytes(
+                    blake3::derive_key(context, &input)[..8]
+                        .try_into()
+                        .expect("eight seed bytes"),
+                )
+            })
+            .collect();
+        Ok(Self {
+            descriptor: ChunkedGeneratedDescriptor {
+                generator_version: 1,
+                kind: GeneratedKind::Correlated,
+                dimension: DIMENSION,
+                vector_count,
+                chunk_rows,
+                seed,
+                correlation: CORRELATION,
+                seed_derivation: context.to_owned(),
+                chunk_seeds,
+            },
+        })
+    }
+    pub fn descriptor(&self) -> &ChunkedGeneratedDescriptor {
+        &self.descriptor
+    }
+    pub fn chunk(&self, chunk: usize) -> Result<Vec<[f32; DIMENSION]>, ChunkError> {
+        let seed = *self
+            .descriptor
+            .chunk_seeds
+            .get(chunk)
+            .ok_or(ChunkError::ChunkOutOfRange)?;
+        let first = chunk as u64 * self.descriptor.chunk_rows as u64;
+        let count =
+            (self.descriptor.vector_count - first).min(self.descriptor.chunk_rows as u64) as usize;
+        Ok(generate_rows(
+            GeneratedKind::Correlated,
+            count,
+            seed,
+            STREAM_INDEXED,
+        ))
+    }
+    pub fn training(&self, count: usize) -> Vec<[f32; DIMENSION]> {
+        generate_rows(
+            GeneratedKind::Correlated,
+            count,
+            self.descriptor.seed,
+            STREAM_CALIBRATION,
+        )
+    }
+    pub fn queries(&self, count: usize) -> Vec<[f32; DIMENSION]> {
+        generate_rows(
+            GeneratedKind::Correlated,
+            count,
+            self.descriptor.seed,
+            STREAM_QUERIES,
+        )
+    }
+}

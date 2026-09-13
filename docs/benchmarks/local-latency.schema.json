@@ -1,0 +1,313 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "timestamp",
+    "git_commit",
+    "dirty_worktree",
+    "machine",
+    "command",
+    "source",
+    "corpus_hash",
+    "query_hash",
+    "kernel",
+    "cache_state",
+    "build_source_commit",
+    "time_log",
+    "index_current_blake3",
+    "training_rows",
+    "query_count",
+    "warmup_queries",
+    "k",
+    "candidate_budget",
+    "workers",
+    "descriptors_held",
+    "generation",
+    "segment_count",
+    "peak_rss_bytes",
+    "drift_warnings",
+    "ac_power",
+    "reused_index",
+    "gate_eligible",
+    "gate_passed",
+    "build_dirty_worktree",
+    "build_seconds",
+    "build_rows_per_second",
+    "open_seconds",
+    "p50_ms",
+    "p99_ms",
+    "latencies_ms",
+    "model",
+    "durability_mode"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        1
+      ]
+    },
+    "kind": {
+      "enum": [
+        "latency"
+      ]
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "git_commit": {
+      "type": "string"
+    },
+    "dirty_worktree": {
+      "type": "boolean"
+    },
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "architecture",
+        "cpu",
+        "physical_memory_bytes",
+        "rustc",
+        "cargo_profile"
+      ],
+      "properties": {
+        "os": {
+          "type": "string"
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "physical_memory_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rustc": {
+          "type": "string"
+        },
+        "cargo_profile": {
+          "type": "string"
+        }
+      }
+    },
+    "command": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generator_version",
+        "kind",
+        "dimension",
+        "vector_count",
+        "chunk_rows",
+        "seed",
+        "correlation",
+        "seed_derivation",
+        "chunk_seeds"
+      ],
+      "properties": {
+        "generator_version": {
+          "enum": [
+            1
+          ]
+        },
+        "kind": {
+          "enum": [
+            "correlated"
+          ]
+        },
+        "dimension": {
+          "enum": [
+            768
+          ]
+        },
+        "vector_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "chunk_rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "correlation": {
+          "enum": [
+            0.85
+          ]
+        },
+        "seed_derivation": {
+          "enum": [
+            "spherra.generated-correlated.chunks.v1"
+          ]
+        },
+        "chunk_seeds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "corpus_hash": {
+      "type": "string"
+    },
+    "query_hash": {
+      "type": "string"
+    },
+    "kernel": {
+      "type": "string"
+    },
+    "cache_state": {
+      "type": "string"
+    },
+    "build_source_commit": {
+      "type": "string"
+    },
+    "time_log": {
+      "type": "string"
+    },
+    "index_current_blake3": {
+      "type": "string"
+    },
+    "training_rows": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "query_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "warmup_queries": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "k": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "candidate_budget": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "workers": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "descriptors_held": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "segment_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "peak_rss_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "drift_warnings": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "ac_power": {
+      "type": "boolean"
+    },
+    "reused_index": {
+      "type": "boolean"
+    },
+    "gate_eligible": {
+      "type": "boolean"
+    },
+    "gate_passed": {
+      "type": "boolean"
+    },
+    "build_dirty_worktree": {
+      "type": "boolean"
+    },
+    "build_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "build_rows_per_second": {
+      "type": "number",
+      "minimum": 0
+    },
+    "open_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "p50_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "p99_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "latencies_ms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "number",
+        "minimum": 0
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transform_id",
+        "quantizer_id",
+        "pq_codebook_id",
+        "codec_id",
+        "scorer_version",
+        "layout"
+      ],
+      "properties": {
+        "transform_id": {
+          "type": "string"
+        },
+        "quantizer_id": {
+          "type": "string"
+        },
+        "pq_codebook_id": {
+          "type": "string"
+        },
+        "codec_id": {
+          "type": "string"
+        },
+        "scorer_version": {
+          "enum": [
+            1
+          ]
+        },
+        "layout": {
+          "enum": [
+            "tiled-soa-32"
+          ]
+        }
+      }
+    },
+    "durability_mode": {
+      "enum": [
+        "file-and-directory-sync"
+      ]
+    }
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "timestamp",
+    "git_commit",
+    "dirty_worktree",
+    "machine",
+    "command",
+    "source",
+    "corpus_hash",
+    "query_hash",
+    "query_count",
+    "k",
+    "artifact_path",
+    "artifact_bytes",
+    "artifact_blake3",
+    "elapsed_seconds",
+    "rows_scored",
+    "workers",
+    "durability_mode"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        1
+      ]
+    },
+    "kind": {
+      "enum": [
+        "oracle-reference"
+      ]
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "git_commit": {
+      "type": "string"
+    },
+    "dirty_worktree": {
+      "type": "boolean"
+    },
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "architecture",
+        "cpu",
+        "physical_memory_bytes",
+        "rustc",
+        "cargo_profile"
+      ],
+      "properties": {
+        "os": {
+          "type": "string"
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "physical_memory_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rustc": {
+          "type": "string"
+        },
+        "cargo_profile": {
+          "type": "string"
+        }
+      }
+    },
+    "command": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generator_version",
+        "kind",
+        "dimension",
+        "vector_count",
+        "chunk_rows",
+        "seed",
+        "correlation",
+        "seed_derivation",
+        "chunk_seeds"
+      ],
+      "properties": {
+        "generator_version": {
+          "enum": [
+            1
+          ]
+        },
+        "kind": {
+          "enum": [
+            "correlated"
+          ]
+        },
+        "dimension": {
+          "enum": [
+            768
+          ]
+        },
+        "vector_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "chunk_rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "correlation": {
+          "enum": [
+            0.85
+          ]
+        },
+        "seed_derivation": {
+          "enum": [
+            "spherra.generated-correlated.chunks.v1"
+          ]
+        },
+        "chunk_seeds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "corpus_hash": {
+      "type": "string"
+    },
+    "query_hash": {
+      "type": "string"
+    },
+    "query_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "k": {
+      "enum": [
+        100
+      ]
+    },
+    "artifact_path": {
+      "type": "string"
+    },
+    "artifact_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "artifact_blake3": {
+      "type": "string"
+    },
+    "elapsed_seconds": {
+      "type": "number",
+      "minimum": 0
+    },
+    "rows_scored": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "workers": {
+      "enum": [
+        6
+      ]
+    },
+    "durability_mode": {
+      "enum": [
+        "not-applicable"
+      ]
+    }
+  }
+}

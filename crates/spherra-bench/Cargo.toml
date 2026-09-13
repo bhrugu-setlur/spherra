@@ -14,3 +14,8 @@ spherra-codec = { path = "../spherra-codec" }
 spherra-format = { path = "../spherra-format" }
 spherra-testkit = { path = "../spherra-testkit" }
 serde_json.workspace = true
+spherra = { path = "../spherra" }
+blake3.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
