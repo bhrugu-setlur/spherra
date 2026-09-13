@@ -1,6 +1,6 @@
 # Spherra local index design
 
-Status: **revision 4; awaiting user approval**
+Status: **approved at revision 4; approved by the user 2026-09-13**
 Date: 2026-09-13
 Scope: replaces, for local scope, the R7 distributed architecture
 (`docs/design/2026-08-04-polar-lsm-router-design.md`) and the I4

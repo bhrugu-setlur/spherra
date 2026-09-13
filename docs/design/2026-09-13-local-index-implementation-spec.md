@@ -1,6 +1,6 @@
 # Spherra local index implementation specification
 
-Status: **revision 4; awaiting user approval**
+Status: **approved at revision 4; approved by the user 2026-09-13**
 Date: 2026-09-13
 Governing design: `2026-09-13-local-index-design.md` (cited below as D§n)
 
@@ -345,4 +345,4 @@ D§14 content changes, which wait for user approval.
 
 ## 11. Approval record
 
-- User: pending.
+- User: APPROVE at revision 4 (2026-09-13). Separate approvals still required before acting: D§14 project guide changes, and unsafe code in `neon.rs` if Task 12 runs.
