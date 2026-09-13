@@ -10,6 +10,7 @@ edition = "2024"
 cargo-fuzz = true
 
 [dependencies]
+spherra = { path = "../crates/spherra", features = ["fuzzing"] }
 arbitrary = { version = "1", features = ["derive"] }
 libfuzzer-sys = "0.4"
 spherra-codec = { path = "../crates/spherra-codec", features = ["fuzzing"] }
@@ -26,6 +27,27 @@ bench = false
 [[bin]]
 name = "bound_soundness"
 path = "fuzz_targets/bound_soundness.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "index_current"
+path = "fuzz_targets/index_current.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "index_model"
+path = "fuzz_targets/index_model.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "index_manifest"
+path = "fuzz_targets/index_manifest.rs"
 test = false
 doc = false
 bench = false

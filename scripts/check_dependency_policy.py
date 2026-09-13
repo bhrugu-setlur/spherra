@@ -39,20 +39,12 @@ def normal_or_build_dependencies(package: dict[str, object]) -> Iterable[str]:
         yield name
 
 
-def main() -> int:
-    completed = subprocess.run(
-        [cargo_executable(), "metadata", "--format-version", "1"],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    metadata = json.loads(completed.stdout)
-
+def invalid_edges(metadata: dict) -> list[tuple[str, str]]:
     workspace_ids = set(metadata["workspace_members"])
     spherra_packages = {
         package["name"]
         for package in metadata["packages"]
-        if package["id"] in workspace_ids and package["name"].startswith("spherra-")
+        if package["id"] in workspace_ids and (package["name"] == "spherra" or package["name"].startswith("spherra-"))
     }
     ALLOWED = {
         (package, "spherra-domain")
@@ -61,6 +53,9 @@ def main() -> int:
     }
     ALLOWED |= {
         ("spherra-codec", "spherra-simd"),
+        ("spherra", "spherra-codec"),
+        ("spherra", "spherra-format"),
+        ("spherra-bench", "spherra"),
         ("spherra-testkit", "spherra-codec"),
         ("spherra-testkit", "spherra-format"),
         ("spherra-bench", "spherra-codec"),
@@ -68,7 +63,7 @@ def main() -> int:
         ("spherra-bench", "spherra-testkit"),
     }
 
-    invalid_edges = []
+    violations = []
     for package in metadata["packages"]:
         package_id = package["id"]
         package_name = package["name"]
@@ -78,10 +73,20 @@ def main() -> int:
             if dependency_name not in spherra_packages:
                 continue
             if (package_name, dependency_name) not in ALLOWED:
-                invalid_edges.append((package_name, dependency_name))
+                violations.append((package_name, dependency_name))
 
-    if invalid_edges:
-        for package_name, dependency_name in sorted(invalid_edges):
+    return violations
+
+
+def main() -> int:
+    completed = subprocess.run(
+        [cargo_executable(), "metadata", "--format-version", "1"],
+        check=True, capture_output=True, text=True,
+    )
+    violations = invalid_edges(json.loads(completed.stdout))
+
+    if violations:
+        for package_name, dependency_name in sorted(violations):
             print(f"invalid dependency edge: {package_name} -> {dependency_name}")
         return 1
 

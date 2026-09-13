@@ -8,4 +8,5 @@ cargo clippy --workspace --all-targets --all-features --locked
 cargo nextest run --workspace --all-features --locked --no-tests=pass
 cargo test --workspace --doc --locked
 python3 scripts/check_dependency_policy.py
+python3 -m unittest scripts/test_check_dependency_policy.py
 cargo deny check licenses bans sources
