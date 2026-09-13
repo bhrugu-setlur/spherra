@@ -430,6 +430,9 @@ pub(super) fn memory_child(o: &Options) -> Result<(), BenchError> {
     if report.rows_added() != rows.len() as u64 {
         return Err(BenchError::harness("memory probe row count mismatch"));
     }
+    // Keep both caller-owned buffers live through staging and commit so the
+    // subtraction uses input memory present throughout the measured workload.
+    std::hint::black_box((&training, &rows));
     value["pre_input_rss_bytes"] = json!(pre);
     value["post_input_rss_bytes"] = json!(post);
     value["input_bytes"] = json!(input_bytes);

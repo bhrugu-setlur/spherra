@@ -1,0 +1,40 @@
+{
+  "artifact_blake3": "8c2446ed410e1fd3c104622567d9c5d048caf4c69d535fda1fd2431a9c498b38",
+  "artifact_bytes": 320824,
+  "artifact_path": "target/measure/oracle-8c2446ed410e1fd3c104622567d9c5d048caf4c69d535fda1fd2431a9c498b38.bin",
+  "command": "spherra-bench oracle-reference --output target/measure/local-index-1m-oracle.json --queries 200 --rows 1000000 --seed 20260804",
+  "corpus_hash": "ade3b24e88e3bb1e744557fb10319f4078afacce713448d30fb02096e5f6d7cf",
+  "dirty_worktree": false,
+  "durability_mode": "not-applicable",
+  "elapsed_seconds": 73.761033,
+  "git_commit": "2ad9a34df74bb84e3c1d8c629bb644201bcf3f07",
+  "k": 100,
+  "kind": "oracle-reference",
+  "machine": {
+    "architecture": "aarch64",
+    "cargo_profile": "release",
+    "cpu": "Apple M1 Pro",
+    "os": "Darwin 26.6.2",
+    "physical_memory_bytes": 34359738368,
+    "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)"
+  },
+  "query_count": 200,
+  "query_hash": "883f9c2ace9a8431006238b0e6bc0ee6551cc7f4192c914d7505ecd2dc1736e5",
+  "rows_scored": 1000000,
+  "schema_version": 1,
+  "source": {
+    "chunk_rows": 1000000,
+    "chunk_seeds": [
+      254657558119675395
+    ],
+    "correlation": 0.85,
+    "dimension": 768,
+    "generator_version": 1,
+    "kind": "correlated",
+    "seed": 20260804,
+    "seed_derivation": "spherra.generated-correlated.chunks.v1",
+    "vector_count": 1000000
+  },
+  "timestamp": "2026-09-13T21:39:07Z",
+  "workers": 6
+}
