@@ -892,3 +892,91 @@ mod tests {
         ));
     }
 }
+
+#[cfg(test)]
+mod cached_primary_tests {
+    use super::*;
+    use crate::corpus::CorpusDescriptor;
+    use std::path::Path;
+
+    fn compare(descriptor: CorpusDescriptor, query_count: usize, include_held_out: bool) {
+        let splits = descriptor.load(20260804, query_count).unwrap();
+        let run = CodecFormatRun::prepare(splits, 20260804).unwrap();
+        let queries: Vec<_> = run
+            .splits
+            .queries()
+            .iter()
+            .map(|query| {
+                run.scorer
+                    .prepare_query(&run.plan, query, &run.quantizer, &run.codebook)
+                    .unwrap()
+            })
+            .collect();
+        let mut rows = run.splits.indexed().to_vec();
+        if include_held_out {
+            rows.extend_from_slice(run.splits.calibration());
+            rows.extend_from_slice(run.splits.queries());
+        }
+        for (row, raw) in rows.iter().enumerate() {
+            let transformed = transform_row(&run.plan, raw).unwrap();
+            let primary = run.quantizer.encode(&transformed);
+            let residual = run
+                .codebook
+                .encode(&residual_of(&run.quantizer, &transformed))
+                .unwrap();
+            let candidate = run
+                .codebook
+                .prepare_candidate(PrimaryScore::for_row(row as u32), residual);
+            for prepared in &queries {
+                let primary_raw = run.scorer.score_primary(prepared, &primary).raw();
+                let cached = run
+                    .scorer
+                    .refine_from_primary(prepared, primary_raw, &residual);
+                assert_eq!(
+                    cached,
+                    run.scorer
+                        .score_refined(prepared, &primary, &residual)
+                        .raw()
+                );
+                assert_eq!(
+                    cached,
+                    run.scorer
+                        .score_prepared_candidate(prepared, &primary, &candidate)
+                        .unwrap()
+                        .raw()
+                );
+            }
+        }
+        eprintln!(
+            "cached primary: {} rows x {} queries; zero differences",
+            rows.len(),
+            queries.len()
+        );
+    }
+
+    #[test]
+    fn cached_primary_refinement_matches_reference_smoke() {
+        compare(
+            CorpusDescriptor::resolve("generated-correlated-768x256").unwrap(),
+            4,
+            false,
+        );
+    }
+
+    #[test]
+    #[ignore = "full corpus qualification: run with --release --ignored; requires the pinned local SciFact archive"]
+    fn cached_primary_refinement_matches_every_archived_and_generated_row() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let path = root.join("corpora/archive/scifact-mpnet-768-2026-09-13.json");
+        let mut descriptor = CorpusDescriptor::resolve(path.to_str().unwrap()).unwrap();
+        if let CorpusDescriptor::FileBacked(ref mut file) = descriptor {
+            file.path = root.join(&file.path);
+        }
+        compare(descriptor, 20, true);
+        compare(
+            CorpusDescriptor::resolve("generated-correlated-768x20000").unwrap(),
+            20,
+            false,
+        );
+    }
+}

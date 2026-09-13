@@ -453,6 +453,27 @@ impl FixedPointScorer {
         }
     }
 
+    /// Adds the 96 residual lookup entries to a cached primary score, in the
+    /// same order as `score_refined`. The caller must supply the primary raw
+    /// score produced for this query and candidate; this method cannot verify
+    /// that association. It grants no certificate provenance.
+    ///
+    /// # Panics
+    /// Panics if an invalid cached value causes checked accumulation to overflow.
+    /// A primary score produced by this scorer satisfies the accumulation bound.
+    pub fn refine_from_primary(
+        &self,
+        query: &PreparedScorerQuery,
+        primary_raw: i64,
+        residual: &Pq96Code,
+    ) -> i64 {
+        let mut sum = primary_raw;
+        for (subquantizer, code) in residual.as_bytes().iter().copied().enumerate() {
+            sum = checked_accumulate(sum, query.residual_lookup[subquantizer][usize::from(code)]);
+        }
+        sum
+    }
+
     pub fn score_refined(
         &self,
         query: &PreparedScorerQuery,
