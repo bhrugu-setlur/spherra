@@ -567,19 +567,28 @@ impl PrimaryFileReader {
         self.0.read_row::<4>(SectionKind::RadiusFlags, row)
     }
 
+    /// Reads one physical TILED_SOA_32 tile in a single positional call. The
+    /// ordinal is a tile index, not a row index. A final partial tile retains
+    /// its padding lanes; the caller uses `row_count` to select logical rows.
+    pub fn primary_tile(&self, tile: u32) -> Result<[u8; 768 * 16], FormatError> {
+        let tile_count = self.row_count().div_ceil(TILE_ROWS);
+        if tile >= tile_count {
+            return Err(FormatError::TileOutOfRange { tile, tile_count });
+        }
+        let entry = self.0.section(SectionKind::PrimaryDirectInt4)?;
+        let mut bytes = [0; 768 * 16];
+        let offset = entry
+            .offset
+            .checked_add(u64::from(tile) * bytes.len() as u64)
+            .ok_or(FormatError::LengthOverflow)?;
+        self.0.read_at(&mut bytes, offset)?;
+        Ok(bytes)
+    }
+
     /// Reads one logical direct-int4 code out of the TILED_SOA_32 layout.
     pub fn primary_code(&self, row: u32) -> Result<[u8; DIRECT_CODE_BYTE_LEN], FormatError> {
         self.0.check_row(row)?;
-        let entry = self.0.section(SectionKind::PrimaryDirectInt4)?;
-
-        // The section length was validated against `tiled_soa32_len`, so every
-        // tile is exactly this size and the arithmetic below stays in range.
-        let tile_bytes = entry.length / u64::from(self.row_count().div_ceil(TILE_ROWS));
-        let mut tile = vec![0; tile_bytes as usize];
-        self.0.read_at(
-            &mut tile,
-            entry.offset + u64::from(row / TILE_ROWS) * tile_bytes,
-        )?;
+        let tile = self.primary_tile(row / TILE_ROWS)?;
 
         // A tile stores all 768 coordinates for its 32 lanes: coordinate `c`
         // occupies a 16-byte lane group, and this row is its `lane`-th nibble.

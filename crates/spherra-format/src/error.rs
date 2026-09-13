@@ -156,6 +156,9 @@ pub enum FormatError {
     #[error("row {row} is outside the segment's {row_count} rows")]
     RowOutOfRange { row: u32, row_count: u32 },
 
+    #[error("tile {tile} is outside the segment's {tile_count} tiles")]
+    TileOutOfRange { tile: u32, tile_count: u32 },
+
     #[error("a stored {value} is not a usable finite non-negative value")]
     InvalidStoredValue { value: &'static str },
 
