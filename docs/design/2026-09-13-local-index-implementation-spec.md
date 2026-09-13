@@ -340,9 +340,9 @@ qualification on filesystems other than APFS.
 
 ## 10. Status and maintenance
 
-Update the project guide status after each task per its maintenance rules, except the
-D§14 content changes, which wait for user approval.
+Update the project guide status section after each task. The D§14 content changes
+were approved and applied on 2026-09-13.
 
 ## 11. Approval record
 
-- User: APPROVE at revision 4 (2026-09-13). Separate approvals still required before acting: D§14 project guide changes, and unsafe code in `neon.rs` if Task 12 runs.
+- User: APPROVE at revision 4 (2026-09-13). Also approved by the user on 2026-09-13: the D§14 project guide changes (applied), and unsafe code confined to `crates/spherra-simd/src/neon.rs` if Task 12 runs.

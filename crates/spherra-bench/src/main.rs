@@ -295,7 +295,8 @@ fn report(outcome: &PruneOutcome) {
     );
     println!(
         "tightness: certified epsilon is {:.1}x the largest observed error",
-        outcome.primary_attribution.epsilon / outcome.observed_primary_error.max.max(f64::MIN_POSITIVE)
+        outcome.primary_attribution.epsilon
+            / outcome.observed_primary_error.max.max(f64::MIN_POSITIVE)
     );
 }
 

@@ -409,10 +409,7 @@ impl CodecFormatRun {
             sorted_lowers.sort_by(|left, right| right.total_cmp(left));
             let threshold = sorted_lowers[(k - 1).min(sorted_lowers.len() - 1)];
 
-            let survivors = uppers
-                .iter()
-                .filter(|upper| **upper >= threshold)
-                .count();
+            let survivors = uppers.iter().filter(|upper| **upper >= threshold).count();
             survivor_counts.push(survivors as f64);
             prune_rates.push((row_count as f64 - survivors as f64) / row_count as f64);
 
@@ -424,8 +421,7 @@ impl CodecFormatRun {
                 .filter(|upper| **upper >= row_threshold)
                 .count();
             per_row_survivor_counts.push(row_survivors as f64);
-            per_row_prune_rates
-                .push((row_count as f64 - row_survivors as f64) / row_count as f64);
+            per_row_prune_rates.push((row_count as f64 - row_survivors as f64) / row_count as f64);
 
             for neighbor in self.oracle.top_k_normalized(&normalized_query, k) {
                 if uppers[neighbor.row as usize] < threshold {
