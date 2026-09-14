@@ -8,8 +8,8 @@ and original-truth certificates are unchanged. Existing indexes need no rebuild.
 
 ## Verification
 
-The production change is clean commit `ad236e5`. The benchmark-only reference
-reuse follow-up is `d0979c2`; it changes no library code. Full CI passes 218 tests
+The production change is clean commit `a407fff`. The benchmark-only reference
+reuse follow-up is `79e8a39`; it changes no library code. Full CI passes 218 tests
 with 12 explicitly skipped qualifications; workspace tests and strict all-target
 clippy pass. The ignored release scalar-reference qualification also passes on
 archived SciFact and generated 20k, each with 200 queries and four k/budget
@@ -34,7 +34,7 @@ All runs use k=10, candidate budget 200, seed 20260804 and 4096 training inputs.
 | MS MARCO 100k, real final queries, cosine | 200 | 0.9705 | 0.9770 | 13 / 2,000 |
 | DPR 1M native 768D, dot | 1000 | 0.9024 | 0.9234 | 210 / 10,000 |
 
-The two cosine runs use clean `ad236e5` and reuse their previous indexes. Corpus,
+The two cosine runs use clean `a407fff` and reuse their previous indexes. Corpus,
 query, model, oracle and CURRENT identities match the original experiment.
 Independent audits compare all 80,000 traced candidates: primary ranks, raw
 primary/refined scores, FP64 numerators and truth are unchanged. Both pools
@@ -50,8 +50,8 @@ MS MARCO query changes order within the same top-10 set. This is the expected
 small numerical difference; the production numerator and raw certificate
 provenance were deliberately retained.
 
-DPR uses clean `d0979c2`, the existing `target/dpr-dot-index-1m-renorm` index,
-and the pinned exact lists from the earlier clean `fcaf0a8` experiment. The
+DPR uses clean `79e8a39`, the existing `target/dpr-dot-index-1m-renorm` index,
+and the pinned exact lists from the earlier clean `7043707` experiment. The
 benchmark verifies the report hash, source cleanliness, all input hashes,
 workload, CURRENT and exact-list cardinality/uniqueness before reuse. It searches
 every query afresh, compares all corrected candidate scores/order with scalar
@@ -78,7 +78,7 @@ check the full 80,000-candidate pools.
 
 Serial clean-release runs on the existing generated 1M index, six
 workers, 50 warmups and 1000 measured queries per method. Historical shared-scan
-baselines at `31f1466` are cosine p50/p99 57.984/144.235 ms and dot
+baselines at `e093e25` are cosine p50/p99 57.984/144.235 ms and dot
 58.658/174.376 ms. These are separate runs, not a paired measurement of the
 correction's isolated cost.
 
@@ -87,7 +87,7 @@ correction's isolated cost.
 | Cosine | 72.313 ms | 113.564 ms | 401,391,616 B | 17 | pass |
 | Dot product | 73.009 ms | 108.237 ms | 401,014,784 B | 17 | pass |
 
-Both runs use clean `d0979c2`, unchanged CURRENT/model/query identities, AC power
+Both runs use clean `79e8a39`, unchanged CURRENT/model/query identities, AC power
 and the existing safe tile kernel. The 1M p50≤150 ms / p99≤300 ms targets pass.
 The medians are about 14 ms higher than the earlier separate runs. These
 measurements do not isolate the correction's cost; the proposed sub-millisecond

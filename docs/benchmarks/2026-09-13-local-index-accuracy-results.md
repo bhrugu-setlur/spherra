@@ -47,7 +47,7 @@ relations can remain. One indexed passage exceeded the model's 384-token limit;
 no calibration passage or query was truncated. No new embedding model was
 trained; the experiment improves representativeness of the measured vectors.
 
-Exact original-space FP64 top100 references were pinned on clean `2f8fcb8`,
+Exact original-space FP64 top100 references were pinned on clean `9524e6b`,
 before any real index measurement. Training sizes and selection were
 [preregistered](2026-09-13-local-index-accuracy-experiments.md): choose the
 smallest input size within 0.002 recall@10 of the best tuning result at budget
@@ -62,7 +62,7 @@ smallest input size within 0.002 recall@10 of the best tuning result at budget
 
 The rule selected **4,096 inputs**, within 0.0010 of the best. The largest
 model's paired-query bootstrap 95% difference interval is −0.65 to +0.80
-percentage points. The selection was committed at `372c362` before the final
+percentage points. The selection was committed at `972bd63` before the final
 run. Since the selected model is the baseline, only one final model was run.
 
 On the **200 untouched final queries**, recall@10 is **0.9705** (1,941/2,000
@@ -103,7 +103,7 @@ in FP64 and reranks by exact cosine score. Existing PQ work is included, making
 this a straightforward prototype rather than an optimized serving integration.
 It does not change returned production scores or certificates.
 
-On clean `ab2c369`, 1,000 generated 1M queries plus 50 warmups per path,
+On clean `71f762a`, 1,000 generated 1M queries plus 50 warmups per path,
 budget 200 and AC power produced:
 
 | Path | p50 | p99 |
@@ -150,9 +150,9 @@ Focused tests cover bad provenance, original-file truncation, exact reranking,
 loss accounting and public score/enclosure agreement. No new fuzz or ASan
 runtime claim is made.
 
-- Generated 1M diagnostics (clean `f3453e1`): [4096](results/2026-09-13-loss-generated-1m-training4096.json), [8192](results/2026-09-13-loss-generated-1m-training8192.json), [16384](results/2026-09-13-loss-generated-1m-training16384.json), [32768](results/2026-09-13-loss-generated-1m-training32768.json).
-- Real tuning diagnostics (clean `ab2c369`): [4096](results/2026-09-13-loss-msmarco-tuning-training4096.json), [8192](results/2026-09-13-loss-msmarco-tuning-training8192.json), [16384](results/2026-09-13-loss-msmarco-tuning-training16384.json), [32768](results/2026-09-13-loss-msmarco-tuning-training32768.json).
-- [Final-query diagnostic](results/2026-09-13-loss-msmarco-test-training4096.json) (clean `372c362`); pinned [tuning oracle](results/2026-09-13-msmarco-tuning-oracle.json) and [final oracle](results/2026-09-13-msmarco-test-oracle.json).
+- Generated 1M diagnostics (clean `0a027e3`): [4096](results/2026-09-13-loss-generated-1m-training4096.json), [8192](results/2026-09-13-loss-generated-1m-training8192.json), [16384](results/2026-09-13-loss-generated-1m-training16384.json), [32768](results/2026-09-13-loss-generated-1m-training32768.json).
+- Real tuning diagnostics (clean `71f762a`): [4096](results/2026-09-13-loss-msmarco-tuning-training4096.json), [8192](results/2026-09-13-loss-msmarco-tuning-training8192.json), [16384](results/2026-09-13-loss-msmarco-tuning-training16384.json), [32768](results/2026-09-13-loss-msmarco-tuning-training32768.json).
+- [Final-query diagnostic](results/2026-09-13-loss-msmarco-test-training4096.json) (clean `972bd63`); pinned [tuning oracle](results/2026-09-13-msmarco-tuning-oracle.json) and [final oracle](results/2026-09-13-msmarco-test-oracle.json).
 - Original reranking [raw timing samples](results/2026-09-13-original-rerank-1m.json) and [process timing output](results/2026-09-13-original-rerank-1m.time.txt).
 - Reproduction: [data builder](../../tools/build_msmarco_accuracy_corpus.py), [dataset audit](../../tools/audit_accuracy_dataset.py), [candidate-trace audit](../../tools/audit_index_loss.py), and [query-bootstrap/relevance summaries](../../tools/summarize_index_accuracy.py).
 
@@ -165,7 +165,7 @@ fixed corpus/model/query sampling, and not adjusted for repeated comparisons.
 
 ## Decision after the investigation
 
-The user declined the original-vector storage/read tradeoff and chose to move
+I declined the original-vector storage/read tradeoff and chose to move
 on from this investigation. Keep compressed-only serving and budget 200. The
 prototype and measurements below remain evidence; original-vector production
 integration is not planned. The completed local-index plan defines no further
@@ -181,7 +181,7 @@ The clearest measured route to higher neighbor fidelity is optional reranking
 from originals. A production proposal would need an explicit external-original
 provider bound to the same index generation and dense row IDs, missing/corrupt
 row failure behavior, a distinct exact-score result contract, and cold-cache
-latency qualification before adoption. It requires a user-approved API/design
+latency qualification before adoption. It requires an approved API/design
 amendment; this task implements only the benchmark prototype.
 
 For a solution retaining today's compressed storage, the next experiment would

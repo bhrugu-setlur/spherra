@@ -1,11 +1,11 @@
 # Reconstruction renormalization experiment — 2026-09-14
 
-The user asked to test "option 1": divide each refined candidate score by the
+This experiment tests "option 1": divide each refined candidate score by the
 length of its reconstruction, `dot(T(q), p + e) / |p + e|` (times the stored
 length for dot-product search). It needs no stored bytes and only touches the
 refined candidate pool. This is a **benchmark-only** experiment at clean
-`fcaf0a8`; serving search, scores, intervals, defaults and formats are unchanged.
-The user has now approved serving adoption in the
+`7043707`; serving search, scores, intervals, defaults and formats are unchanged.
+Serving adoption is now approved in the
 [reconstruction-length amendment](../design/2026-09-14-reconstruction-length-amendment.md).
 The earlier expectation that intervals must change is corrected there: retain
 the authenticated raw-score bounds on original truth, rather than rescaling
@@ -33,7 +33,7 @@ reranking, which recovered all neighbors. Not yet measured: serving latency
 cost, a certified interval for the corrected score, 10M rows, and a paired
 interval on DPR.
 
-## Option 2: stored build-time alignment (clean `7a526ab`)
+## Option 2: stored build-time alignment (clean `c0b11e3`)
 
 The builder knows each row's original direction u, so it could store the
 alignment `a = dot(u, p + e)` and serving could divide the refined score by it

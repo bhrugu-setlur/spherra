@@ -1,5 +1,7 @@
 # Spherra benchmark evidence
 
+Result files record commit IDs from before 2026-09-14; see the [commit ID map](commit-ids.md).
+
 This directory holds the **contract** for Spherra measurements: the JSON Schema
 documents a result must satisfy, and the rules about what a given result is and
 is not evidence for. Result files themselves live under `results/` and are only
@@ -143,7 +145,7 @@ pinned streaming-oracle reference.
 
 ### Local index stage 2 results (2026-09-13)
 
-The safe tile kernel passes every latency gate at clean commit `84065a9`:
+The safe tile kernel passes every latency gate at clean commit `4bbd4a1`:
 
 | Rows | p50 | p99 | Peak open/search RSS | Retained descriptors |
 |---|---:|---:|---:|---:|
@@ -214,7 +216,7 @@ still resolve to the exact recorded bytes. Schema-valid smoke runs remain
 ineligible for full gates. Any equality difference, enclosure failure or
 historical drop above 0.01 writes the result and exits nonzero.
 
-Clean commit `9a48a77` passes all three quality gates, with 200 queries per
+Clean commit `9239047` passes all three quality gates, with 200 queries per
 corpus, k=10 and budget 200:
 
 | Corpus | Indexed rows | Index recall@10 | Task 1 recall@10 | Equality differences | Enclosure failures |
@@ -376,7 +378,7 @@ almost entirely slack — sound, but conservative.
 
 ## Recorded results
 
-Committed under [`results/`](results/), all measured at commit `2bd12a0` with
+Committed under [`results/`](results/), all measured at commit `baa31f1` with
 `dirty_worktree: false` on an Apple M1 Pro (32 GiB), `rustc 1.88.0 (6b00bc388
 2025-06-23)`, release profile, `--cache-state warm` (asserted, never enforced).
 
@@ -441,7 +443,7 @@ Every entry in both files reports `primary_bound_violation_count: 0` and
 
 ## R7 quality-gate scoring
 
-Scored against [design spec](../design/2026-08-04-polar-lsm-router-design.md)
+Scored against [design spec](../design/archive/2026-08-04-polar-lsm-router-design.md)
 §11.1. **The R7 quality gate as a whole remains open.** One sub-gate has passing
 evidence at smoke scale; the rest are unmeasured.
 

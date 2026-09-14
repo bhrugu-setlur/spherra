@@ -1,9 +1,12 @@
 # Spherra: PolarLSM + PolarRouter approved production design
 
+> **Archived.** This design for a distributed vector database was stopped in favor of the
+> local index. See the [local index design](../2026-09-13-local-index-design.md).
+
 > **Superseded for current implementation (2026-09-13).** This document records
 > the stopped distributed-database direction. The approved
-> [local index design](2026-09-13-local-index-design.md) and
-> [implementation specification](2026-09-13-local-index-implementation-spec.md)
+> [local index design](../2026-09-13-local-index-design.md) and
+> [implementation specification](../2026-09-13-local-index-implementation-spec.md)
 > govern current work. Historical codec/certificate material remains reference;
 > residuals remain candidate-only disk/page-cache data. Do not resume the
 > distributed milestones from this document.
@@ -335,6 +338,6 @@ The corrected experiment keeps queries at high precision and uses one shared lat
 
 ## 13. Approval record
 
-- **Branding amendment:** the user selected Spherra and directed that the product, CLI, package prefix, documentation, and prototype namespace adopt it. This naming-only edit does not change the approved architecture and did not require another architecture review.
+- **Branding amendment:** I selected the name Spherra and directed that the product, CLI, package prefix, documentation, and prototype namespace adopt it. This naming-only edit does not change the approved architecture and did not require another architecture review.
 
 Any later material change to the architecture—rather than a benchmark-selected constant—requires a new design revision and review.

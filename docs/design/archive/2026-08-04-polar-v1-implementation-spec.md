@@ -1,9 +1,12 @@
 # Spherra v1 implementation specification
 
+> **Archived.** This design for a distributed vector database was stopped in favor of the
+> local index. See the [local index design](../2026-09-13-local-index-design.md).
+
 > **Superseded for current implementation (2026-09-13).** This specification
 > records the stopped distributed-database direction. Follow the approved
-> [local index design](2026-09-13-local-index-design.md) and
-> [local implementation specification](2026-09-13-local-index-implementation-spec.md).
+> [local index design](../2026-09-13-local-index-design.md) and
+> [local implementation specification](../2026-09-13-local-index-implementation-spec.md).
 > Its completed codec/format work remains historical evidence; its later
 > database milestones are not the current plan.
 
@@ -25,7 +28,7 @@ The workspace currently contains:
 - The approved R7 architecture specification.
 - A C++20 scalar codec/layout experiment.
 - A Python synthetic retrieval-quality experiment.
-- A living project guide.
+- A living status document.
 
 The workspace does not yet contain:
 
@@ -425,17 +428,17 @@ Do not implement during the codec/format foundation:
 
 ## 10. Status and document maintenance
 
-The project guide is a living document. Every project change must leave it accurate about completed work, remaining work, and the next executable step. Contributors must not claim milestone completion from code presence alone; they must run and record the milestone exit gate.
+The status document is a living record. Every project change must leave it accurate about completed work, remaining work, and the next executable step. Contributors must not claim milestone completion from code presence alone; they must run and record the milestone exit gate.
 
 After code, test, specification, benchmark-evidence, or status changes:
 
-1. Update the project guide when status, constraints, decisions, paths, commands, or next work changed.
+1. Update the status document when status, constraints, decisions, paths, commands, or next work changed.
 2. Re-run the verification commands for the changed area.
 3. Record the results with the changed documents.
-4. Do not report completion while the project guide is stale.
+4. Do not report completion while the status document is stale.
 
 ## 11. Approval record
 
-- **Branding amendment:** `polar` product/CLI/crate identifiers were changed to Spherra identifiers at the user's direction. Milestone boundaries, dependency direction, behavior, and verification gates are unchanged; no renewed technical review was required.
+- **Branding amendment:** `polar` product/CLI/crate identifiers were changed to Spherra identifiers. Milestone boundaries, dependency direction, behavior, and verification gates are unchanged; no renewed technical review was required.
 
 No implementation may begin from this document until it is approved for the same unchanged revision.

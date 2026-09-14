@@ -62,7 +62,7 @@ thousand.
 Certified epsilon is **3.8x** the largest error actually observed over 200
 queries x 3,688 rows (0.2146 against 0.0562). On synthetic data it is 5.2x.
 
-This corrects a belief recorded in the project guide caveat 3 and repeated on
+This corrects a belief recorded in status caveat 3 and repeated on
 2026-08-07: that `maximum_normalized_primary_slack` of 0.99999990 showed
 roughly seven orders of magnitude of unused error budget.
 

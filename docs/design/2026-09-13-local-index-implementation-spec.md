@@ -1,9 +1,9 @@
 # Spherra local index implementation specification
 
-The user-approved [reconstruction-length amendment](2026-09-14-reconstruction-length-amendment.md) supersedes the original
+The [reconstruction-length amendment](2026-09-14-reconstruction-length-amendment.md) supersedes the original
 final-ranking rule below. Primary Q24 scoring and raw-score certificates remain unchanged.
 
-Status: **approved at revision 4; approved by the user 2026-09-13**
+Status: **approved at revision 4 on 2026-09-13**
 Date: 2026-09-13
 Governing design: `2026-09-13-local-index-design.md` (cited below as D§n)
 
@@ -48,7 +48,7 @@ Absent: see D§2 code gaps.
 - Segment format v1 bytes do not change.
 - Quality evidence uses one archived SciFact `.f32`, identified by BLAKE3 and
   stored outside Git with its descriptor committed.
-- AddressSanitizer is unavailable on this machine (project guide); fuzz runs use
+- AddressSanitizer is unavailable on this machine; fuzz runs use
   `-s none` and are recorded as such.
 
 ## 4. Strategy
@@ -316,10 +316,10 @@ before the implementation.
 - **1M recall:** recorded against the Task 10 reference.
 - **Soundness:** interval enclosure for every hit on all three corpora.
 - **Gate:** zero equality differences and zero enclosure failures; a historical
-  recall drop above 0.01 stops the task and is reported to the user.
+  recall drop above 0.01 stops the task and is reported.
 
 ### Task 14 — Guidance and documentation
-- After user approval, apply D§14.
+- After approval, apply D§14.
 - Rewrite `README.md`: API, measured recall and latency, kernel per CPU, interval
   meaning and trust boundary, drift heuristics, append limits, directory states,
   durability scope.
@@ -343,20 +343,20 @@ qualification on filesystems other than APFS.
 
 ## 10. Status and maintenance
 
-Update the project guide status section after each task. The D§14 content changes
+Update the status document after each task. The D§14 content changes
 were approved and applied on 2026-09-13.
 
 ## 11. Approval record
 
-- User: APPROVE at revision 4 (2026-09-13). Also approved by the user on 2026-09-13: the D§14 project guide changes (applied), and unsafe code confined to `crates/spherra-simd/src/neon.rs` if Task 12 runs.
+- Approved at revision 4 (2026-09-13). Also approved on 2026-09-13: the D§14 status-document changes (applied), and unsafe code confined to `crates/spherra-simd/src/neon.rs` if Task 12 runs.
 
-## Subsequent user-directed checkpoint: stored magnitude
+## Subsequent checkpoint: stored magnitude
 
 The [2026-09-14 amendment](2026-09-14-stored-magnitude-amendment.md) adds
 `Hit::stored_magnitude()` and a compact checked-open cache. It defines the
 additional contract and verification without reopening the completed task plan.
 
-## Subsequent user-directed checkpoint: optional dot-product search
+## Subsequent checkpoint: optional dot-product search
 
 The [2026-09-14 amendment](2026-09-14-dot-product-search-amendment.md) defines the
 separate magnitude-aware method, exact comparison arithmetic, original-dot

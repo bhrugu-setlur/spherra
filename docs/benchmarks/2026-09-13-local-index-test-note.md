@@ -1,7 +1,7 @@
 # Technical note: local index test and measurement results
 
 Date: 2026-09-13 (America/New_York). Scope: the completed local embedded index
-on branch `local-index`, through delivery commit `b8f99f5`. Some raw timestamps
+on branch `local-index`, through delivery commit `40a79ba`. Some raw timestamps
 are September 14 UTC; they belong to the same local test date.
 
 The safe Rust tile kernel meets the approved 1M and 10M latency gates. The
@@ -152,12 +152,12 @@ above are committed. This distinction matters when reproducing from a clone.
 
 | Measurement | Clean source commit |
 |---|---|
-| Task 1 recall references | `caa8229418101dafa33749ca1148227a4dbcac7d` |
-| Pinned 1M exact oracle | `2ad9a34df74bb84e3c1d8c629bb644201bcf3f07` |
-| Builder memory and scalar 1M | `76408df13d7bfbb58a3b7c4bafb3d6b65b376a34` |
-| Scalar 10M | `e96f56391d5cf003f2527648ff45602401807d94` |
-| Safe tile 1M and 10M | `84065a963cbe6954979449d299ff53e7f07d4056` |
-| Public quality, all three corpora | `9a48a77789a77f2c8afe0cffe5318b1332c4cf22` |
+| Task 1 recall references | `8a3c543bb0737992522261e23f24402d55f042da` |
+| Pinned 1M exact oracle | `fa0663bd624168eb7a8a0ec9b7cf9b1417cf93ce` |
+| Builder memory and scalar 1M | `ff42ca76d7e703bbe1dcc8d9af994ea22837f72d` |
+| Scalar 10M | `3ad82433aeb9ff27ecde102d6cbfecaafa0fc955` |
+| Safe tile 1M and 10M | `4bbd4a19e16a569c01f5ae8f4994652678e87a63` |
+| Public quality, all three corpora | `92390476484fc8734e8a8d7986fdb4060a935f7b` |
 
 Every benchmark JSON retains its original command, full source revision,
 clean-worktree flag, model identities, corpus/query hashes and machine record.

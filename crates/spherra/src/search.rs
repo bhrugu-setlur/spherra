@@ -105,7 +105,7 @@ impl Ranking for Cosine {
     }
 }
 /// The refined Q24 score divided by the FP64 length of its reconstruction p + e
-/// (user-approved correction amendment). Squares are summed in coordinate order
+/// (reconstruction-length amendment). Squares are summed in coordinate order
 /// without fused multiply-add, so the value is bit-reproducible. A non-normal
 /// length leaves the raw score unchanged.
 pub(crate) fn corrected_score(raw: i64, p: &[f32; 768], e: &[f32; 768]) -> f64 {

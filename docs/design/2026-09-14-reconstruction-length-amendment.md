@@ -1,6 +1,6 @@
 # Reconstruction-length correction — 2026-09-14
 
-The user explicitly approved adopting the tested no-storage reconstruction-length
+I approved adopting the tested no-storage reconstruction-length
 correction (Option 1) in serving. This supersedes the no-renormalization and
 integer-only final-order rules in local design D§5, implementation Task 8 and
 the dot-product amendment. Codec kernels and their integer comparison contract

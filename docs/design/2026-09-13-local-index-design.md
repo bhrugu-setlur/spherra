@@ -1,12 +1,12 @@
 # Spherra local index design
 
-The user-approved [reconstruction-length amendment](2026-09-14-reconstruction-length-amendment.md) supersedes the original
+The [reconstruction-length amendment](2026-09-14-reconstruction-length-amendment.md) supersedes the original
 final-ranking rule below. Primary Q24 scoring and raw-score certificates remain unchanged.
 
-Status: **approved at revision 4; approved by the user 2026-09-13**
+Status: **approved at revision 4 on 2026-09-13**
 Date: 2026-09-13
 Scope: replaces, for local scope, the R7 distributed architecture
-(`docs/design/2026-08-04-polar-lsm-router-design.md`) and the I4
+(`docs/design/archive/2026-08-04-polar-lsm-router-design.md`) and the I4
 implementation specification. Those documents remain as the record of the
 stopped database direction.
 
@@ -36,7 +36,7 @@ honest per-hit error intervals and a measured speed target.
   budget 20 to 0.9370 at budget 200, and is unchanged at 1,000 and all rows.
   Budgets between 20 and 200 were not measured in this reference. At the
   measured budgets of 200 and above, the codec's refined ranking limits recall
-  on these two corpora. This factual correction was approved by the user after
+  on these two corpora. This factual correction was approved after
   the [Task 1 measurements](../benchmarks/2026-09-13-local-index-reference.md).
 - **The rebuilt SciFact bytes differ from August's** (BLAKE3 `b2e549ce…` against
   `8a20ab21…`), and recall@10 at budget 200 moved from 0.9775 to 0.9745. Quality
@@ -85,7 +85,7 @@ honest per-hit error intervals and a measured speed target.
 ## 3. Product contract
 
 - 768 dimensions; default `search` uses cosine similarity on direction only.
-  The user-directed [dot-product amendment](2026-09-14-dot-product-search-amendment.md)
+  The [dot-product amendment](2026-09-14-dot-product-search-amendment.md)
   adds a separate magnitude-aware `search_dot_product` method.
 - Rows are identified by an assigned `RowId(u64)`, a dense ordinal starting at 0
   in commit order. The caller keeps its own mapping. Maximum `2^48 - 1`.
@@ -556,7 +556,7 @@ not need all normalized rows in memory.
 - **Coarse routing.** Deferred; outlined in Appendix A.
 - **Certificate-driven candidate selection.** Failed its experiment.
 
-## 13. Open questions for the user
+## 13. Open questions
 
 - If the 10M latency gate is missed after stage 3, is multi-second search
   acceptable, or is coarse routing's recall risk acceptable?
@@ -565,18 +565,18 @@ not need all normalized rows in memory.
   at the default descriptor limit an index opens with at most 191 segments unless
   the caller raises `ulimit -n`.
 
-## 14. Project guidance changes requiring user approval
+## 14. Project guidance changes requiring approval
 
-- Rewrite the project guide project paragraph, product contract, status, and next
+- Rewrite the status document's project paragraph, product contract, status, and next
   step for the local library, and mark the R7/I4 frozen decisions superseded for
   local scope. The frozen rule that residuals are candidate-only SSD data is
   unchanged by this design.
-- If stage 3 is built, correct the project guide caveat that says the workspace
+- If stage 3 is built, correct the status caveat that says the workspace
   contains no unsafe code.
 
 ## Appendix A. Coarse routing alternative
 
-Considered only if stage 3 misses the 10M gate and the user accepts added recall
+Considered only if stage 3 misses the 10M gate and I accept added recall
 risk.
 
 **Design.** The model gains 4,096 spherical centroids (FP32, about 12.6 MB) over

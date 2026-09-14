@@ -1,6 +1,6 @@
 # Stored magnitude amendment — 2026-09-14
 
-The user directed continuation of item 2 (return each result’s magnitude) after
+I continued with item 2 (return each result’s magnitude) after
 completion of the vector-length audit. This narrow amendment extends the local
 index design and implementation specification; the original 14-task plan remains
 complete.

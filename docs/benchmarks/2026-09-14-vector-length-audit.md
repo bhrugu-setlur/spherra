@@ -1,8 +1,8 @@
 # Vector-length input audit
 
-Status: complete. Code and clean measurements: `ca10f76`.
+Status: complete. Code and clean measurements: `2c4358f`.
 
-The user authorized the next checkpoint: diagnose vector-length anomalies
+This checkpoint's goal: diagnose vector-length anomalies
 before ingestion while retaining compressed-only cosine search and budget 200.
 This is `spherra-bench norm-audit`, not an extension to public commit reports.
 The library API, stored model/segment bytes, rejection rules, scoring and
@@ -91,7 +91,7 @@ that transient runner flag was not established; no related source was changed.
 
 ## Recorded results
 
-All 11 runs used the clean release revision `ca10f76`. An independent Python/
+All 11 runs used the clean release revision `2c4358f`. An independent Python/
 NumPy calculation verified input hashes, all rejection and underflow counts,
 near-unit fractions and every reported norm percentile (within 1e-14 relative
 or 1e-15 absolute tolerance for reduction-order differences).

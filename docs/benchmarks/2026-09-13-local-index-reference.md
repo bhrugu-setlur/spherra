@@ -1,7 +1,7 @@
 # Local index historical recall reference
 
 Task 1 measurements, 2026-09-13, from clean commit
-`caa8229418101dafa33749ca1148227a4dbcac7d`. Both commands exited successfully
+`8a3c543bb0737992522261e23f24402d55f042da`. Both commands exited successfully
 and validated their output against the embedded measurement schema. Every
 entry records the machine, compiler, identities, corpus hash, seed, and command.
 These are aggregate recall references, not hit-by-hit algorithm references or
@@ -41,14 +41,14 @@ Raw floating-point values and all provenance are preserved in the
 [SciFact JSON](results/2026-09-13-local-index-reference-beir-scifact-mpnet-768.json)
 and [generated JSON](results/2026-09-13-local-index-reference-generated-correlated-768x20000.json).
 
-## Specification correction approved by the user
+## Specification correction
 
 The table in approved design D§2 is reproduced to its displayed precision.
 However, the following sentence is contradicted:
 
 > Recall@10 already plateaus at budget 20 on both corpora.
 
-Replacement approved by the user and applied to D§2:
+Replacement applied to D§2:
 
 > Recall@10 is unchanged across the measured budgets 20, 200, 1,000, and all
 > rows on archived SciFact. On generated correlated 20k it rises from 0.9330 at
@@ -61,7 +61,7 @@ the budget,” now reads:
 > At the measured budgets of 200 and above, the codec's refined ranking limits
 > recall on these two corpora.
 
-The user approved this factual correction and continuing with Task 2. The
+I approved this factual correction and continued with Task 2. The
 search algorithm and its default budget of 200 are unchanged.
 
 ## Reproduction

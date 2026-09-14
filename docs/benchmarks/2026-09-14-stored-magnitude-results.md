@@ -4,7 +4,7 @@ Date: 2026-09-14. Worktree: `.worktrees/local-index`, branch `local-index`.
 
 ## Change and scope
 
-The [user-directed amendment](../design/2026-09-14-stored-magnitude-amendment.md)
+The [stored-magnitude amendment](../design/2026-09-14-stored-magnitude-amendment.md)
 adds `Hit::stored_magnitude() -> f32`. It returns the existing FP16 stored length,
 promoted to FP32. Opening retains two bytes per row (20,000,000 bytes at 10M,
 about 19.07 MiB), plus per-segment slice headers and allocator overhead. At most
@@ -56,7 +56,7 @@ both finish.
 ## Recorded results
 
 Both serial runs completed at clean release commit
-`1a4b73d413936eeaaa86d9b32cdae3a643ea5d48`, unchanged throughout, on the M1 Pro
+`95155dca2b01322f97b0b0b6d36b7035989f920f`, unchanged throughout, on the M1 Pro
 with AC power. Existing indexes were reused without rebuilding or modifying
 CURRENT. Their original build commits remain recorded separately in the JSON.
 
@@ -75,7 +75,7 @@ remains below 20 GiB process memory and exercises existing-index opening and
 search with the new cache; its short sample cannot establish tail latency. Its
 JSON deliberately records both `gate_eligible: false` and `gate_passed: false`.
 
-For context, the prior full 1M run at `84065a9` recorded 52.621834/147.277750 ms
+For context, the prior full 1M run at `4bbd4a1` recorded 52.621834/147.277750 ms
 and 399,638,528 bytes RSS; the prior full 10M run recorded 3,855,040,512 bytes.
 These are separate runs, not a paired overhead experiment. Their timing/RSS
 differences include ordinary system and allocator variation; the exact 20 MB

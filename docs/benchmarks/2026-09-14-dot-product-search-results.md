@@ -1,7 +1,7 @@
 # Additional dot-product search: test data and results
 
 Date: 2026-09-14. Branch/worktree: `local-index` / `.worktrees/local-index`.
-The user requested a way to use length in an additional search method.
+This checkpoint adds a way to use vector length in an additional search method.
 [Contract and arithmetic proof](../design/2026-09-14-dot-product-search-amendment.md).
 
 ## Implementation
@@ -122,7 +122,7 @@ is checked against the existing numerical targets; this is workload-specific.
 ## Completed measurements
 
 All four runs used clean release commit
-`12ef3ec9a2f41c29c5419b12cb0c02ebd96d6eed`, with no tracked changes during
+`5a2294491647aa9a3d9051e4001cf363a579caba`, with no tracked changes during
 measurement. The 1M/10M latency runs used AC power on the M1 Pro. Final documentation
 updates are subsequent; serving code is the measured code.
 
@@ -202,7 +202,7 @@ must have the recorded build sidecars and CURRENT hashes to pass reuse checks.
 ## Follow-up: shared scan and native 768D dot model at 1M rows
 
 A review found the 1170-row MovieLens test cannot show selection behavior at
-scale: recall is flat from budget 20 through all 1170 rows. Commit `31f1466`
+scale: recall is flat from budget 20 through all 1170 rows. Commit `e093e25`
 therefore (1) moves cosine and dot search onto one internal scan/refinement
 routine differing only in the ordering key, (2) documents short-vector rounding,
 and (3) lets `dot-product` take up to 2M rows with `--sweep-budgets`.
@@ -212,7 +212,7 @@ reference search qualification passes; rerunning the MovieLens command gives
 byte-identical rows, scores and intervals for all 2000 dot hits and identical
 cosine rows. Clean 1M latency on the reused generated index, 1000 queries:
 
-| Clean `31f1466`, generated 1M | p50 ms | p99 ms | Peak RSS bytes | Gate |
+| Clean `e093e25`, generated 1M | p50 ms | p99 ms | Peak RSS bytes | Gate |
 |---|---:|---:|---:|---|
 | Cosine `latency` | 57.984 | 144.235 | 400,703,488 | Passed |
 | Dot `dot-product-latency` | 58.658 | 174.376 | 400,752,640 | Passed initial targets |
@@ -236,7 +236,7 @@ exact original dot-product neighbors, not answer relevance.
 | Indexed | 1,000,000 | 10.771 | 11.460 | 12.322 | 13.842 | 16.591 |
 | Queries | 1,000 | 8.849 | 9.006 | 9.386 | 9.892 | 10.459 |
 
-### Results (clean `31f1466`, k10, default budget 200)
+### Results (clean `e093e25`, k10, default budget 200)
 
 | Measure | Result |
 |---|---:|

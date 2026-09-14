@@ -1,10 +1,10 @@
 # Additional dot-product search — 2026-09-14
 
-The user-approved [reconstruction-length amendment](2026-09-14-reconstruction-length-amendment.md) supersedes the original
+The [reconstruction-length amendment](2026-09-14-reconstruction-length-amendment.md) supersedes the original
 final-ranking rule below. Primary Q24 scoring and raw-score certificates remain unchanged.
 
-The user requested a method that makes vector length useful in search while
-preserving the existing search. This amendment implements that authorized scope
+This amendment adds a method that makes vector length useful in search while
+preserving the existing search. It is exposed
 as `Index::search_dot_product(&Vector, SearchOptions) -> Result<DotProductResult, Error>`.
 It adds an optional search metric; it does not replace the cosine contract.
 
