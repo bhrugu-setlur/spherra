@@ -397,10 +397,129 @@ def search_figure(theme, ex):
     return c.svg("Scoring a query against the compressed vector")
 
 
+STEP_SECONDS = 2.4  # one stage: a move, then a pause to read it
+MOVE_SECONDS = 0.9
+
+
+def animation_figure(theme, ex):
+    """An animated SVG (SMIL) of the vector passing through every transform.
+
+    The projection is linear, so moving the arrow tip in a straight line on
+    screen matches moving the vector in a straight line in 3D.
+    """
+    u = ex["u"]
+    flipped = tuple(c_ * s for c_, s in zip(u, SIGNS))
+    permuted = tuple(flipped[source] for source in PERMUTATION)
+    stages = [
+        (scale(X, 0.3), X, "text2", "Start", "x = (4, 1, 0.5), drawn at 0.3× size to fit"),
+        (u, u, "blue", "Normalize", "u = x / ‖x‖: length 4.153 becomes 1"),
+        (flipped, flipped, "blue", "Flip signs", "S·u: multiply by (+1, −1, −1)"),
+        (permuted, permuted, "blue", "Shuffle", "P·S·u: each coordinate moves to a new slot"),
+        (ex["y"], ex["y"], "blue", "Mix", "y = H·P·S·u: coordinates blend and even out"),
+        (ex["p"], ex["p"], "orange", "Snap to grid", "p: each coordinate rounds to a grid level"),
+        (ex["r"], ex["r"], "aqua", "Add correction", "r = p + ê: a codebook entry fixes the leftover"),
+    ]
+    n = len(stages)
+    total = n * STEP_SECONDS
+    c = Canvas(960, 420, theme)
+    a = Axes3D(c, 250, 225, 150)
+    a.frame()
+
+    def discrete(attr, values):
+        times = ";".join(f"{k / n:.4f}" for k in range(n))
+        return (
+            f'<animate attributeName="{attr}" dur="{total}s" repeatCount="indefinite" '
+            f'calcMode="discrete" keyTimes="{times}" values="{";".join(str(v) for v in values)}"/>'
+        )
+
+    def moving(attr, per_stage):
+        """Hold each stage's value, gliding to the next over MOVE_SECONDS."""
+        frames = [(0.0, per_stage[0])]
+        for k in range(1, n):
+            start = k * STEP_SECONDS
+            frames += [(start, per_stage[k - 1]), (start + MOVE_SECONDS, per_stage[k])]
+        frames.append((total, per_stage[-1]))
+        times = ";".join(f"{t / total:.4f}" for t, _ in frames)
+        values = ";".join(f"{v:.1f}" for _, v in frames)
+        return (
+            f'<animate attributeName="{attr}" dur="{total}s" repeatCount="indefinite" '
+            f'keyTimes="{times}" values="{values}"/>'
+        )
+
+    # The grid only matters once the vector snaps to it.
+    grid_on = discrete("opacity", [1 if k >= 5 else 0 for k in range(n)])
+    dots = "".join(
+        f'<circle cx="{a.at((gx, gy, gz))[0]:.1f}" cy="{a.at((gx, gy, gz))[1]:.1f}" r="2" fill="{c.t["text2"]}"/>'
+        for gx in LEVELS
+        for gy in LEVELS
+        for gz in LEVELS
+    )
+    c.raw(f'<g opacity="0">{grid_on}{dots}</g>')
+
+    screen = [a.at(vector) for vector, *_ in stages]
+    origin = a.at((0, 0, 0))
+    colors = [c.t[color] for _, _, color, _, _ in stages]
+
+    # A dashed ghost keeps the previous stage visible for comparison.
+    ghost = [origin] + screen[:-1]
+    c.raw(
+        f'<line x1="{origin[0]:.1f}" y1="{origin[1]:.1f}" x2="{origin[0]:.1f}" y2="{origin[1]:.1f}" '
+        f'stroke="{c.t["text2"]}" stroke-width="1.4" stroke-dasharray="4 4" opacity="0.7">'
+        + discrete("x2", [f"{g[0]:.1f}" for g in ghost])
+        + discrete("y2", [f"{g[1]:.1f}" for g in ghost])
+        + "</line>"
+    )
+    c.raw(
+        f'<line x1="{origin[0]:.1f}" y1="{origin[1]:.1f}" x2="{screen[0][0]:.1f}" y2="{screen[0][1]:.1f}" '
+        f'stroke="{colors[0]}" stroke-width="3" stroke-linecap="round">'
+        + moving("x2", [s[0] for s in screen])
+        + moving("y2", [s[1] for s in screen])
+        + discrete("stroke", colors)
+        + "</line>"
+    )
+    c.raw(
+        f'<circle cx="{screen[0][0]:.1f}" cy="{screen[0][1]:.1f}" r="6" fill="{colors[0]}" '
+        f'stroke="{c.t["surface"]}" stroke-width="2">'
+        + moving("cx", [s[0] for s in screen])
+        + moving("cy", [s[1] for s in screen])
+        + discrete("fill", colors)
+        + "</circle>"
+    )
+
+    # Right side: the stage name, its formula, and the three coordinates.
+    left = 520
+    for k, (_, shown, color, title, formula) in enumerate(stages):
+        visible = discrete("opacity", [1 if i == k else 0 for i in range(n)])
+        c.raw(f'<g opacity="{1 if k == 0 else 0}">{visible}')
+        c.text(left, 70, f"Step {k + 1} of {n}", size=13, color="text2")
+        c.text(left, 98, title, size=22, weight=700, color=color if color != "text2" else "text")
+        c.text(left, 124, formula, size=14, color="text2")
+        for i, value in enumerate(shown):
+            c.text(left + 340, 184 + i * 44, f"{value:+.3f}", size=14, weight=600)
+        c.raw("</g>")
+
+    bar_scale = 200
+    for i in range(3):
+        top = 168 + i * 44
+        c.text(left, top + 16, f"c{'₁₂₃'[i]}", size=14, color="text2")
+        widths = [bar_scale * abs(vector[i]) for vector, *_ in stages]
+        c.raw(
+            f'<rect x="{left + 30}" y="{top}" width="{widths[0]:.1f}" height="22" rx="4" fill="{colors[0]}">'
+            + moving("width", widths)
+            + discrete("fill", colors)
+            + "</rect>"
+        )
+    c.text(left, 318, "Bar length = size of each coordinate, at the arrow's scale.", size=12, color="text2")
+    c.text(left, 338, "After mixing, the three bars are about equal: that is why one grid fits all.", size=12, color="text2")
+    c.text(24, 396, "Dashed arrow = the previous step. Loops every 17 seconds.", size=12, color="text2")
+    return c.svg("Animation: one vector moving through each Spherra transform")
+
+
 def main():
     ex = example()
     OUT.mkdir(parents=True, exist_ok=True)
     for theme in THEMES:
+        (OUT / f"transform-animation-{theme}.svg").write_text(animation_figure(theme, ex))
         (OUT / f"compression-{theme}.svg").write_text(compression_figure(theme, ex))
         (OUT / f"search-{theme}.svg").write_text(search_figure(theme, ex))
     for key in ("u", "y", "p", "e", "e_hat", "r", "q"):
