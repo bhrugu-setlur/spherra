@@ -116,7 +116,7 @@ $$H_2 = \begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix}, \qquad
 H_4 = \begin{pmatrix} 1 & 1 & 1 & 1 \\ 1 & -1 & 1 & -1 \\ 1 & 1 & -1 & -1 \\ 1 & -1 & -1 & 1 \end{pmatrix}$$
 
 Written directly, the entry in row `i` and column `j` (counting from 0) is
-$(-1)^{\text{popcount}(i \,\&\, j)}$: it is `−1` when `i` and `j` share an odd
+$(-1)^{\text{popcount}(i \text{ AND } j)}$: it is `−1` when `i` and `j` share an odd
 number of 1 bits.
 
 Three facts make it a good mixer:
