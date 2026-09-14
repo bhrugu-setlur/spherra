@@ -14,6 +14,46 @@ numbers instead of 4.
   <img src="docs/images/transform-animation-light.svg" alt="Animation of four coordinate bars: x = (4, 2, 2, 1) is normalized, has one sign flipped, is shuffled, goes through two fast Walsh-Hadamard passes and a scale by one half to become y = (0.5, -0.5, 0.7, 0.1), then is rounded to the grid and corrected.">
 </picture>
 
+## Quick start
+
+Rust 1.88.0, edition 2024. Vectors must be finite and 768-dimensional. Training
+vectors teach the index its grid and codebooks; they are not searchable unless
+you also push them.
+
+```rust
+use std::path::Path;
+use spherra::{CreateOptions, Error, Index, IndexBuilder, SearchOptions, Vector};
+
+fn build_and_search(
+    directory: &Path,
+    training: &[Vector],
+    rows: &[Vector],
+    query: &Vector,
+) -> Result<(), Error> {
+    let mut builder = IndexBuilder::create(
+        directory,
+        training,
+        CreateOptions { seed: 20260804, validation_rows: None },
+    )?;
+    for row in rows {
+        builder.push(row)?;
+    }
+    builder.commit()?;
+
+    let index = Index::open(directory)?;
+    let result = index.search(query, SearchOptions { k: 10, candidate_budget: None })?;
+    for hit in result.hits() {
+        println!("row {}: score {}, range {:?}", hit.row().get(), hit.score(), hit.interval());
+    }
+    Ok(())
+}
+```
+
+- `index.search_dot_product(query, options)` also uses each vector's length.
+- `IndexBuilder::append(directory)` adds rows later. Drop open `Index` handles
+  first.
+- Commits are atomic: a crash leaves the previous version readable.
+
 ## The problem
 
 An embedding is a list of numbers, called coordinates, that describes a piece of
@@ -74,7 +114,26 @@ spreading, and Step 4c explains why it needs Steps 2 and 3 first.
 
 ### Step 4: Mix with the Hadamard transform
 
-#### 4a. The Hadamard matrix
+Spherra mixes `w` with the **Hadamard transform**:
+
+$$y = \tfrac{1}{2} H_4\, w = (0.5,\ -0.5,\ 0.7,\ 0.1)$$
+
+Every output coordinate adds or subtracts every input coordinate with equal
+weight, and the length stays exactly 1. The **fast Walsh–Hadamard transform**
+computes it using only additions and subtractions:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/fwht-dark.svg">
+  <img src="docs/images/fwht-light.svg" alt="Butterfly diagram. Input (0.4, 0.8, -0.4, 0.2). Pass 1 pairs positions 1-2 and 3-4, giving (1.2, -0.4, -0.2, -0.6). Pass 2 pairs positions 1-3 and 2-4, giving (1.0, -1.0, 1.4, 0.2). Scaling by one half gives (0.5, -0.5, 0.7, 0.1).">
+</picture>
+
+The largest coordinate drops from 0.8 to 0.7 and two coordinates move to the
+middle. The random signs and shuffle matter: mixing `u` without them gives
+`(0.9, 0.3, 0.3, 0.1)`, which is worse. Expand the sections below for the full
+math.
+
+<details>
+<summary><strong>4a. The Hadamard matrix: how it is built and why it keeps lengths</strong></summary>
 
 A Hadamard matrix contains only `+1` and `−1`, and any two different rows agree
 in exactly half of their positions. The standard way to build one (Sylvester's
@@ -110,7 +169,10 @@ Three facts make this a good mixer:
    $\tfrac{1}{\sqrt n}(\pm w_1 \pm w_2 \pm \dots \pm w_n)$. No input coordinate
    counts more than another.
 
-#### 4b. Computing it fast: the fast Walsh–Hadamard transform
+</details>
+
+<details>
+<summary><strong>4b. The fast Walsh–Hadamard transform: the algorithm and why it works</strong></summary>
 
 Multiplying by the matrix, as in the table above, takes $n^2$ multiplications:
 16,384 for a 128 × 128 matrix. The **fast Walsh–Hadamard transform** (FWHT) gets
@@ -124,12 +186,7 @@ for half-width h = 1, 2, 4, …, n/2:
 finally multiply everything by 1/√n
 ```
 
-Here it is on `w`:
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/fwht-dark.svg">
-  <img src="docs/images/fwht-light.svg" alt="Butterfly diagram. Input (0.4, 0.8, -0.4, 0.2). Pass 1 pairs positions 1-2 and 3-4, giving (1.2, -0.4, -0.2, -0.6). Pass 2 pairs positions 1-3 and 2-4, giving (1.0, -1.0, 1.4, 0.2). Scaling by one half gives (0.5, -0.5, 0.7, 0.1).">
-</picture>
+Here it is on `w`, matching the diagram above:
 
 | Pass | Pairs | Calculation | Result |
 |---|---|---|---|
@@ -150,7 +207,10 @@ For a 128-coordinate block that is 7 passes × 64 steps = **448** steps instead
 of 16,384 multiplications. Spherra's code for this is
 [`hadamard_128`](crates/spherra-simd/src/scalar.rs).
 
-#### 4c. Why the random signs and shuffle matter
+</details>
+
+<details>
+<summary><strong>4c. Why the random signs and shuffle matter</strong></summary>
 
 Now the result:
 
@@ -195,7 +255,15 @@ most `0.0063`. For comparison, the average coordinate size is
 $1/\sqrt{128} \approx 0.088$, and before mixing a coordinate could be as large
 as `1`.
 
-#### 4d. How Spherra uses it on 768 coordinates
+This bound is for **one** coordinate. Across a whole block of 128 coordinates,
+it allows up to 128 × 0.0063 ≈ 0.8 coordinates above `0.3` on average. So a
+large coordinate can still appear now and then. The bound says large
+coordinates are rare, not that they never happen.
+
+</details>
+
+<details>
+<summary><strong>4d. How Spherra uses it on 768 coordinates</strong></summary>
 
 Spherra splits the 768 coordinates into **6 blocks of 128** and runs the FWHT on
 each block separately. One **round** is:
@@ -224,6 +292,8 @@ still zero. After round 2, every block holds close to its fair 1/6 share.
 
 The random signs and shuffles come from a saved seed, so every stored vector
 and every query goes through exactly the same two rounds.
+
+</details>
 
 ### Why reshaping is allowed
 
