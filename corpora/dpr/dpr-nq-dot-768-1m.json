@@ -1,0 +1,62 @@
+{
+  "dataset": "DPR Wikipedia passages (psgs_w100, single-NQ context embeddings) with NQ-open validation questions",
+  "sources": {
+    "passages": "https://huggingface.co/datasets/facebook/wiki_dpr@0ae2454140a2d6864475c83f26e6dc9cd4ab9ce4 data/psgs_w100/nq",
+    "shard_sha256": {
+      "train-00000-of-00157.parquet": "cf04d22ef173533b97d4376637d2e2f090ccf5453c91c750c8c55845f6b1730c",
+      "train-00020-of-00157.parquet": "f4ba64c1cb314ba47a109acf46f37d5f1763bd36127578178066685c9749d534",
+      "train-00040-of-00157.parquet": "9691ad7be66f6e140271b0ee8a674a7dffab4294bd65eb19b4d31951b7221e06",
+      "train-00060-of-00157.parquet": "8337f7a2a5304fd3146637db2c0a58f2fe7b60b5d7451d333c4be21606e87aba",
+      "train-00080-of-00157.parquet": "d25416e11aaf8cee4b4794f2eb927d87d915d963bb831d958ed1b9915cd2d1c0",
+      "train-00100-of-00157.parquet": "7cab2536e0fcb586ce568074b065706d8bff8d356704dc97448e59ec11c06933",
+      "train-00120-of-00157.parquet": "fc778e3578c33ba94e14044f28b2cba272138b8ecb9c68134f3c0acd39ad5451",
+      "train-00140-of-00157.parquet": "094ace2f8681ae0fe18c3a88d99d33297be70a6ed334ee79248475196867378b"
+    },
+    "questions": "https://huggingface.co/datasets/google-research-datasets/nq_open@5dd9790a83002ad084ddeb7c420dc716852c6f28 nq_open/validation",
+    "questions_sha256": "b074bed0bccb56fa1551a8ac1c9c51ce89bc11c7fbb6a9c713b2c33a98531e12",
+    "question_encoder": "facebook/dpr-question_encoder-single-nq-base",
+    "question_encoder_weights_sha256": "7fd8074bf164ea506267e1894b4b7579d25c56858d4890d707272557b7c7cc00"
+  },
+  "licenses": "wiki_dpr and DPR models CC-BY-NC-4.0; NQ-open CC-BY-SA-3.0; local research use, no redistribution",
+  "builder": "tools/build_dpr_dot_corpus.py",
+  "model": "native 768D DPR single-NQ encoders trained for dot-product retrieval; no normalization",
+  "purpose": "original-vector dot-product retrieval accuracy, not question-answering relevance",
+  "split": "BLAKE3 ordering v1 over passage IDs from 8 shards: 4096 codec training rows, then 1000000 indexed rows; 1000 NQ-open validation questions",
+  "python": "3.12.3",
+  "numpy": "1.26.4",
+  "pyarrow": "17.0.0",
+  "torch": "2.5.1",
+  "transformers": "4.46.3",
+  "splits": {
+    "training": {
+      "file": "training.f32",
+      "rows": 4096,
+      "blake3": "19e40ca2ccb0b30ca9c581ffb12a7b76049011af3cdda36a9a981f62a05de5dd",
+      "norm_min": 11.125940437767493,
+      "norm_p01": 11.446492332549774,
+      "norm_median": 12.314765049732529,
+      "norm_p99": 13.883416359295023,
+      "norm_max": 15.664688420998411
+    },
+    "indexed": {
+      "file": "indexed.f32",
+      "rows": 1000000,
+      "blake3": "3a5f918b79c2e924b09b3136e82614a5a01de2bbbf5be22f595c1e2b9932a99a",
+      "norm_min": 10.771167263345486,
+      "norm_p01": 11.460432630870635,
+      "norm_median": 12.32151890265715,
+      "norm_p99": 13.841505423954553,
+      "norm_max": 16.591243036385304
+    },
+    "queries": {
+      "file": "queries.f32",
+      "rows": 1000,
+      "blake3": "1ebbfa6b13a041176ca9b492d1d7dadf388962dee72425e2f43b2385d03fcbc4",
+      "norm_min": 8.848972816160257,
+      "norm_p01": 9.005785292802496,
+      "norm_median": 9.386017449061928,
+      "norm_p99": 9.892068887908607,
+      "norm_max": 10.458907990539712
+    }
+  }
+}

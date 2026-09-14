@@ -199,6 +199,82 @@ fresh index/output path for the real-factor command. The descriptor records all
 split bytes and the reconstruction recipe. Existing generated 1M/10M indexes
 must have the recorded build sidecars and CURRENT hashes to pass reuse checks.
 
-The checkpoint is complete: source, tests, guide, status and schemas
-are current. Existing compressed-only cosine behavior is retained, while users
+## Follow-up: shared scan and native 768D dot model at 1M rows
+
+A review found the 1170-row MovieLens test cannot show selection behavior at
+scale: recall is flat from budget 20 through all 1170 rows. Commit `31f1466`
+therefore (1) moves cosine and dot search onto one internal scan/refinement
+routine differing only in the ordering key, (2) documents short-vector rounding,
+and (3) lets `dot-product` take up to 2M rows with `--sweep-budgets`.
+
+Refactor checks: CI 213 passed / 12 skipped; the ignored full-corpus checked
+reference search qualification passes; rerunning the MovieLens command gives
+byte-identical rows, scores and intervals for all 2000 dot hits and identical
+cosine rows. Clean 1M latency on the reused generated index, 1000 queries:
+
+| Clean `31f1466`, generated 1M | p50 ms | p99 ms | Peak RSS bytes | Gate |
+|---|---:|---:|---:|---|
+| Cosine `latency` | 57.984 | 144.235 | 400,703,488 | Passed |
+| Dot `dot-product-latency` | 58.658 | 174.376 | 400,752,640 | Passed initial targets |
+
+### Workload
+
+[Builder](../../tools/build_dpr_dot_corpus.py) and
+[descriptor](../../corpora/dpr/dpr-nq-dot-768-1m.json). Passages are the published
+DPR single-NQ context embeddings from `facebook/wiki_dpr` (eight SHA256-pinned
+shards, 00000 to 00140 every 20th): native 768D vectors trained for unnormalized
+dot-product retrieval. BLAKE3 ordering over passage IDs selects 4096 codec
+training rows and a disjoint 1,000,000 indexed rows. Queries are 1000 NQ-open
+validation questions encoded locally, one at a time, with the SHA256-pinned
+`facebook/dpr-question_encoder-single-nq-base` (torch 2.5.1, transformers
+4.46.3). Licenses: CC-BY-NC-4.0 (wiki_dpr, DPR models) and CC-BY-SA-3.0
+(NQ-open); local research inputs, not redistributed. This measures retrieval of
+exact original dot-product neighbors, not answer relevance.
+
+| Split | Rows | Min norm | 1% | Median | 99% | Max |
+|---|---:|---:|---:|---:|---:|---:|
+| Indexed | 1,000,000 | 10.771 | 11.460 | 12.322 | 13.842 | 16.591 |
+| Queries | 1,000 | 8.849 | 9.006 | 9.386 | 9.892 | 10.459 |
+
+### Results (clean `31f1466`, k10, default budget 200)
+
+| Measure | Result |
+|---|---:|
+| Dot search recall@10 vs exact original dot | **0.9024** (9,024/10,000) |
+| Cosine search recall vs that dot objective | 0.4671 |
+| Original-dot enclosure failures | **0** of 10,000 |
+| Build time / whole-process peak RSS | 45.1 s / 6,764,396,544 bytes (includes 1M FP32 inputs held by the harness) |
+
+| Budget | 10 | 20 | 50 | 100 | 200 | 500 | 1000 | 2000 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Dot recall@10 | 0.7901 | 0.8943 | 0.9023 | 0.9024 | 0.9024 | 0.9024 | 0.9024 | 0.9024 |
+
+An independent NumPy FP64 audit (local `target/dpr_audit.py`) reproduced all
+1000 exact top-10 lists, the 0.9024 recall and zero enclosure failures, and
+decomposed the losses:
+
+| Diagnostic | Recall@10 |
+|---|---:|
+| Exact directions with FP16 stored lengths, vs exact dot | 0.9943 |
+| Cosine search vs exact cosine on the same corpus | 0.9109 |
+| Exact cosine ranking vs exact dot | 0.4755 |
+
+Interpretation: the default budget is ample at 1M; recall stops improving by
+budget 50, so long vectors do not crowd true neighbors out of the candidate
+pool. The remaining loss matches the codec's cosine direction loss on this
+corpus (0.9109), plus a small FP16 length effect: DPR top-10 scores are very
+close (median relative gap between ranks 10 and 11 is 0.127%, 10th percentile
+0.020%), while FP16 length rounding reaches 0.046%. Ignoring length loses over
+half the true neighbors. 10M dot recall and other native dot models remain
+unmeasured.
+
+Raw evidence: [DPR JSON](results/2026-09-14-dot-product-dpr-1m.json) and
+[process log](results/2026-09-14-dot-product-dpr-1m.time.txt);
+[cosine latency](results/2026-09-14-shared-scan-latency-1m.json) /
+[log](results/2026-09-14-shared-scan-latency-1m.time.txt);
+[dot latency](results/2026-09-14-shared-scan-dot-product-latency-1m.json) /
+[log](results/2026-09-14-shared-scan-dot-product-latency-1m.time.txt).
+
+The checkpoint is complete: source, tests, guide, status and schemas are current.
+Existing compressed-only cosine behavior is retained, while users
 can opt into length-aware dot-product search on the same saved index.

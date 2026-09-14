@@ -123,6 +123,13 @@ claim. Existing indexes were reused. Independent numerical audits pass and
 [Test data and raw results](docs/benchmarks/2026-09-14-dot-product-search-results.md).
 [Contract](docs/design/2026-09-14-dot-product-search-amendment.md).
 
-Dot search remains approximate. The real workload is rank-64 SVD padded to 768,
-not a native 768D model or held-out recommendation relevance test; larger real
-dot corpora and 10M dot recall remain unmeasured.
+Follow-up at clean `31f1466`: cosine and dot search share one scan/refinement
+routine (cosine rows, scores and intervals unchanged; CI 213 passed / 12 skipped;
+MovieLens hits byte-identical). On 1M native 768D DPR passage vectors with 1000
+encoded NQ questions, dot recall@10 is 0.9024 with zero enclosure failures,
+flat from budget 50 to 2000; cosine search on the same corpus reaches 0.9109
+against exact cosine, and exact-direction/FP16-length ranking reaches 0.9943.
+1M latency passes: cosine 57.984 / 144.235 ms, dot 58.658 / 174.376 ms.
+
+Dot search remains approximate; 10M dot recall and other native dot models
+remain unmeasured.
