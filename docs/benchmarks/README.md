@@ -481,3 +481,10 @@ Use `target/release/spherra-bench` after `cargo build -p spherra-bench --release
 the floating-point bit level across devices: a changed byte hash is a new
 snapshot requiring its own descriptor and pinned oracles, not interchangeable
 evidence. Do not overwrite existing hash-pinned artifacts.
+
+## Vector-length input audit
+
+`norm-audit` checks hash-pinned FP32 inputs before normalization/FP16 rounding.
+The [technical note](2026-09-14-vector-length-audit.md) documents its command,
+explicit policies, exit codes, bounded memory and eleven recorded real/synthetic
+runs. It is an ingestion diagnostic, with no index API or search changes.

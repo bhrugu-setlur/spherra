@@ -1,0 +1,68 @@
+[
+  {
+    "name": "msmarco-indexed",
+    "exit_code": 0,
+    "report": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-msmarco-indexed.json",
+    "report_blake3": "bb59213fd2ff118b51c44b3b42ed1a214863255053e57a06675116a305f4c6b1"
+  },
+  {
+    "name": "msmarco-calibration",
+    "exit_code": 0,
+    "report": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-msmarco-calibration.json",
+    "report_blake3": "94bb3e51d5f99cfcfec69e8b57f127f67f57184b82e670279ed9777a24b7e032"
+  },
+  {
+    "name": "msmarco-tuning",
+    "exit_code": 0,
+    "report": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-msmarco-tuning.json",
+    "report_blake3": "be68019015e944833dbcead93fe561e208df0a36952be704f2bfffab75c2d6e1"
+  },
+  {
+    "name": "msmarco-test",
+    "exit_code": 0,
+    "report": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-msmarco-test.json",
+    "report_blake3": "80b7beb79a56611c099220db4ddbaf7b91d33ddc8f22d790212452410b1b453d"
+  },
+  {
+    "name": "unit",
+    "exit_code": 0,
+    "report": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-unit.json",
+    "report_blake3": "4679e0329c0436ad22f20ca4c1c284c91e37b7bc75429575ee1433792a4af6f6"
+  },
+  {
+    "name": "mixed",
+    "exit_code": 0,
+    "report": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-mixed.json",
+    "report_blake3": "1433335bf0e8cb539dfcafcb5844e52f88c0c726fe0de362232e4a7067e34e55"
+  },
+  {
+    "name": "shift",
+    "exit_code": 0,
+    "report": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-shift.json",
+    "report_blake3": "51b3cdb8276dbba230b734376e07ddac6c4ffe88aa82ed8087e2ee089edea074"
+  },
+  {
+    "name": "varied",
+    "exit_code": 0,
+    "report": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-varied.json",
+    "report_blake3": "aeb38a7ae5001d630ec9f098ee14df74faeb5c6b0057bf1fad048ada045a0d1d"
+  },
+  {
+    "name": "tiny",
+    "exit_code": 0,
+    "report": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-tiny.json",
+    "report_blake3": "4ab29e15b9dbe22d1ad729f19c54f3c66c778f29fb36791dfab21c4d314b681b"
+  },
+  {
+    "name": "invalid",
+    "exit_code": 1,
+    "report": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-invalid.json",
+    "report_blake3": "536ad21024b6958898368331c39776f1326e7657836bbbe070ad4be37949f61c"
+  },
+  {
+    "name": "strict-mixed",
+    "exit_code": 1,
+    "report": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-strict-mixed.json",
+    "report_blake3": "27c5803c21e28067d6f7483a421d162805fe31ea6ca8849299aa315d06d75eeb"
+  }
+]

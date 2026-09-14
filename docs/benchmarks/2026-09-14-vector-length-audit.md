@@ -1,6 +1,6 @@
 # Vector-length input audit
 
-Status: implemented; verification and clean recorded runs in progress.
+Status: complete. Code and clean measurements: `ca10f76`.
 
 The user authorized the next checkpoint: diagnose vector-length anomalies
 before ingestion while retaining compressed-only cosine search and budget 200.
@@ -57,9 +57,9 @@ Focused tests cover mixed normalized/unnormalized rows, no unsolicited scale
 warnings, deviations hidden by FP16 rounding, explicit strict-mode failures,
 reference rescaling, tiny positive norms, underflow, zero/non-finite/overflow
 inputs, all-invalid statistics, malformed framing, wrong hash and output
-preservation. Full workspace CI, workspace tests and strict clippy follow.
+preservation. Full workspace CI, workspace tests and strict clippy passed.
 
-Clean release evidence will include all four pinned MS MARCO splits and a
+Clean release evidence includes all four pinned MS MARCO splits and a
 small explicitly synthetic anomaly suite. Synthetic length changes validate
 policy mechanics; they are not a varied-length real retrieval benchmark or
 evidence that magnitude indicates information, popularity or confidence.
@@ -88,3 +88,59 @@ all-target clippy passed. Nextest marked the existing pure CRC-check test
 `current_crc_is_checked_even_with_valid_trailing_hash` as `LEAK` once despite
 passing; its isolated nextest rerun passed without that flag. The cause of
 that transient runner flag was not established; no related source was changed.
+
+## Recorded results
+
+All 11 runs used the clean release revision `ca10f76`. An independent Python/
+NumPy calculation verified input hashes, all rejection and underflow counts,
+near-unit fractions and every reported norm percentile (within 1e-14 relative
+or 1e-15 absolute tolerance for reduction-order differences).
+
+| Input | Rows | Result |
+|---|---:|---|
+| MS MARCO indexed | 100,000 | Strict unit policy passes; no warnings |
+| MS MARCO calibration | 32,768 | Strict unit policy passes; no warnings |
+| MS MARCO tuning queries | 200 | Strict unit policy passes; no warnings |
+| MS MARCO final queries | 200 | Strict unit policy passes; no warnings |
+| Unit baseline | 100 | No warnings |
+| Mixed lengths | 100 | Unit-length policy warning |
+| 14× rescaling | 100 | Median and p95 scale-shift warnings |
+| Varied lengths without unit policy | 100 | No warnings |
+| Tiny positive vectors | 4 | Near-zero and FP16-underflow warnings |
+| Invalid vectors | 6 | Five invalid rows; report written, exit 1 |
+| Mixed lengths, strict mode | 100 | Report written, exit 1 |
+
+The indexed real split spans approximately **0.9999999164–1.0000001123**,
+with median **1.0000000259** before FP16 rounding. All 133,168 real rows pass
+validation and the explicit unit policy. This audits the existing normalized
+snapshot; it adds no new real-data retrieval or semantic-quality result.
+
+Synthetic rows contain the listed value in coordinate 0 and zero elsewhere:
+unit=100 copies of 1; mixed=90 copies of 1 plus 10 copies of 14; shift=100 copies
+of 14; varied=integers 1 through 100; tiny=`[1e-10, 1e-7, 1e-6, 1]`;
+invalid=`[0, 1e-13, 70000, NaN, +Infinity, 1]`. Values are encoded as FP32
+before auditing. The tiny set has four accepted rows but one positive FP16
+underflow; maximum relative rounding error is 1.0. The invalid set has two
+non-finite rows, two below-minimum norms and one above-FP16-maximum norm.
+Zero stored magnitude must therefore not be interpreted as proof of zero input.
+
+Raw schema-validated JSON reports and expected exit codes are linked by the
+[run inventory](results/2026-09-14-norm-run-inventory.json). Individual reports:
+[indexed](results/2026-09-14-norm-msmarco-indexed.json),
+[calibration](results/2026-09-14-norm-msmarco-calibration.json),
+[tuning](results/2026-09-14-norm-msmarco-tuning.json),
+[final](results/2026-09-14-norm-msmarco-test.json),
+[unit](results/2026-09-14-norm-unit.json),
+[mixed](results/2026-09-14-norm-mixed.json),
+[shift](results/2026-09-14-norm-shift.json),
+[varied](results/2026-09-14-norm-varied.json),
+[tiny](results/2026-09-14-norm-tiny.json),
+[invalid](results/2026-09-14-norm-invalid.json), and
+[strict mixed](results/2026-09-14-norm-strict-mixed.json).
+
+## Checkpoint boundary
+
+This completes the authorized diagnostic. No magnitude cache, original-vector
+storage, new search metric, flag assignment or public commit-report field was
+introduced. A later application can run this audit before passing vectors to
+`IndexBuilder`; integrating the report into that API is separate design work.

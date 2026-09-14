@@ -1,0 +1,65 @@
+{
+  "baseline": {
+    "input_blake3": "c72f2ed59516b1331834345a8f3a8db23ea669f72c525c9b44a5525365d9b4a3",
+    "median_ratio": 14.0,
+    "p95_ratio": 14.0,
+    "path": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-unit.json",
+    "report_blake3": "4679e0329c0436ad22f20ca4c1c284c91e37b7bc75429575ee1433792a4af6f6"
+  },
+  "command": "spherra-bench norm-audit --baseline /Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-unit.json --input /Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/norm-fixtures/shift.f32 --input-blake3 9d881b37e18affa1efa3dd0b7f90f71b9f1046b43c2a16b4ad021605f96c75e2 --output /Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-shift.json --rows 100",
+  "counts": {
+    "accepted_rows": 100,
+    "finite_rows": 100,
+    "invalid_rows": 0,
+    "near_unit_rows": 0,
+    "near_zero_rows": 0,
+    "non_finite_rows": 0,
+    "norm_above_fp16_maximum": 0,
+    "norm_below_minimum": 0,
+    "positive_fp16_underflow": 0
+  },
+  "dirty_worktree": false,
+  "elapsed_seconds": 0.001022458,
+  "first_invalid": [],
+  "gate_passed": true,
+  "git_commit": "ca10f760797ce225d0e118d7322d4aa1b75d1193",
+  "input": {
+    "blake3": "9d881b37e18affa1efa3dd0b7f90f71b9f1046b43c2a16b4ad021605f96c75e2",
+    "byte_len": 307200,
+    "dimension": 768,
+    "path": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/norm-fixtures/shift.f32",
+    "rows": 100
+  },
+  "kind": "norm-audit",
+  "machine": {
+    "architecture": "aarch64",
+    "cargo_profile": "release",
+    "cpu": "Apple M1 Pro",
+    "os": "Darwin 26.6.2",
+    "physical_memory_bytes": 34359738368,
+    "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)"
+  },
+  "maximum_relative_fp16_rounding_error": 0.0,
+  "policy": {
+    "expect_unit": false,
+    "fail_on_warning": false,
+    "max_outside_fraction": 0.01,
+    "near_zero": 1e-6,
+    "shift_factor": 2.0,
+    "unit_tolerance": 0.0001
+  },
+  "schema_version": 1,
+  "statistics": {
+    "maximum": 14.0,
+    "median": 14.0,
+    "minimum": 14.0,
+    "near_unit_fraction": 0.0,
+    "p95": 14.0,
+    "p99": 14.0
+  },
+  "timestamp": "2026-09-14T04:35:25Z",
+  "warnings": [
+    "median_scale_shift",
+    "p95_scale_shift"
+  ]
+}

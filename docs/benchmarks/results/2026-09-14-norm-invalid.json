@@ -1,0 +1,80 @@
+{
+  "baseline": null,
+  "command": "spherra-bench norm-audit --input /Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/norm-fixtures/invalid.f32 --input-blake3 509c60dc40fb9382a063183e87e2f77f746a7f7ab574c029e456ebd38184c817 --output /Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-invalid.json --rows 6",
+  "counts": {
+    "accepted_rows": 1,
+    "finite_rows": 4,
+    "invalid_rows": 5,
+    "near_unit_rows": 1,
+    "near_zero_rows": 2,
+    "non_finite_rows": 2,
+    "norm_above_fp16_maximum": 1,
+    "norm_below_minimum": 2,
+    "positive_fp16_underflow": 1
+  },
+  "dirty_worktree": false,
+  "elapsed_seconds": 0.0001775,
+  "first_invalid": [
+    {
+      "reason": "norm_below_minimum",
+      "row": 0
+    },
+    {
+      "reason": "norm_below_minimum",
+      "row": 1
+    },
+    {
+      "reason": "norm_above_fp16_maximum",
+      "row": 2
+    },
+    {
+      "reason": "non_finite_component",
+      "row": 3
+    },
+    {
+      "reason": "non_finite_component",
+      "row": 4
+    }
+  ],
+  "gate_passed": false,
+  "git_commit": "ca10f760797ce225d0e118d7322d4aa1b75d1193",
+  "input": {
+    "blake3": "509c60dc40fb9382a063183e87e2f77f746a7f7ab574c029e456ebd38184c817",
+    "byte_len": 18432,
+    "dimension": 768,
+    "path": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/norm-fixtures/invalid.f32",
+    "rows": 6
+  },
+  "kind": "norm-audit",
+  "machine": {
+    "architecture": "aarch64",
+    "cargo_profile": "release",
+    "cpu": "Apple M1 Pro",
+    "os": "Darwin 26.6.2",
+    "physical_memory_bytes": 34359738368,
+    "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)"
+  },
+  "maximum_relative_fp16_rounding_error": 1.0,
+  "policy": {
+    "expect_unit": false,
+    "fail_on_warning": false,
+    "max_outside_fraction": 0.01,
+    "near_zero": 1e-6,
+    "shift_factor": 2.0,
+    "unit_tolerance": 0.0001
+  },
+  "schema_version": 1,
+  "statistics": {
+    "maximum": 70000.0,
+    "median": 9.9999998245167e-14,
+    "minimum": 0.0,
+    "near_unit_fraction": 0.25,
+    "p95": 70000.0,
+    "p99": 70000.0
+  },
+  "timestamp": "2026-09-14T04:35:25Z",
+  "warnings": [
+    "near_zero_inputs",
+    "fp16_magnitude_underflow"
+  ]
+}

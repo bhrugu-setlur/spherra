@@ -1,0 +1,58 @@
+{
+  "baseline": null,
+  "command": "spherra-bench norm-audit --expect-unit true --input /Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/norm-fixtures/mixed.f32 --input-blake3 fce03ba515c5a609f8a7148288abb9714afd1720fc03580c50ded0d84c65a746 --output /Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/measure/norm-mixed.json --rows 100",
+  "counts": {
+    "accepted_rows": 100,
+    "finite_rows": 100,
+    "invalid_rows": 0,
+    "near_unit_rows": 90,
+    "near_zero_rows": 0,
+    "non_finite_rows": 0,
+    "norm_above_fp16_maximum": 0,
+    "norm_below_minimum": 0,
+    "positive_fp16_underflow": 0
+  },
+  "dirty_worktree": false,
+  "elapsed_seconds": 0.000883375,
+  "first_invalid": [],
+  "gate_passed": true,
+  "git_commit": "ca10f760797ce225d0e118d7322d4aa1b75d1193",
+  "input": {
+    "blake3": "fce03ba515c5a609f8a7148288abb9714afd1720fc03580c50ded0d84c65a746",
+    "byte_len": 307200,
+    "dimension": 768,
+    "path": "/Users/bhrugusetlur/dev/spherra/.worktrees/local-index/target/norm-fixtures/mixed.f32",
+    "rows": 100
+  },
+  "kind": "norm-audit",
+  "machine": {
+    "architecture": "aarch64",
+    "cargo_profile": "release",
+    "cpu": "Apple M1 Pro",
+    "os": "Darwin 26.6.2",
+    "physical_memory_bytes": 34359738368,
+    "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)"
+  },
+  "maximum_relative_fp16_rounding_error": 0.0,
+  "policy": {
+    "expect_unit": true,
+    "fail_on_warning": false,
+    "max_outside_fraction": 0.01,
+    "near_zero": 1e-6,
+    "shift_factor": 2.0,
+    "unit_tolerance": 0.0001
+  },
+  "schema_version": 1,
+  "statistics": {
+    "maximum": 14.0,
+    "median": 1.0,
+    "minimum": 1.0,
+    "near_unit_fraction": 0.9,
+    "p95": 14.0,
+    "p99": 14.0
+  },
+  "timestamp": "2026-09-14T04:35:25Z",
+  "warnings": [
+    "unit_length_policy_exceeded"
+  ]
+}

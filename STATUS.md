@@ -25,14 +25,15 @@ of extra originals per million rows. Exact vector ranking does not improve
 sparse relevance-label scores on this sample. Production contracts/defaults
 are unchanged. All nine complete candidate traces passed independent audits.
 
-## Active checkpoint: vector-length audit
+## Completed checkpoint: vector-length audit
 
 The user authorized a pre-ingestion/benchmark length diagnostic. It streams
 hash-pinned FP32 rows, reports FP64 norm distributions and FP16 underflow,
 checks explicit unit-length/reference policies and reports invalid inputs.
 Focused tests and full verification pass (201 CI tests, 12 skipped; workspace
 tests and strict clippy). An existing CRC test received one transient nextest
-LEAK flag; its isolated rerun passed cleanly. Clean real/anomaly runs are next.
+LEAK flag; its isolated rerun passed cleanly. All four real splits and seven synthetic runs are recorded at clean `ca10f76`;
+an independent calculation verified their statistics, counts and identities.
 No public index API, search path or durable format changes are included.
 [Protocol and results](docs/benchmarks/2026-09-14-vector-length-audit.md).
 
@@ -55,7 +56,7 @@ Timing commit: `84065a9`; quality commit: `9a48a77`. Both used clean release
 builds. [Full protocol, raw timing samples and every quality hit](docs/benchmarks/README.md).
 The 1M oracle artifact was pinned at `2ad9a34`, before index measurement.
 
-The latest full quality gate passed 197 tests with 12 explicitly skipped large
+The latest full quality gate passed 201 tests with 12 explicitly skipped large
 qualifications. Workspace tests and strict all-target clippy pass. The release
 kernel qualification passed on archived SciFact and generated 100k. Earlier
 builder, recovery and decoder-fuzz qualifications remain recorded in the task
@@ -87,4 +88,4 @@ README examples compile as doctests. The final CI gate passed 191 tests with
   investigation above is complete. The user declined original-vector reranking
   because of its storage/read tradeoff; compressed-only search and budget 200
   remain the chosen behavior. The prototype is retained as experiment evidence.
-- The separately authorized vector-length audit above is the next checkpoint.
+- The separately authorized vector-length audit above is complete; public commit-report integration remains separate work.
