@@ -1,7 +1,9 @@
 //! Quality through the public Index API. The independent reference uses public
 //! checked format readers, checked scalar scores, and full sorts; it never calls
 //! the serving tile kernel, worker heaps, or private index implementation.
+mod dataset;
 mod loss;
+pub(super) use dataset::oracle_reference as dataset_oracle;
 pub(super) use loss::run as diagnose;
 
 use crate::local_index::{

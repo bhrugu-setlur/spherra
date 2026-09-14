@@ -1,0 +1,394 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "dataset_hash",
+    "source",
+    "corpus_hash",
+    "query_hash",
+    "query_count",
+    "rows_scored",
+    "k",
+    "artifact_path",
+    "artifact_bytes",
+    "artifact_blake3",
+    "git_commit",
+    "dirty_worktree",
+    "machine",
+    "timestamp",
+    "command",
+    "elapsed_seconds"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        1
+      ]
+    },
+    "kind": {
+      "enum": [
+        "real-query-oracle"
+      ]
+    },
+    "dataset_hash": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "descriptor",
+        "descriptor_path",
+        "descriptor_blake3",
+        "query_split"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "real-query"
+          ]
+        },
+        "descriptor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema_version",
+            "name",
+            "dimension",
+            "provenance",
+            "indexed",
+            "calibration",
+            "tuning",
+            "test",
+            "qrels"
+          ],
+          "properties": {
+            "schema_version": {
+              "enum": [
+                1
+              ]
+            },
+            "name": {
+              "type": "string"
+            },
+            "dimension": {
+              "enum": [
+                768
+              ]
+            },
+            "provenance": {
+              "type": "object",
+              "required": [
+                "model_revision",
+                "dataset_revision",
+                "preprocessing",
+                "sampling"
+              ],
+              "properties": {
+                "model_revision": {
+                  "type": "string"
+                },
+                "dataset_revision": {
+                  "type": "string"
+                },
+                "preprocessing": {
+                  "type": "string"
+                },
+                "sampling": {
+                  "type": "string"
+                }
+              }
+            },
+            "indexed": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "row_count",
+                "byte_len",
+                "blake3",
+                "records_path",
+                "records_blake3",
+                "truncated_inputs",
+                "embedding_seconds"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "row_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "byte_len": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "blake3": {
+                  "type": "string"
+                },
+                "records_path": {
+                  "type": "string"
+                },
+                "records_blake3": {
+                  "type": "string"
+                },
+                "truncated_inputs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "embedding_seconds": {
+                  "type": "number"
+                }
+              }
+            },
+            "calibration": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "row_count",
+                "byte_len",
+                "blake3",
+                "records_path",
+                "records_blake3",
+                "truncated_inputs",
+                "embedding_seconds"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "row_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "byte_len": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "blake3": {
+                  "type": "string"
+                },
+                "records_path": {
+                  "type": "string"
+                },
+                "records_blake3": {
+                  "type": "string"
+                },
+                "truncated_inputs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "embedding_seconds": {
+                  "type": "number"
+                }
+              }
+            },
+            "tuning": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "row_count",
+                "byte_len",
+                "blake3",
+                "records_path",
+                "records_blake3",
+                "truncated_inputs",
+                "embedding_seconds"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "row_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "byte_len": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "blake3": {
+                  "type": "string"
+                },
+                "records_path": {
+                  "type": "string"
+                },
+                "records_blake3": {
+                  "type": "string"
+                },
+                "truncated_inputs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "embedding_seconds": {
+                  "type": "number"
+                }
+              }
+            },
+            "test": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "row_count",
+                "byte_len",
+                "blake3",
+                "records_path",
+                "records_blake3",
+                "truncated_inputs",
+                "embedding_seconds"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "row_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "byte_len": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "blake3": {
+                  "type": "string"
+                },
+                "records_path": {
+                  "type": "string"
+                },
+                "records_blake3": {
+                  "type": "string"
+                },
+                "truncated_inputs": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "embedding_seconds": {
+                  "type": "number"
+                }
+              }
+            },
+            "qrels": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path",
+                "blake3",
+                "records"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "blake3": {
+                  "type": "string"
+                },
+                "records": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "descriptor_path": {
+          "type": "string"
+        },
+        "descriptor_blake3": {
+          "type": "string"
+        },
+        "query_split": {
+          "enum": [
+            "tuning",
+            "test"
+          ]
+        }
+      }
+    },
+    "corpus_hash": {
+      "type": "string"
+    },
+    "query_hash": {
+      "type": "string"
+    },
+    "query_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "rows_scored": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "k": {
+      "enum": [
+        100
+      ]
+    },
+    "artifact_path": {
+      "type": "string"
+    },
+    "artifact_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "artifact_blake3": {
+      "type": "string"
+    },
+    "git_commit": {
+      "type": "string"
+    },
+    "dirty_worktree": {
+      "type": "boolean"
+    },
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "architecture",
+        "cpu",
+        "physical_memory_bytes",
+        "rustc",
+        "cargo_profile"
+      ],
+      "properties": {
+        "os": {
+          "type": "string"
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "physical_memory_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rustc": {
+          "type": "string"
+        },
+        "cargo_profile": {
+          "type": "string"
+        }
+      }
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "command": {
+      "type": "string"
+    },
+    "elapsed_seconds": {
+      "type": "number"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pinned exhaustive reference for independent real queries"
+}

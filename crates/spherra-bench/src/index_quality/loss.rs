@@ -187,6 +187,8 @@ pub(crate) fn run(o: &Options) -> Result<(), BenchError> {
         o,
         &[
             "rows",
+            "dataset",
+            "query-split",
             "queries",
             "seed",
             "training-rows",
@@ -218,19 +220,53 @@ pub(crate) fn run(o: &Options) -> Result<(), BenchError> {
     )?;
     let seed = o.require_parsed("seed")?;
     let training = number(o, "training-rows", 4096_usize)?;
-    let source = GeneratedChunks::new(count, 1_000_000, seed).map_err(BenchError::harness)?;
-    let queries = source.queries(query_count);
     let revision = SourceRevision::capture();
     let start = Instant::now();
-    let (exact, oracle, corpus_hash) =
-        pinned_oracle(Path::new(o.require("oracle-reference")?), &source, &queries)?;
     let dir = Path::new(o.require("index-dir")?);
-    let build = build_index(o, &source, dir, training)?;
-    let rows = source.chunk(0).map_err(BenchError::harness)?;
-    require(
-        hash_rows(&rows) == corpus_hash && build["corpus_hash"] == corpus_hash,
-        "diagnostic original/index corpus mismatch",
-    )?;
+    let (rows, queries, exact, oracle, corpus_hash, build, source_value) =
+        if o.get("dataset").is_some() {
+            require(
+                o.get("rows").is_none(),
+                "dataset and generated rows cannot be combined",
+            )?;
+            let data = super::dataset::Dataset::load(o)?;
+            let (exact, oracle) = data.oracle(Path::new(o.require("oracle-reference")?))?;
+            let build = data.build(o, dir)?;
+            (
+                data.rows,
+                data.queries,
+                exact,
+                oracle,
+                data.corpus_hash,
+                build,
+                data.source,
+            )
+        } else {
+            require(
+                o.get("query-split").is_none(),
+                "query-split requires a real dataset",
+            )?;
+            let source =
+                GeneratedChunks::new(count, 1_000_000, seed).map_err(BenchError::harness)?;
+            let queries = source.queries(query_count);
+            let (exact, oracle, corpus_hash) =
+                pinned_oracle(Path::new(o.require("oracle-reference")?), &source, &queries)?;
+            let build = build_index(o, &source, dir, training)?;
+            let rows = source.chunk(0).map_err(BenchError::harness)?;
+            require(
+                hash_rows(&rows) == corpus_hash && build["corpus_hash"] == corpus_hash,
+                "diagnostic original/index corpus mismatch",
+            )?;
+            (
+                rows,
+                queries,
+                exact,
+                oracle,
+                corpus_hash,
+                build,
+                json!(source.descriptor()),
+            )
+        };
     let index = Index::open(dir).map_err(BenchError::harness)?;
     let reference = Reference::open(dir, seed, &index)?;
     let output = Path::new(o.require("output")?);
@@ -288,7 +324,7 @@ pub(crate) fn run(o: &Options) -> Result<(), BenchError> {
         let total=(queries.len()*10) as f64;
         json!({"budget":budgets[i].min(rows.len()),"candidate_recall_at_10":sum("candidate_matches") as f64/total,"recall_at_10":sum("delivered_matches") as f64/total,"floating_recall_at_10":sum("floating_matches") as f64/total,"selection_losses":sum("selection_losses"),"ranking_losses":sum("ranking_losses"),"floating_top10_differences":sum("floating_top10_differences")})
     }).collect::<Vec<_>>();
-    let mut value = json!({"schema_version":1,"kind":"index-diagnose","timestamp":timestamp_rfc3339_utc(),"git_commit":revision.commit,"dirty_worktree":revision.dirty,"machine":MachineProfile::capture(),"command":format!("spherra-bench index-diagnose {}",o.0.iter().map(|(k,v)|format!("--{k} {v}")).collect::<Vec<_>>().join(" ")),"source":source.descriptor(),"corpus_hash":corpus_hash,"query_hash":hash_rows(&queries),"seed":seed,"vector_count":rows.len(),"query_count":queries.len(),"training_rows":training,"validation_rows":(training/4).min(4096),"model":model_metadata(dir)?,"index_current_blake3":hash_file(&dir.join("CURRENT"))?,"build_source_commit":build["git_commit"],"build_dirty_worktree":build["dirty_worktree"],"oracle_reference":oracle,"trace":{"path":trace_path,"blake3":hash_file(&trace_path)?,"bytes":fs::metadata(&trace_path).map_err(BenchError::harness)?.len()},"checks_passed":true,"summaries":summaries,"query_results":query_results,"elapsed_seconds":start.elapsed().as_secs_f64()});
+    let mut value = json!({"schema_version":1,"kind":"index-diagnose","timestamp":timestamp_rfc3339_utc(),"git_commit":revision.commit,"dirty_worktree":revision.dirty,"machine":MachineProfile::capture(),"command":format!("spherra-bench index-diagnose {}",o.0.iter().map(|(k,v)|format!("--{k} {v}")).collect::<Vec<_>>().join(" ")),"source":source_value,"corpus_hash":corpus_hash,"query_hash":hash_rows(&queries),"seed":seed,"vector_count":rows.len(),"query_count":queries.len(),"training_rows":training,"validation_rows":(training/4).min(4096),"model":model_metadata(dir)?,"index_current_blake3":hash_file(&dir.join("CURRENT"))?,"build_source_commit":build["git_commit"],"build_dirty_worktree":build["dirty_worktree"],"oracle_reference":oracle,"trace":{"path":trace_path,"blake3":hash_file(&trace_path)?,"bytes":fs::metadata(&trace_path).map_err(BenchError::harness)?.len()},"checks_passed":true,"summaries":summaries,"query_results":query_results,"elapsed_seconds":start.elapsed().as_secs_f64()});
     finish_revision(&mut value);
     let schema: Value = serde_json::from_str(include_str!(
         "../../../../docs/benchmarks/local-index-loss.schema.json"

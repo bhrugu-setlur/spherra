@@ -16,7 +16,13 @@ existing measurements; no new performance or quality run was made for the note.
 The user authorized the [accuracy experiments](docs/benchmarks/2026-09-13-local-index-accuracy-experiments.md):
 neighbor-loss diagnosis, representative real queries/documents, then a controlled
 training-size sweep. Production behavior remains the delivered baseline while
-these measurements establish the next change.
+these measurements establish the next change. Generated 1M diagnostics prove
+100% candidate coverage at budget 200 for all four training sizes, with recall
+0.9095/0.9135/0.9190/0.9145. All losses occur in compressed reranking.
+Real-query preparation and an original-vector reranking cost prototype are in
+progress; the model-selection rule is preregistered in the experiment note.
+The real snapshot is complete and hash-verified. The new measurement tooling
+passes 197 CI tests (12 skipped), workspace tests and strict clippy.
 
 ## Acceptance evidence
 

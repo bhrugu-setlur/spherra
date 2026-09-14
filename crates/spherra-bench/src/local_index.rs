@@ -140,7 +140,7 @@ fn resident_bytes() -> Result<u64, BenchError> {
     kib.checked_mul(1024)
         .ok_or_else(|| BenchError::harness("RSS overflow"))
 }
-fn ac_power() -> Result<bool, BenchError> {
+pub(super) fn ac_power() -> Result<bool, BenchError> {
     let out = Command::new("/usr/bin/pmset")
         .args(["-g", "batt"])
         .output()

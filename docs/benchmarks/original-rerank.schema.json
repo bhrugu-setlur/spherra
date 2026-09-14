@@ -1,0 +1,264 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "command",
+    "ac_power",
+    "git_commit",
+    "dirty_worktree",
+    "timestamp",
+    "machine",
+    "source",
+    "corpus_hash",
+    "query_hash",
+    "model",
+    "index_current_blake3",
+    "build_source_commit",
+    "build_dirty_worktree",
+    "originals_path",
+    "originals_bytes",
+    "candidate_budget",
+    "query_count",
+    "warmup_queries",
+    "cache_state",
+    "scope",
+    "normal_p50_ms",
+    "normal_p99_ms",
+    "original_p50_ms",
+    "original_p99_ms",
+    "normal_samples_ms",
+    "original_samples_ms",
+    "original_results_blake3"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        1
+      ]
+    },
+    "kind": {
+      "enum": [
+        "original-rerank-prototype"
+      ]
+    },
+    "command": {
+      "type": "string"
+    },
+    "ac_power": {
+      "type": "boolean"
+    },
+    "git_commit": {
+      "type": "string"
+    },
+    "dirty_worktree": {
+      "type": "boolean"
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "architecture",
+        "cpu",
+        "physical_memory_bytes",
+        "rustc",
+        "cargo_profile"
+      ],
+      "properties": {
+        "os": {
+          "type": "string"
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "physical_memory_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rustc": {
+          "type": "string"
+        },
+        "cargo_profile": {
+          "type": "string"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generator_version",
+        "kind",
+        "dimension",
+        "vector_count",
+        "chunk_rows",
+        "seed",
+        "correlation",
+        "seed_derivation",
+        "chunk_seeds"
+      ],
+      "properties": {
+        "generator_version": {
+          "enum": [
+            1
+          ]
+        },
+        "kind": {
+          "enum": [
+            "correlated"
+          ]
+        },
+        "dimension": {
+          "enum": [
+            768
+          ]
+        },
+        "vector_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "chunk_rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "correlation": {
+          "enum": [
+            0.85
+          ]
+        },
+        "seed_derivation": {
+          "enum": [
+            "spherra.generated-correlated.chunks.v1"
+          ]
+        },
+        "chunk_seeds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "corpus_hash": {
+      "type": "string"
+    },
+    "query_hash": {
+      "type": "string"
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transform_id",
+        "quantizer_id",
+        "pq_codebook_id",
+        "codec_id",
+        "scorer_version",
+        "layout"
+      ],
+      "properties": {
+        "transform_id": {
+          "type": "string"
+        },
+        "quantizer_id": {
+          "type": "string"
+        },
+        "pq_codebook_id": {
+          "type": "string"
+        },
+        "codec_id": {
+          "type": "string"
+        },
+        "scorer_version": {
+          "enum": [
+            1
+          ]
+        },
+        "layout": {
+          "enum": [
+            "tiled-soa-32"
+          ]
+        }
+      }
+    },
+    "index_current_blake3": {
+      "type": "string"
+    },
+    "build_source_commit": {
+      "type": "string"
+    },
+    "build_dirty_worktree": {
+      "type": "boolean"
+    },
+    "originals_path": {
+      "type": "string"
+    },
+    "originals_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "candidate_budget": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "query_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "warmup_queries": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "cache_state": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "normal_p50_ms": {
+      "type": "number"
+    },
+    "normal_p99_ms": {
+      "type": "number"
+    },
+    "original_p50_ms": {
+      "type": "number"
+    },
+    "original_p99_ms": {
+      "type": "number"
+    },
+    "normal_samples_ms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "number"
+      }
+    },
+    "original_samples_ms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "number"
+      }
+    },
+    "original_results_blake3": {
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Public finalist search followed by FP32 original reranking prototype"
+}

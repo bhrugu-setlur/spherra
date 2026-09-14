@@ -44,6 +44,16 @@ Status: in progress; authorized after the local-index delivery.
   enclosure or inconsistent loss accounting. Use clean release commits for
   recorded runs and archive evidence after they complete.
 
+## Preregistered real-query selection
+
+At budget 200, choose the smallest training input size whose tuning recall@10
+is within 0.002 of the best of 4096/8192/16384/32768. Record that choice before
+running final queries. Compare only the baseline and selected model on the
+200 final queries; if baseline wins selection, run it once. Report paired
+query-bootstrap intervals (10,000 resamples, seed 20260804). Budget sweeps
+remain diagnostic and do not change the default. Relevance labels supplement
+exact-neighbor recall; this constructed subset is not an official benchmark.
+
 ## Progress
 
 - Preregistered the first diagnostic and data/training experiment sequence.
@@ -54,7 +64,10 @@ Status: in progress; authorized after the local-index delivery.
 - Focused tests cover full/partial candidate coverage, loss accounting, all-hit
   equality/enclosure, trace identities, schema requirements and bad inputs.
 - Focused tests and the full CI gate passed (194 tests, 12 skipped); workspace
-  tests and strict all-target clippy passed. Clean 1M measurements are next.
+  tests and strict all-target clippy passed. Clean 1M measurements completed at `f3453e1`: budget 200 covers every exact
+  top10 neighbor; delivered recall for the four training sizes is respectively
+  0.9095/0.9135/0.9190/0.9145. Every loss is compressed ranking loss; all
+  four complete candidate traces passed an independent audit.
 - Real-data preparation pins `BeIR/msmarco@a918e0d1`,
   `BeIR/msmarco-qrels@253fbf8a`, and MPNet `e8c3b32e`. The planned 100k-passage
   workload retains relevant passages for 400 deterministically chosen dev
@@ -62,7 +75,14 @@ Status: in progress; authorized after the local-index delivery.
   calibration passages. This is an explicitly constructed subset, not an
   official full-corpus MS MARCO score. Passage truncation at the model's 384
   word-piece limit is counted and recorded; raw texts and normalized FP32
-  embeddings are retained locally.
+  embeddings are retained locally. Case/whitespace-normalized duplicate passage
+  texts are excluded between calibration and indexed documents, and repeated
+  query texts between tuning and final queries. Near-duplicates remain possible.
+- `dataset-oracle` pins real-query exact references; `index-diagnose --dataset`
+  verifies vector/text hashes, query split and reusable model provenance.
+- `original-rerank` is a benchmark-only prototype: public k=B search followed
+  by positional FP32 original reads and exact FP64 reranking. Its warm-cache
+  comparison includes existing PQ work, so it is not an optimized new API.
 
 ```bash
 cargo run -p spherra-bench --release --locked -- index-diagnose \
@@ -71,3 +91,18 @@ cargo run -p spherra-bench --release --locked -- index-diagnose \
   --oracle-reference docs/benchmarks/results/2026-09-13-local-index-oracle-generated-correlated-1m.json \
   --output target/measure/loss-1m-training4096.json
 ```
+
+The real-data snapshot is pinned in
+[`corpora/msmarco/msmarco-real-queries-100k-mpnet-768.json`](../../corpora/msmarco/msmarco-real-queries-100k-mpnet-768.json).
+All vector/text hashes, counts, relevance endpoints and split separation passed
+`tools/audit_accuracy_dataset.py`; actual query texts also have no normalized
+exact duplicates in either indexed or calibration passages. The executed data
+builder and tracked builder have identical executable Python AST (formatting
+and module description aside). Embedding bytes, device and dependencies are
+pinned; identical floating-point bytes on other hardware are not assumed.
+
+Real-query/prototype verification passed 197 CI tests with 12 explicitly
+skipped large qualifications, workspace tests, strict all-target clippy, and
+three Python sampling tests. New tests reject wrong query oracles and corrupted
+vector hashes, validate reusable training identity, compare original reranking
+with exhaustive truth and reject truncated original files.

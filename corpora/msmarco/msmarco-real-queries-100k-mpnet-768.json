@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "name": "msmarco-real-queries-100000-mpnet-768-v1",
+  "dimension": 768,
+  "provenance": {
+    "dataset_repository": "BeIR/msmarco",
+    "dataset_revision": "a918e0d11a77ed33f42f29d98340b655593b96ad",
+    "qrels_repository": "BeIR/msmarco-qrels",
+    "qrels_revision": "253fbf8a3f8d4a0932b63882b5162bedc84779f5",
+    "model_repository": "sentence-transformers/all-mpnet-base-v2",
+    "model_revision": "e8c3b32edf5434bc2275fc9bab85f82640a19130",
+    "source_corpus_blake3": "85da2b452c99be4429bc41d1f642e8c4ffbdb935e1079273f6f15bc17fd82d3f",
+    "source_queries_blake3": "f93a6f0d324f98da0fa63e95525fa77df77a136964ebf4159c20a451f826af41",
+    "source_qrels_blake3": "960731a4c28e9f55e765a815e8d5fb5ffad61f1f8d0ef09957297d7cee5bd636",
+    "source_rows": 8841823,
+    "device": "mps",
+    "dependencies": {
+      "sentence-transformers": "6.0.1",
+      "huggingface-hub": "1.31.0",
+      "pyarrow": "25.0.1",
+      "blake3": "1.0.9",
+      "torch": "2.14.0",
+      "numpy": "2.5.3"
+    },
+    "preprocessing": "title + newline + passage; strip; mean pooling per pinned model; normalized FP32; max384 word pieces; truncation counts recorded",
+    "sampling": "v1 BLAKE3-ranked development queries split tuning/test; all their labeled relevant passages plus deterministic sampled distractors; disjoint calibration document/text groups; case/whitespace-normalized exact duplicates excluded across splits; reservoir oversamples2x before text deduplication; experimental subset, not full MS MARCO score",
+    "relevant_documents_for_queries": 435
+  },
+  "indexed": {
+    "path": "target/accuracy/msmarco-100k-deduplicated/indexed.f32",
+    "row_count": 100000,
+    "byte_len": 307200000,
+    "blake3": "5567023469b93d085f3c942479cfb0788d757ced07b96bd106cb1548e76e7e55",
+    "records_path": "target/accuracy/msmarco-100k-deduplicated/indexed.jsonl",
+    "records_blake3": "3d1537a9fb26e6362f03fbed27e53a6a9152165bf72c500770c9d0a2523b27e2",
+    "truncated_inputs": 1,
+    "embedding_seconds": 1081.6048865829944
+  },
+  "calibration": {
+    "path": "target/accuracy/msmarco-100k-deduplicated/calibration.f32",
+    "row_count": 32768,
+    "byte_len": 100663296,
+    "blake3": "760b8719c4afc2918ca506e62eb39223ec40e0e1f00febcb57fb17a67c453c56",
+    "records_path": "target/accuracy/msmarco-100k-deduplicated/calibration.jsonl",
+    "records_blake3": "e829630e664084eca59c12d6018e4f06cb3f62c9f446b91884b0bb9bc7273a01",
+    "truncated_inputs": 0,
+    "embedding_seconds": 342.7658227920183
+  },
+  "tuning": {
+    "path": "target/accuracy/msmarco-100k-deduplicated/tuning.f32",
+    "row_count": 200,
+    "byte_len": 614400,
+    "blake3": "8331033c3e344808ea6c74181c17ef9eca162bbba4bc677e5243fa4c0dcb5ee2",
+    "records_path": "target/accuracy/msmarco-100k-deduplicated/tuning.jsonl",
+    "records_blake3": "7a73333ad227d260427b1f16f92fd7865c7c8ae8dfe4db5c774f5c71512c3b94",
+    "truncated_inputs": 0,
+    "embedding_seconds": 1.3414920419454575
+  },
+  "test": {
+    "path": "target/accuracy/msmarco-100k-deduplicated/test.f32",
+    "row_count": 200,
+    "byte_len": 614400,
+    "blake3": "d3c7dd581cb4acd11be9dbbf7d283067736bafd58ca718045caa23596eeca587",
+    "records_path": "target/accuracy/msmarco-100k-deduplicated/test.jsonl",
+    "records_blake3": "a5042c6e32a56d53c8f00cf62f24597b6ebcbd413d0282c58eb0812929b0abff",
+    "truncated_inputs": 0,
+    "embedding_seconds": 0.9299896250013262
+  },
+  "qrels": {
+    "path": "target/accuracy/msmarco-100k-deduplicated/qrels.jsonl",
+    "blake3": "6363ca12a30b15a7271e4d010d11b87c8a5cd3a1f9d974558eb2e7ebf0f9b3b3",
+    "records": 435
+  }
+}
