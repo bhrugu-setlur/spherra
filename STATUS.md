@@ -19,11 +19,13 @@ training-size sweep. Production behavior remains the delivered baseline while
 these measurements establish the next change. Generated 1M diagnostics prove
 100% candidate coverage at budget 200 for all four training sizes, with recall
 0.9095/0.9135/0.9190/0.9145. All losses occur in compressed reranking.
-Real-query preparation and an original-vector reranking cost prototype are in
-progress; the model-selection rule is preregistered in the experiment note.
-The real snapshot is complete and hash-verified; both exact-query references
-are pinned before index measurement. The new measurement tooling
-passes 197 CI tests (12 skipped), workspace tests and strict clippy.
+The real 100k snapshot and both exact references are pinned and verified.
+Real tuning recall is 0.9715/0.9680/0.9700/0.9725; the preregistered rule
+selects the baseline 4096-input model. Its untouched final-query run is next.
+The original-vector prototype adds a median paired 3.223 ms on warm-cache
+1M queries and needs 3.072 GB of extra stored originals per million rows.
+Measurement tooling passes 197 CI tests (12 skipped), workspace tests and
+strict clippy. Production contracts and defaults remain unchanged.
 
 ## Acceptance evidence
 

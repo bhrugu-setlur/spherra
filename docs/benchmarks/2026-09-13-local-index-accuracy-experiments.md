@@ -111,3 +111,21 @@ Both real-query exact top100 references are now pinned under
 `docs/benchmarks/results/2026-09-13-msmarco-{tuning,test}-oracle.json`,
 generated on clean `2f8fcb8` before any real index measurement. No final-query
 model result has been run or inspected.
+
+## Selection recorded before final-query measurement
+
+All tuning measurements ran on clean `ab2c369`. Recall@10 at budget 200 for
+4096/8192/16384/32768 inputs is 0.9715/0.9680/0.9700/0.9725. Candidate
+coverage is 1.0000 in all cases; larger budgets recover no additional neighbors.
+The preregistered rule selects **4096 inputs**: it is the smallest size within
+0.002 of the best (difference 0.0010). The largest model's paired-query
+bootstrap 95% difference interval is −0.0065 to +0.0080. All four complete
+candidate traces passed the independent audit. The final comparison therefore
+requires one run, since the selected model is the baseline. No final-query
+model result has been generated or inspected as of this decision.
+
+The separate original-rerank prototype also completed on clean `ab2c369`,
+with no concurrent training/embedding/test load: 1,000 queries, 50 warmups,
+AC power, normal p50/p99 66.125/181.195 ms, original p50/p99
+69.081/209.124 ms. Raw samples and `/usr/bin/time -l` output are archived.
+This warm-cache prototype is not a new production API or SLO qualification.

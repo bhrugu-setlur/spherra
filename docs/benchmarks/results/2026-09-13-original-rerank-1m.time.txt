@@ -1,0 +1,28 @@
+original-rerank 100/1000 queries
+original-rerank 200/1000 queries
+original-rerank 300/1000 queries
+original-rerank 400/1000 queries
+original-rerank 500/1000 queries
+original-rerank 600/1000 queries
+original-rerank 700/1000 queries
+original-rerank 800/1000 queries
+original-rerank 900/1000 queries
+original-rerank 1000/1000 queries
+      210.79 real       655.32 user         9.24 sys
+          6544146432  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              408002  page reclaims
+                  69  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+               14309  voluntary context switches
+              861671  involuntary context switches
+      10821918950884  instructions retired
+       1857850295240  cycles elapsed
+          6542054416  peak memory footprint
