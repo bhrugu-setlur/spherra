@@ -264,7 +264,7 @@ Exit gate:
 - Corrupt/truncated format fuzzing returns structured errors without panic or out-of-bounds access.
 - Real-corpus recall and candidate-budget curves are recorded. Failure to meet R7 quality gates blocks format freeze but does not permit silent architecture changes.
 
-Detailed execution plan: [`../plans/2026-08-04-polar-codec-format-foundation.md`](../plans/2026-08-04-polar-codec-format-foundation.md)
+Detailed execution plan: the codec and format foundation plan (not included in this repository).
 
 ### M2: One-member Raft and immediate-visibility vertical slice
 
@@ -431,11 +431,11 @@ After code, test, specification, benchmark-evidence, or status changes:
 
 1. Update the project guide when status, constraints, decisions, paths, commands, or next work changed.
 2. Re-run the verification commands for the changed area.
-3. Verify no semantic refresh is pending and query the changed concepts.
+3. Record the results with the changed documents.
 4. Do not report completion while the project guide is stale.
 
 ## 11. Approval record
 
 - **Branding amendment:** `polar` product/CLI/crate identifiers were changed to Spherra identifiers at the user's direction. Milestone boundaries, dependency direction, behavior, and verification gates are unchanged; no renewed technical review was required.
 
-No implementation may begin from this document until both conditions are satisfied for the same unchanged revision.
+No implementation may begin from this document until it is approved for the same unchanged revision.

@@ -37,7 +37,7 @@ honest per-hit error intervals and a measured speed target.
   Budgets between 20 and 200 were not measured in this reference. At the
   measured budgets of 200 and above, the codec's refined ranking limits recall
   on these two corpora. This factual correction was approved by the user after
-  the [Task 1 measurements](../../benchmarks/2026-09-13-local-index-reference.md).
+  the [Task 1 measurements](../benchmarks/2026-09-13-local-index-reference.md).
 - **The rebuilt SciFact bytes differ from August's** (BLAKE3 `b2e549ce…` against
   `8a20ab21…`), and recall@10 at budget 200 moved from 0.9775 to 0.9745. Quality
   comparisons must use one archived set of bytes.
