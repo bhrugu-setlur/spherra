@@ -567,6 +567,33 @@ impl PrimaryFileReader {
         self.0.read_row::<4>(SectionKind::RadiusFlags, row)
     }
 
+    /// Reads 1..=4096 consecutive radius/flags words with one positional read.
+    /// Both endpoints are checked before allocation or I/O. No padding rows
+    /// are returned; the caller owns interpretation of the four stored bytes.
+    pub fn radius_flags_range(&self, first: u32, count: u32) -> Result<Vec<[u8; 4]>, FormatError> {
+        if !(1..=4096).contains(&count) {
+            return Err(FormatError::InvalidStoredValue {
+                value: "radius range count",
+            });
+        }
+        self.0.check_row(first)?;
+        let last = first
+            .checked_add(count - 1)
+            .ok_or(FormatError::LengthOverflow)?;
+        self.0.check_row(last)?;
+        let entry = self.0.section(SectionKind::RadiusFlags)?;
+        let offset = entry
+            .offset
+            .checked_add(u64::from(first) * 4)
+            .ok_or(FormatError::LengthOverflow)?;
+        let mut bytes = vec![0; count as usize * 4];
+        self.0.read_at(&mut bytes, offset)?;
+        Ok(bytes
+            .chunks_exact(4)
+            .map(|b| [b[0], b[1], b[2], b[3]])
+            .collect())
+    }
+
     /// Reads one physical TILED_SOA_32 tile in a single positional call. The
     /// ordinal is a tile index, not a row index. A final partial tile retains
     /// its padding lanes; the caller uses `row_count` to select logical rows.

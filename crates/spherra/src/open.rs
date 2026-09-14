@@ -18,6 +18,7 @@ pub(crate) const TILE_BYTES: usize = 768 * 16;
 pub(crate) struct Segment {
     pub entry: SegmentEntry,
     pub tiles: Vec<u8>,
+    pub magnitudes: Box<[u16]>,
     pub tile_start: usize,
     pub residual: PairedResidualReader,
     pub certificate: BoundPair,
@@ -99,14 +100,36 @@ impl Index {
             for tile in 0..count {
                 bytes.extend_from_slice(&pair.primary().primary_tile(tile as u32)?);
             }
+            let mut magnitudes = Vec::with_capacity(entry.row_count as usize);
+            for first in (0..entry.row_count).step_by(4096) {
+                let count = (entry.row_count - first).min(4096);
+                for word in pair.primary().radius_flags_range(first, count)? {
+                    let bits = u16::from_le_bytes([word[0], word[1]]);
+                    // The writer produces finite nonnegative FP16, including
+                    // +0 for underflow. Negative zero is not canonical input.
+                    if bits & 0x8000 != 0 || bits & 0x7c00 == 0x7c00 {
+                        return Err(Error::Corrupt);
+                    }
+                    magnitudes.push(bits);
+                }
+            }
+            let magnitudes = magnitudes.into_boxed_slice();
             let primary = terms(pair.primary().primary_certificate()?);
             let refined = terms(pair.primary().refined_certificate()?);
-            loaded.push((entry, bytes, tiles, pair.into_residual(), primary, refined));
+            loaded.push((
+                entry,
+                bytes,
+                magnitudes,
+                tiles,
+                pair.into_residual(),
+                primary,
+                refined,
+            ));
             tiles += count;
         }
         // No bound certificate exists until every segment's physical checks passed.
         let mut segments = Vec::with_capacity(loaded.len());
-        for (i, (entry, bytes, tile_start, residual, primary, refined)) in
+        for (i, (entry, bytes, magnitudes, tile_start, residual, primary, refined)) in
             loaded.into_iter().enumerate()
         {
             let binding = Binding {
@@ -120,6 +143,7 @@ impl Index {
             segments.push(Segment {
                 entry,
                 tiles: bytes,
+                magnitudes,
                 tile_start,
                 residual,
                 certificate: BoundPair::bind(binding, primary, refined)?,

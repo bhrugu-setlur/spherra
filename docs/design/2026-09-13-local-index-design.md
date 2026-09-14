@@ -155,7 +155,9 @@ Result types have private fields, read-only getters, and no public constructor:
   `cleanup_complete()`.
 - `SearchResult`: `generation()`, `candidate_budget()`, `rows_scanned()`,
   `rows_refined()`, `hits() -> &[Hit]`.
-- `Hit`: `row()`, `segment()`, `score()` (refined), `interval() -> (f64, f64)`.
+- `Hit`: `row()`, `segment()`, `score()` (refined), `interval() -> (f64, f64)`,
+  `stored_magnitude() -> f32` (stored FP16 input length promoted to FP32;
+  [2026-09-14 amendment](2026-09-14-stored-magnitude-amendment.md)).
 - `SegmentCertificates`: `first_row()`, `row_count()`, `primary()`, `refined()`,
   each kind exposing its five terms as getters.
 - `DriftReport`: section 10.
@@ -399,7 +401,9 @@ preceding bytes.
    require header `segment_id`, `collection_id`, and `row_count` to equal the
    entry and the index id; require every representation identity to equal the
    model; pair the files.
-8. Load primary codes tile by tile into owned memory and certificates, then
+8. Load primary codes tile by tile, certificates and two-byte-per-row stored
+   magnitudes into owned memory (validate finite nonnegative FP16, including +0
+   underflow, as specified by the magnitude amendment), then
    close the primary file before opening the next segment; keep only residual
    files open for positional reads. `spherra-format` provides this as a
    consuming `PairedSegmentReaders::into_residual` that drops the primary reader

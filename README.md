@@ -77,8 +77,8 @@ fn build_and_search(
         SearchOptions { k: 10, candidate_budget: None },
     )?;
     for hit in result.hits() {
-        println!("row {}: score {}, interval {:?}",
-            hit.row().get(), hit.score(), hit.interval());
+        println!("row {}: score {}, interval {:?}, stored length {}",
+            hit.row().get(), hit.score(), hit.interval(), hit.stored_magnitude());
     }
     Ok(())
 }
@@ -88,6 +88,11 @@ fn build_and_search(
 size. `k` must be positive; an explicit budget below `k` is invalid. If `k`
 exceeds the index size, every row is returned. Ordering is score descending,
 then row ID ascending. Row IDs are dense ordinals scoped to one index.
+
+`hit.stored_magnitude()` returns the input length rounded to FP16 and promoted
+to FP32. Tiny positive lengths may round to zero. It is metadata and does not
+affect ranking or score intervals. Opening retains two bytes per row (20 MB at
+10M rows, plus per-segment overhead); existing valid indexes need no rebuild.
 
 Drop all open `Index` handles before appending; they hold shared locks for their
 lifetime. Builders take a nonblocking exclusive lock and return `IndexBusy` on

@@ -72,3 +72,35 @@ fn tiles_equal_each_row_code_with_one_read_including_partial_tiles() {
         }
     }
 }
+
+#[test]
+fn radius_blocks_are_bounded_single_reads_and_preserve_every_byte() {
+    let count = 4101_u32;
+    let mut segment = common::primary_segment();
+    segment.rows = (0..count).map(common::row_entry).collect();
+    segment.primary_codes = (0..count).map(common::primary_code).collect();
+    segment.radius_flags = (0..count).map(u32::to_le_bytes).collect();
+    let reads = Arc::new(AtomicUsize::new(0));
+    let reader = PrimaryFileReader::open(
+        Box::new(Spy {
+            bytes: encode_primary_segment(&segment).unwrap(),
+            reads: Arc::clone(&reads),
+        }),
+        &common::expectations(),
+    )
+    .unwrap();
+    for (first, n) in [(0, 4096), (4096, 5), (2, 31)] {
+        reads.store(0, Ordering::SeqCst);
+        let data = reader.radius_flags_range(first, n).unwrap();
+        assert_eq!(reads.load(Ordering::SeqCst), 1);
+        assert_eq!(
+            data,
+            &segment.radius_flags[first as usize..(first + n) as usize]
+        );
+    }
+    for (first, n) in [(0, 0), (0, 4097), (4101, 1), (4100, 2), (u32::MAX, 2)] {
+        reads.store(0, Ordering::SeqCst);
+        assert!(reader.radius_flags_range(first, n).is_err());
+        assert_eq!(reads.load(Ordering::SeqCst), 0);
+    }
+}

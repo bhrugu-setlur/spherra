@@ -26,6 +26,7 @@ pub struct Hit {
     segment: u32,
     raw: i64,
     interval: (f64, f64),
+    magnitude_bits: u16,
 }
 impl Hit {
     pub fn row(&self) -> RowId {
@@ -39,6 +40,12 @@ impl Hit {
     }
     pub fn interval(&self) -> (f64, f64) {
         self.interval
+    }
+    /// The original input length rounded to FP16, promoted exactly to FP32.
+    /// A tiny positive input length may round to zero. This is metadata, not
+    /// a confidence score, and does not participate in ranking or intervals.
+    pub fn stored_magnitude(&self) -> f32 {
+        half::f16::from_bits(self.magnitude_bits).to_f32()
     }
     #[cfg(test)]
     pub(crate) fn raw(&self) -> i64 {
@@ -258,6 +265,8 @@ impl Index {
                 segment: candidate.segment as u32,
                 raw,
                 interval,
+                magnitude_bits: self.data.segments[candidate.segment].magnitudes
+                    [candidate.local as usize],
             });
         }
         Ok(SearchResult {

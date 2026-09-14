@@ -457,3 +457,169 @@ fn certificates_reject_every_mismatched_binding_and_row_range() {
         Err(Error::CertificateInvalid)
     ));
 }
+
+#[test]
+fn stored_magnitudes_roundtrip_append_and_do_not_affect_cosine_order() {
+    let corpus = spherra_testkit::CorpusDescriptor::resolve("generated-correlated-768x400")
+        .unwrap()
+        .load(20260804, 20)
+        .unwrap();
+    let lengths = [1.0_f32, 1.0001, 14.0, 1e-10, 1e-7, 65504.0];
+    let rows: Vec<Vector> = lengths
+        .iter()
+        .map(|&x| {
+            let mut v = [0.0; 768];
+            v[0] = x;
+            v
+        })
+        .collect();
+    let expected: Vec<_> = rows
+        .iter()
+        .map(|r| {
+            spherra_domain::ValidatedVector::new(r.to_vec())
+                .unwrap()
+                .radius_f32()
+        })
+        .collect();
+    let dir = tempfile::tempdir().unwrap();
+    let mut b = IndexBuilder::create(
+        dir.path(),
+        corpus.calibration(),
+        CreateOptions {
+            seed: 20260804,
+            validation_rows: None,
+        },
+    )
+    .unwrap();
+    for row in &rows[..3] {
+        b.push(row).unwrap();
+    }
+    b.commit().unwrap();
+    let index = Index::open(dir.path()).unwrap();
+    let first = index
+        .search(
+            &rows[0],
+            SearchOptions {
+                k: 3,
+                candidate_budget: Some(3),
+            },
+        )
+        .unwrap();
+    let kept = first.hits()[1].clone();
+    drop(index);
+    let mut b = IndexBuilder::append(dir.path()).unwrap();
+    for row in &rows[3..] {
+        b.push(row).unwrap();
+    }
+    b.commit().unwrap();
+    for workers in [1, 6] {
+        let index = Index::open_with_workers(dir.path(), workers).unwrap();
+        let result = index
+            .search(
+                &rows[0],
+                SearchOptions {
+                    k: 6,
+                    candidate_budget: Some(6),
+                },
+            )
+            .unwrap();
+        assert_eq!(result.hits().len(), 6);
+        assert_eq!(
+            index
+                .data
+                .segments
+                .iter()
+                .map(|s| s.magnitudes.len() * 2)
+                .sum::<usize>(),
+            12
+        );
+        for (i, h) in result.hits().iter().enumerate() {
+            assert_eq!(h.row().get(), i as u64);
+            assert_eq!(h.stored_magnitude().to_bits(), expected[i].to_bits());
+            assert_eq!(h.raw(), result.hits()[0].raw());
+            assert!(h.interval().0 <= 1.0 && h.interval().1 >= 1.0);
+        }
+        for (a, b) in first.hits().iter().zip(result.hits()) {
+            assert_eq!(
+                (a.row(), a.raw(), a.interval()),
+                (b.row(), b.raw(), b.interval())
+            );
+        }
+    }
+    assert_eq!(kept.stored_magnitude(), 1.0);
+    assert_eq!(expected[3], 0.0);
+}
+
+#[test]
+fn opening_rejects_invalid_magnitudes_even_with_consistent_hashes() {
+    for bits in [0x8000_u16, 0xbc00, 0x7c00, 0x7e00] {
+        let dir = copy();
+        let (_, mut m, _) = storage::load(&RealFs, dir.path()).unwrap();
+        rewrite_segment(dir.path(), &mut m, |p, _| {
+            p.radius_flags[0][..2].copy_from_slice(&bits.to_le_bytes())
+        });
+        assert!(
+            matches!(Index::open(dir.path()), Err(Error::Corrupt)),
+            "bits={bits:04x}"
+        );
+    }
+}
+
+#[test]
+fn magnitude_only_changes_preserve_every_score_rank_and_interval() {
+    let dir = copy();
+    let index = Index::open(dir.path()).unwrap();
+    let queries = &fixture().rows[..8];
+    let before: Vec<_> = queries
+        .iter()
+        .map(|q| {
+            index
+                .search(
+                    q,
+                    SearchOptions {
+                        k: 33,
+                        candidate_budget: Some(33),
+                    },
+                )
+                .unwrap()
+                .hits()
+                .iter()
+                .map(|h| {
+                    let (lo, hi) = h.interval();
+                    (h.row(), h.raw(), lo.to_bits(), hi.to_bits())
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect();
+    drop(index);
+    let (_, mut m, _) = storage::load(&RealFs, dir.path()).unwrap();
+    rewrite_segment(dir.path(), &mut m, |p, _| {
+        for (i, r) in p.radius_flags.iter_mut().enumerate() {
+            r[..2]
+                .copy_from_slice(&(if i % 2 == 0 { 0x0000_u16 } else { 0x7bff_u16 }).to_le_bytes());
+        }
+    });
+    let index = Index::open(dir.path()).unwrap();
+    for (q, expected) in queries.iter().zip(before) {
+        let actual = index
+            .search(
+                q,
+                SearchOptions {
+                    k: 33,
+                    candidate_budget: Some(33),
+                },
+            )
+            .unwrap();
+        assert_eq!(
+            actual
+                .hits()
+                .iter()
+                .map(|h| {
+                    let (lo, hi) = h.interval();
+                    (h.row(), h.raw(), lo.to_bits(), hi.to_bits())
+                })
+                .collect::<Vec<_>>(),
+            expected
+        );
+    }
+}

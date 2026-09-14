@@ -37,6 +37,16 @@ an independent calculation verified their statistics, counts and identities.
 No public index API, search path or durable format changes are included.
 [Protocol and results](docs/benchmarks/2026-09-14-vector-length-audit.md).
 
+## Current checkpoint: return stored magnitude
+
+The user directed continuation to item 2 of the magnitude feature list.
+`Hit::stored_magnitude()` and bounded checked loading of a two-byte-per-row cache
+are implemented. Focused tests cover roundtrip/append, malformed magnitudes,
+exactly unchanged scoring and bounded reads. CI passed 205 tests with 12 skipped;
+workspace tests and strict clippy pass. Clean-release resource measurements are
+in progress.
+[Contract](docs/design/2026-09-14-stored-magnitude-amendment.md).
+
 ## Acceptance evidence
 
 | Gate | Result |

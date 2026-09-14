@@ -18,6 +18,7 @@ spherra-format = { path = "../spherra-format" }
 blake3.workspace = true
 crc32c.workspace = true
 rustix.workspace = true
+half.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

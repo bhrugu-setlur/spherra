@@ -346,3 +346,9 @@ were approved and applied on 2026-09-13.
 ## 11. Approval record
 
 - User: APPROVE at revision 4 (2026-09-13). Also approved by the user on 2026-09-13: the D§14 project guide changes (applied), and unsafe code confined to `crates/spherra-simd/src/neon.rs` if Task 12 runs.
+
+## Subsequent user-directed checkpoint: stored magnitude
+
+The [2026-09-14 amendment](2026-09-14-stored-magnitude-amendment.md) adds
+`Hit::stored_magnitude()` and a compact checked-open cache. It defines the
+additional contract and verification without reopening the completed task plan.

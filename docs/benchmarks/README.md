@@ -488,3 +488,8 @@ evidence. Do not overwrite existing hash-pinned artifacts.
 The [technical note](2026-09-14-vector-length-audit.md) documents its command,
 explicit policies, exit codes, bounded memory and eleven recorded real/synthetic
 runs. It is an ingestion diagnostic, with no index API or search changes.
+
+## Stored magnitude checkpoint
+
+[Implementation, test data and resource protocol](2026-09-14-stored-magnitude-results.md)
+cover `Hit::stored_magnitude()` and the compact resident cache.
