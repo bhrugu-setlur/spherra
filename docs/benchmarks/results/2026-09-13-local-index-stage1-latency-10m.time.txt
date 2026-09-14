@@ -1,0 +1,382 @@
+build: training on 4096 inputs
+build: 65536 rows staged
+build: 131072 rows staged
+build: 196608 rows staged
+build: 262144 rows staged
+build: 327680 rows staged
+build: 393216 rows staged
+build: 458752 rows staged
+build: 524288 rows staged
+build: 589824 rows staged
+build: 655360 rows staged
+build: 720896 rows staged
+build: 786432 rows staged
+build: 851968 rows staged
+build: 917504 rows staged
+build: 983040 rows staged
+build: generation 1 committed, 1000000 rows
+build: 1048576 rows staged
+build: 1114112 rows staged
+build: 1179648 rows staged
+build: 1245184 rows staged
+build: 1310720 rows staged
+build: 1376256 rows staged
+build: 1441792 rows staged
+build: 1507328 rows staged
+build: 1572864 rows staged
+build: 1638400 rows staged
+build: 1703936 rows staged
+build: 1769472 rows staged
+build: 1835008 rows staged
+build: 1900544 rows staged
+build: 1966080 rows staged
+build: generation 2 committed, 2000000 rows
+build: 2031616 rows staged
+build: 2097152 rows staged
+build: 2162688 rows staged
+build: 2228224 rows staged
+build: 2293760 rows staged
+build: 2359296 rows staged
+build: 2424832 rows staged
+build: 2490368 rows staged
+build: 2555904 rows staged
+build: 2621440 rows staged
+build: 2686976 rows staged
+build: 2752512 rows staged
+build: 2818048 rows staged
+build: 2883584 rows staged
+build: 2949120 rows staged
+build: generation 3 committed, 3000000 rows
+build: 3014656 rows staged
+build: 3080192 rows staged
+build: 3145728 rows staged
+build: 3211264 rows staged
+build: 3276800 rows staged
+build: 3342336 rows staged
+build: 3407872 rows staged
+build: 3473408 rows staged
+build: 3538944 rows staged
+build: 3604480 rows staged
+build: 3670016 rows staged
+build: 3735552 rows staged
+build: 3801088 rows staged
+build: 3866624 rows staged
+build: 3932160 rows staged
+build: 3997696 rows staged
+build: generation 4 committed, 4000000 rows
+build: 4063232 rows staged
+build: 4128768 rows staged
+build: 4194304 rows staged
+build: 4259840 rows staged
+build: 4325376 rows staged
+build: 4390912 rows staged
+build: 4456448 rows staged
+build: 4521984 rows staged
+build: 4587520 rows staged
+build: 4653056 rows staged
+build: 4718592 rows staged
+build: 4784128 rows staged
+build: 4849664 rows staged
+build: 4915200 rows staged
+build: 4980736 rows staged
+build: generation 5 committed, 5000000 rows
+build: 5046272 rows staged
+build: 5111808 rows staged
+build: 5177344 rows staged
+build: 5242880 rows staged
+build: 5308416 rows staged
+build: 5373952 rows staged
+build: 5439488 rows staged
+build: 5505024 rows staged
+build: 5570560 rows staged
+build: 5636096 rows staged
+build: 5701632 rows staged
+build: 5767168 rows staged
+build: 5832704 rows staged
+build: 5898240 rows staged
+build: 5963776 rows staged
+build: generation 6 committed, 6000000 rows
+build: 6029312 rows staged
+build: 6094848 rows staged
+build: 6160384 rows staged
+build: 6225920 rows staged
+build: 6291456 rows staged
+build: 6356992 rows staged
+build: 6422528 rows staged
+build: 6488064 rows staged
+build: 6553600 rows staged
+build: 6619136 rows staged
+build: 6684672 rows staged
+build: 6750208 rows staged
+build: 6815744 rows staged
+build: 6881280 rows staged
+build: 6946816 rows staged
+build: generation 7 committed, 7000000 rows
+build: 7012352 rows staged
+build: 7077888 rows staged
+build: 7143424 rows staged
+build: 7208960 rows staged
+build: 7274496 rows staged
+build: 7340032 rows staged
+build: 7405568 rows staged
+build: 7471104 rows staged
+build: 7536640 rows staged
+build: 7602176 rows staged
+build: 7667712 rows staged
+build: 7733248 rows staged
+build: 7798784 rows staged
+build: 7864320 rows staged
+build: 7929856 rows staged
+build: 7995392 rows staged
+build: generation 8 committed, 8000000 rows
+build: 8060928 rows staged
+build: 8126464 rows staged
+build: 8192000 rows staged
+build: 8257536 rows staged
+build: 8323072 rows staged
+build: 8388608 rows staged
+build: 8454144 rows staged
+build: 8519680 rows staged
+build: 8585216 rows staged
+build: 8650752 rows staged
+build: 8716288 rows staged
+build: 8781824 rows staged
+build: 8847360 rows staged
+build: 8912896 rows staged
+build: 8978432 rows staged
+build: generation 9 committed, 9000000 rows
+build: 9043968 rows staged
+build: 9109504 rows staged
+build: 9175040 rows staged
+build: 9240576 rows staged
+build: 9306112 rows staged
+build: 9371648 rows staged
+build: 9437184 rows staged
+build: 9502720 rows staged
+build: 9568256 rows staged
+build: 9633792 rows staged
+build: 9699328 rows staged
+build: 9764864 rows staged
+build: 9830400 rows staged
+build: 9895936 rows staged
+build: 9961472 rows staged
+build: generation 10 committed, 10000000 rows
+query: warming with 50 queries
+query: 5/1000 complete, last 6356.140 ms
+query: 10/1000 complete, last 6660.582 ms
+query: 15/1000 complete, last 6632.623 ms
+query: 20/1000 complete, last 6380.537 ms
+query: 25/1000 complete, last 6670.842 ms
+query: 30/1000 complete, last 6437.420 ms
+query: 35/1000 complete, last 6365.553 ms
+query: 40/1000 complete, last 6284.663 ms
+query: 45/1000 complete, last 6447.691 ms
+query: 50/1000 complete, last 6433.460 ms
+query: 55/1000 complete, last 6182.475 ms
+query: 60/1000 complete, last 6165.474 ms
+query: 65/1000 complete, last 6177.963 ms
+query: 70/1000 complete, last 6496.843 ms
+query: 75/1000 complete, last 6483.711 ms
+query: 80/1000 complete, last 6507.138 ms
+query: 85/1000 complete, last 6550.328 ms
+query: 90/1000 complete, last 6409.590 ms
+query: 95/1000 complete, last 6169.456 ms
+query: 100/1000 complete, last 6439.596 ms
+query: 105/1000 complete, last 6409.248 ms
+query: 110/1000 complete, last 6291.448 ms
+query: 115/1000 complete, last 6200.533 ms
+query: 120/1000 complete, last 6214.175 ms
+query: 125/1000 complete, last 6420.226 ms
+query: 130/1000 complete, last 6603.596 ms
+query: 135/1000 complete, last 6482.631 ms
+query: 140/1000 complete, last 6670.643 ms
+query: 145/1000 complete, last 6411.569 ms
+query: 150/1000 complete, last 6629.004 ms
+query: 155/1000 complete, last 6465.649 ms
+query: 160/1000 complete, last 6159.633 ms
+query: 165/1000 complete, last 6297.508 ms
+query: 170/1000 complete, last 6553.762 ms
+query: 175/1000 complete, last 6476.340 ms
+query: 180/1000 complete, last 6366.491 ms
+query: 185/1000 complete, last 6278.578 ms
+query: 190/1000 complete, last 6293.989 ms
+query: 195/1000 complete, last 7233.250 ms
+query: 200/1000 complete, last 6537.478 ms
+query: 205/1000 complete, last 6511.214 ms
+query: 210/1000 complete, last 6481.057 ms
+query: 215/1000 complete, last 6450.522 ms
+query: 220/1000 complete, last 6519.792 ms
+query: 225/1000 complete, last 6277.343 ms
+query: 230/1000 complete, last 6461.667 ms
+query: 235/1000 complete, last 6618.639 ms
+query: 240/1000 complete, last 6294.197 ms
+query: 245/1000 complete, last 6643.453 ms
+query: 250/1000 complete, last 6179.994 ms
+query: 255/1000 complete, last 6327.474 ms
+query: 260/1000 complete, last 6492.576 ms
+query: 265/1000 complete, last 6427.368 ms
+query: 270/1000 complete, last 6480.115 ms
+query: 275/1000 complete, last 6418.272 ms
+query: 280/1000 complete, last 6286.599 ms
+query: 285/1000 complete, last 6158.658 ms
+query: 290/1000 complete, last 6607.474 ms
+query: 295/1000 complete, last 6539.432 ms
+query: 300/1000 complete, last 6314.612 ms
+query: 305/1000 complete, last 6147.469 ms
+query: 310/1000 complete, last 6427.068 ms
+query: 315/1000 complete, last 6438.525 ms
+query: 320/1000 complete, last 6553.879 ms
+query: 325/1000 complete, last 6354.477 ms
+query: 330/1000 complete, last 6492.053 ms
+query: 335/1000 complete, last 6429.752 ms
+query: 340/1000 complete, last 6476.249 ms
+query: 345/1000 complete, last 6447.442 ms
+query: 350/1000 complete, last 6633.928 ms
+query: 355/1000 complete, last 6287.199 ms
+query: 360/1000 complete, last 6730.625 ms
+query: 365/1000 complete, last 6243.652 ms
+query: 370/1000 complete, last 6306.693 ms
+query: 375/1000 complete, last 6449.774 ms
+query: 380/1000 complete, last 6343.075 ms
+query: 385/1000 complete, last 6437.254 ms
+query: 390/1000 complete, last 6463.934 ms
+query: 395/1000 complete, last 6429.616 ms
+query: 400/1000 complete, last 6167.357 ms
+query: 405/1000 complete, last 6493.900 ms
+query: 410/1000 complete, last 6636.388 ms
+query: 415/1000 complete, last 6209.022 ms
+query: 420/1000 complete, last 6203.526 ms
+query: 425/1000 complete, last 6182.764 ms
+query: 430/1000 complete, last 6307.695 ms
+query: 435/1000 complete, last 6457.721 ms
+query: 440/1000 complete, last 6437.720 ms
+query: 445/1000 complete, last 6546.976 ms
+query: 450/1000 complete, last 6496.458 ms
+query: 455/1000 complete, last 6685.827 ms
+query: 460/1000 complete, last 6266.112 ms
+query: 465/1000 complete, last 6581.380 ms
+query: 470/1000 complete, last 6445.129 ms
+query: 475/1000 complete, last 6284.254 ms
+query: 480/1000 complete, last 6198.278 ms
+query: 485/1000 complete, last 6185.507 ms
+query: 490/1000 complete, last 6728.951 ms
+query: 495/1000 complete, last 6440.885 ms
+query: 500/1000 complete, last 6290.103 ms
+query: 505/1000 complete, last 6360.840 ms
+query: 510/1000 complete, last 6744.713 ms
+query: 515/1000 complete, last 6373.495 ms
+query: 520/1000 complete, last 6152.048 ms
+query: 525/1000 complete, last 6460.970 ms
+query: 530/1000 complete, last 6429.655 ms
+query: 535/1000 complete, last 6329.400 ms
+query: 540/1000 complete, last 6200.730 ms
+query: 545/1000 complete, last 6249.530 ms
+query: 550/1000 complete, last 6488.129 ms
+query: 555/1000 complete, last 6487.662 ms
+query: 560/1000 complete, last 6616.507 ms
+query: 565/1000 complete, last 6328.095 ms
+query: 570/1000 complete, last 6678.169 ms
+query: 575/1000 complete, last 6466.877 ms
+query: 580/1000 complete, last 6172.616 ms
+query: 585/1000 complete, last 6509.868 ms
+query: 590/1000 complete, last 6467.998 ms
+query: 595/1000 complete, last 6299.786 ms
+query: 600/1000 complete, last 6187.841 ms
+query: 605/1000 complete, last 6312.011 ms
+query: 610/1000 complete, last 6417.011 ms
+query: 615/1000 complete, last 6445.820 ms
+query: 620/1000 complete, last 6470.205 ms
+query: 625/1000 complete, last 6337.134 ms
+query: 630/1000 complete, last 6442.603 ms
+query: 635/1000 complete, last 6589.654 ms
+query: 640/1000 complete, last 6315.586 ms
+query: 645/1000 complete, last 6344.945 ms
+query: 650/1000 complete, last 6595.589 ms
+query: 655/1000 complete, last 6870.819 ms
+query: 660/1000 complete, last 6328.882 ms
+query: 665/1000 complete, last 6340.140 ms
+query: 670/1000 complete, last 6209.482 ms
+query: 675/1000 complete, last 6439.506 ms
+query: 680/1000 complete, last 6495.087 ms
+query: 685/1000 complete, last 6355.922 ms
+query: 690/1000 complete, last 6696.062 ms
+query: 695/1000 complete, last 6454.886 ms
+query: 700/1000 complete, last 6493.310 ms
+query: 705/1000 complete, last 6194.132 ms
+query: 710/1000 complete, last 6434.008 ms
+query: 715/1000 complete, last 6468.560 ms
+query: 720/1000 complete, last 6354.127 ms
+query: 725/1000 complete, last 6192.961 ms
+query: 730/1000 complete, last 6206.994 ms
+query: 735/1000 complete, last 6316.393 ms
+query: 740/1000 complete, last 6559.755 ms
+query: 745/1000 complete, last 6499.463 ms
+query: 750/1000 complete, last 6567.340 ms
+query: 755/1000 complete, last 6514.323 ms
+query: 760/1000 complete, last 6494.522 ms
+query: 765/1000 complete, last 6496.620 ms
+query: 770/1000 complete, last 6582.908 ms
+query: 775/1000 complete, last 6421.025 ms
+query: 780/1000 complete, last 6158.795 ms
+query: 785/1000 complete, last 6280.587 ms
+query: 790/1000 complete, last 6171.046 ms
+query: 795/1000 complete, last 6450.169 ms
+query: 800/1000 complete, last 6434.440 ms
+query: 805/1000 complete, last 6495.074 ms
+query: 810/1000 complete, last 6493.990 ms
+query: 815/1000 complete, last 6427.364 ms
+query: 820/1000 complete, last 6153.885 ms
+query: 825/1000 complete, last 6296.349 ms
+query: 830/1000 complete, last 6448.413 ms
+query: 835/1000 complete, last 6309.855 ms
+query: 840/1000 complete, last 6313.787 ms
+query: 845/1000 complete, last 9782.107 ms
+query: 850/1000 complete, last 6719.428 ms
+query: 855/1000 complete, last 6641.285 ms
+query: 860/1000 complete, last 6424.341 ms
+query: 865/1000 complete, last 6350.196 ms
+query: 870/1000 complete, last 6497.718 ms
+query: 875/1000 complete, last 6464.545 ms
+query: 880/1000 complete, last 6362.003 ms
+query: 885/1000 complete, last 6330.425 ms
+query: 890/1000 complete, last 6840.033 ms
+query: 895/1000 complete, last 6732.533 ms
+query: 900/1000 complete, last 6143.145 ms
+query: 905/1000 complete, last 6239.551 ms
+query: 910/1000 complete, last 6162.612 ms
+query: 915/1000 complete, last 6437.803 ms
+query: 920/1000 complete, last 6463.148 ms
+query: 925/1000 complete, last 6447.448 ms
+query: 930/1000 complete, last 6519.546 ms
+query: 935/1000 complete, last 6458.467 ms
+query: 940/1000 complete, last 6190.307 ms
+query: 945/1000 complete, last 6804.991 ms
+query: 950/1000 complete, last 6574.629 ms
+query: 955/1000 complete, last 6306.725 ms
+query: 960/1000 complete, last 6436.056 ms
+query: 965/1000 complete, last 6200.769 ms
+query: 970/1000 complete, last 6417.105 ms
+query: 975/1000 complete, last 6518.922 ms
+query: 980/1000 complete, last 6411.379 ms
+query: 985/1000 complete, last 6567.821 ms
+query: 990/1000 complete, last 6609.712 ms
+query: 995/1000 complete, last 6595.969 ms
+query: 1000/1000 complete, last 6483.237 ms
+     7600.69 real     39797.24 user       104.78 sys
+          7354368000  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+             6082863  page reclaims
+                 150  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+               11287  voluntary context switches
+            10716882  involuntary context switches
+     307120068524169  instructions retired
+     115907868219734  cycles elapsed
+          7449614048  peak memory footprint

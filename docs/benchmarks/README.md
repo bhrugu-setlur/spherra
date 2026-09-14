@@ -96,6 +96,38 @@ A separate ignored library `worker_probe` compares 4/6/8 workers on the measured
 1M index (20 queries, five warmups). It is a scaling probe, not a substitute for
 the 1,000-query acceptance runs, and does not add an option to the public API.
 
+### Local index stage 1 results (2026-09-13)
+
+Both complete runs used six workers, k=10, budget 200, 50 warmups and 1,000
+timed public-API searches on the M1 Pro, on AC power, from clean release commits.
+
+| Rows | p50 | p99 | Peak process RSS | Open | Build rows/s | Retained descriptors |
+|---|---:|---:|---:|---:|---:|---:|
+| 1M | 630.172 ms | 807.444 ms | 6,665,224,192 B | 1.119 s | 11,729.022 | 17 |
+| 10M | 6,438.614 ms | 6,974.116 ms | 7,354,368,000 B | 11.732 s | 11,935.785 | 161 |
+
+Stage 1 misses both latency targets at both sizes. The 10M process memory gate
+passes. The separate builder probe also passes: 938,000,384 peak RSS minus
+6,815,744 pre-input RSS minus 301,992,960 live caller-input bytes equals
+**629,191,680 builder-owned bytes**, below the 2 GiB limit. These are measured
+values; the design's earlier memory estimates are not substituted for them.
+
+Results and original raw `time -l` logs:
+
+- [1M JSON](results/2026-09-13-local-index-stage1-latency-1m.json),
+  [raw log](results/2026-09-13-local-index-stage1-latency-1m.time.txt).
+- [10M JSON](results/2026-09-13-local-index-stage1-latency-10m.json),
+  [raw log](results/2026-09-13-local-index-stage1-latency-10m.time.txt).
+- [Builder memory JSON](results/2026-09-13-local-index-build-memory.json),
+  [raw log](results/2026-09-13-local-index-build-memory.time.txt).
+- [Worker probe](results/2026-09-13-local-index-stage1-workers.txt): 4/6/8 workers
+  gave p50 853.208 / 633.932 / 591.882 ms. This small probe changes no default.
+
+The JSONs preserve their original commands and `target/measure/` output paths;
+the links above archive those exact bytes. The 1M corpus matches the previously
+pinned streaming-oracle reference. The next approved stage is the safe tile
+kernel; the scorer, representation, and default budget stay fixed.
+
 ## Running the harness
 
 Baseline measurement, one result per candidate budget:

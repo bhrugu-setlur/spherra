@@ -80,7 +80,13 @@ pub struct StreamingOracle {
 }
 impl StreamingOracle {
     pub fn new(queries: &[[f32; DIMENSION]], k: usize) -> Result<Self, OracleStreamError> {
-        if queries.is_empty() || k == 0 {
+        // Reference headers encode both counts as u32; reject truncating values
+        // before allocating query state.
+        if queries.is_empty()
+            || k == 0
+            || u32::try_from(queries.len()).is_err()
+            || u32::try_from(k).is_err()
+        {
             return Err(OracleStreamError::InvalidOptions);
         }
         let queries = queries

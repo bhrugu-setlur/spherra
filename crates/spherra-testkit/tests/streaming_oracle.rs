@@ -47,6 +47,9 @@ fn streaming_oracle_matches_every_score_and_tie_on_small_chunks() {
     assert_eq!(oracle.corpus_hash(), hash);
     assert!(StreamingOracle::new(&[], 100).is_err());
     assert!(StreamingOracle::new(&[[1.0; 768]], 0).is_err());
+    if let Ok(oversized) = usize::try_from(u64::from(u32::MAX) + 1) {
+        assert!(StreamingOracle::new(&[[1.0; 768]], oversized).is_err());
+    }
     assert!(StreamingOracle::new(&[[0.0; 768]], 100).is_err());
 }
 #[test]

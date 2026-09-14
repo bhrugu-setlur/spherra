@@ -1,0 +1,46 @@
+build: training on 4096 inputs
+build: 65536 rows staged
+build: 131072 rows staged
+build: 196608 rows staged
+build: 262144 rows staged
+build: 327680 rows staged
+build: 393216 rows staged
+build: 458752 rows staged
+build: 524288 rows staged
+build: 589824 rows staged
+build: 655360 rows staged
+build: 720896 rows staged
+build: 786432 rows staged
+build: 851968 rows staged
+build: 917504 rows staged
+build: 983040 rows staged
+build: generation 1 committed, 1000000 rows
+query: warming with 50 queries
+query: 100/1000 complete, last 644.413 ms
+query: 200/1000 complete, last 635.988 ms
+query: 300/1000 complete, last 666.928 ms
+query: 400/1000 complete, last 762.443 ms
+query: 500/1000 complete, last 628.407 ms
+query: 600/1000 complete, last 644.336 ms
+query: 700/1000 complete, last 636.537 ms
+query: 800/1000 complete, last 628.323 ms
+query: 900/1000 complete, last 623.814 ms
+query: 1000/1000 complete, last 790.372 ms
+      772.27 real      3972.64 user        10.71 sys
+          6665224192  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              693779  page reclaims
+                  85  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                1274  voluntary context switches
+             1034882  involuntary context switches
+      30752042485715  instructions retired
+      11580988326070  cycles elapsed
+          6891836792  peak memory footprint

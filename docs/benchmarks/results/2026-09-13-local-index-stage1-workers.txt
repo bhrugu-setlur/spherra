@@ -1,0 +1,12 @@
+    Finished `release` profile [optimized] target(s) in 0.03s
+     Running unittests src/lib.rs (target/release/deps/spherra-f98541dd78b5a23f)
+
+running 1 test
+worker probe: SourceRevision { commit: "e96f56391d5cf003f2527648ff45602401807d94", dirty: false }; MachineProfile { os: "Darwin 26.6.2", architecture: "aarch64", cpu: "Apple M1 Pro", physical_memory_bytes: 34359738368, rustc: "rustc 1.88.0 (6b00bc388 2025-06-23)", cargo_profile: "release" }
+workers=4 queries=20 warmup=5 p50_ms=853.208125 p99_ms=992.613709
+workers=6 queries=20 warmup=5 p50_ms=633.931583 p99_ms=771.959583
+workers=8 queries=20 warmup=5 p50_ms=591.882291 p99_ms=711.713792
+test worker_probe::compare_four_six_and_eight_workers ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 31 filtered out; finished in 56.61s
+

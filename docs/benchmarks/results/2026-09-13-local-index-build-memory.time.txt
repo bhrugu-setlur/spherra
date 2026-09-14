@@ -1,0 +1,19 @@
+memory: creating with 32768 training inputs, then staging 65537 rows
+       58.76 real        60.81 user         0.31 sys
+           938000384  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               64049  page reclaims
+                  34  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                  73  voluntary context switches
+                4604  involuntary context switches
+        745793823148  instructions retired
+        189878091865  cycles elapsed
+           933381224  peak memory footprint
