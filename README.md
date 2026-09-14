@@ -1,121 +1,179 @@
 # Spherra
 
 I built Spherra as a local, embedded Rust vector index for 768-dimensional
-embeddings. It stores immutable generations on disk, scans compressed primary
-codes, refines the best candidates from their residuals, and returns approximate
-top-k hits with intervals that enclose each hit's original-space score. Rows are
-added offline in atomic commits; there is no server or distributed runtime.
+embeddings. It shrinks each vector to about one sixth of its size, searches the
+small copies, and returns the best matches with a proven range for each score.
+It runs inside your program: there is no server.
 
-> **Project status:** the local index is implemented and its measured acceptance
-> gates pass on an Apple M1 Pro with 32 GiB RAM. The earlier distributed
-> database direction is stopped. The authoritative design is the [local index
-> design](docs/design/2026-09-13-local-index-design.md), with delivery
-> details in the [implementation specification](docs/design/2026-09-13-local-index-implementation-spec.md).
+This README explains the math. It walks one small 3D vector through every step,
+so you can see what happens to the numbers. The real index does the same steps
+in 768 dimensions.
 
-## What I built
+## The idea in one line
 
-| Part | Result |
-|---|---|
-| Public library | `spherra` exposes `IndexBuilder`, `Index`, cosine search, append, and optional length-aware dot-product search |
-| Compression | Two seeded sign/permutation/Hadamard rounds, direct 4-bit direction codes, and PQ96x8 residual refinement |
-| Storage | Checked little-endian model, manifest, segment, `CURRENT`, and per-block integrity data with content identities |
-| Publication | Staged files are verified and synced before `CURRENT` is published; interrupted commits preserve a valid previous generation |
-| Search | A full primary scan keeps a candidate budget, reads residuals only for finalists, and orders by corrected score then row ID |
-| Truth | FP64 original-space scores are used as the reference; returned intervals validate the score of each returned row, not exact top-k membership |
-| Verification | Scalar differential tests, fault-injected recovery tests, pinned corpora, release benchmarks, and checked fuzz targets |
+Store each vector as a **direction** (a point on a sphere) plus a **length**.
+Compress the direction in two layers: a coarse layer that is fast to scan, and a
+fine layer that corrects it for the best few candidates.
 
-## Measured results
+| Per stored row | Size |
+|---|---:|
+| Original FP32 vector (768 × 4 bytes) | 3,072 bytes |
+| Coarse direction code (768 × 4 bits) | 384 bytes |
+| Fine correction code (96 × 1 byte) | 96 bytes |
+| Radius/flags word, including the FP16 length | 4 bytes |
+| **Stored total** | **484 bytes (about 6.3× smaller)** |
 
-The current serving correction divides finalist scores by the FP64 length of the
-reconstructed compressed vector. It changes no index bytes and requires no
-rebuild.
+## Compressing a vector
 
-| Workload | Indexed rows | Queries | Recall@10 | Median / p99 |
-|---|---:|---:|---:|---:|
-| Generated correlated cosine | 1,000,000 | 200 | **0.9255** | **72.31 / 113.56 ms** |
-| MS MARCO cosine | 100,000 | 200 | **0.9770** | — |
-| Native DPR dot product | 1,000,000 | 1,000 | **0.9234** | **73.01 / 108.24 ms** |
+The picture below follows the example vector `x = (4, 1, 0.5)`. To keep the
+errors big enough to see, the 3D toy uses a 4-level grid and a 4-entry codebook;
+Spherra uses 16 levels and 256 entries.
 
-An earlier uncorrected 10M release qualification measured 458.15 ms median and
-616.47 ms p99. The corrected serving path has not been rerun for a new 10M
-tail-latency claim. These are held-out vector-neighbor measurements, not
-published BEIR task scores. See the [benchmark protocol and raw
-evidence](docs/benchmarks/README.md) for commands, hashes, and limitations.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/compression-dark.svg">
+  <img src="docs/images/compression-light.svg" alt="Four panels. 1: x is scaled to the unit vector u. 2: a random rotation turns u, whose coordinates are 0.96, 0.24 and 0.12, into y, whose coordinates are 0.64, 0.52 and 0.56. 3: each coordinate of y snaps to the nearest grid level, giving p. 4: the leftover e = y − p is replaced by its nearest codebook entry ê, and r = p + ê lands much closer to y.">
+</picture>
 
-## How it works
+### 1. Keep the direction, store the length
 
-```mermaid
-flowchart LR
-    TRAIN["Training rows"] --> MODEL["Restored model<br/>transform + int4 + PQ"]
-    ROWS["Input rows"] --> BUILD["IndexBuilder"]
-    MODEL --> BUILD
-    BUILD --> SEG["Immutable segments<br/>primary + residual + certificates"]
-    SEG --> CURRENT["Verified generation<br/>CURRENT + manifest"]
+$$u = \frac{x}{\lVert x \rVert}, \qquad \lVert x \rVert = \sqrt{4^2 + 1^2 + 0.5^2} = 4.153$$
 
-    QUERY["Query"] --> SCAN["Scan every primary tile"]
-    CURRENT --> SCAN
-    SCAN --> CANDIDATES["Best candidate budget"]
-    CANDIDATES --> REFINE["Read residuals and refine"]
-    REFINE --> RESULT["Corrected top-k hits<br/>score interval + stored magnitude"]
-```
+So `u = (0.963, 0.241, 0.120)`, which has length 1. Cosine similarity only
+depends on direction, so the rest of the pipeline works with `u`. The length is
+kept as a 16-bit float for the optional dot-product search.
 
-Creating an index trains a deterministic transform, direct-int4 table, and
-PQ96x8 codebook from a bounded calibration set. The builder validates each input
-vector, stages immutable segments, writes the manifest and model, verifies every
-identity, syncs the files, and publishes `CURRENT` last. A commit is either
-visible as a complete generation or remains unpublished.
+### 2. Randomly rotate
 
-Opening an index verifies the complete generation before exposing a handle. The
-primary direction tiles and the two-byte-per-row stored-magnitude cache stay in
-memory. Residual files remain candidate-only and are read positionally. A cosine
-query scans every primary row, keeps the best candidate budget using exact Q24
-integer scores, refines those candidates, applies reconstruction-length
-correction, and returns the final top-k rows. `search_dot_product` uses the same
-scan while weighting primary and refined scores by the stored FP16 input length.
+`u` is lopsided: nearly all of its size sits in the first coordinate. A grid with
+the same levels on every coordinate would waste most of its levels on that
+imbalance. So Spherra first applies a random rotation:
 
-## How I built it
+$$y = H \cdot P \cdot S \cdot u$$
 
-1. **Started with a scalar codec oracle.** I implemented the fixed 768-dimensional
-   transform, direct-int4 quantization, PQ96x8 residuals, fixed-point scoring,
-   and conservative score certificates before adding storage or parallelism.
-2. **Made the model restorable.** Quantizer and codebook bytes have stable
-   identities, so a reopened index uses exactly the model that built its rows.
-3. **Added durable local generations.** Checked containers, manifests, locks,
-   atomic publication, bounded descriptors, and fault-injected recovery define
-   the library's filesystem behavior.
-4. **Built the reference search.** Every primary row is visited, candidates are
-   refined from disk, and the result is compared with an independent exact
-   FP64 oracle.
-5. **Qualified the serving path.** A safe tiled scan kernel passed exact scalar
-   differential checks and the M1 latency gates, so a second unsafe SIMD
-   toolchain was not introduced.
-6. **Measured real workloads.** Hash-pinned SciFact, MS MARCO, DPR, MovieLens,
-   and generated corpora cover cosine quality, dot-product quality, memory,
-   recovery, norm handling, and reconstruction drift.
+- **S** flips the sign of some coordinates. Here `S = diag(1, −1, −1)`.
+- **P** shuffles the coordinates into a new order.
+- **H** mixes every coordinate into every other one. Spherra uses a normalized
+  Hadamard block. The 3D figure uses `H = I − (2/3)·J`, where `J` is the all-ones
+  matrix. Both are rotations that undo themselves.
 
-## How I tested it
+The result is `y = (−0.642, −0.522, 0.562)`. The biggest coordinate dropped from
+0.96 to 0.64, and all three are now similar in size.
 
-The normal repository gate is:
+A rotation never changes lengths or angles. For any two vectors,
+`(R·a)·(R·b) = a·b`. That fact is what makes every later step allowed: a score
+computed after rotating is the same score as before rotating.
 
-```bash
-bash scripts/ci.sh
-cargo test --workspace --locked
-cargo clippy --workspace --all-targets --locked -- -D warnings
-```
+In 768 dimensions Spherra runs this twice with different random choices. Each
+round flips signs, shuffles all 768 coordinates, then applies six 128 × 128
+Hadamard blocks. The random choices come from a seed, so the same seed always
+rebuilds the same rotation.
 
-| Verification level | What is checked | Status |
-|---|---|---|
-| Codec and format | Explicit bytes, restored identities, paired readers, tile decoding, and certificate enclosure | Passing |
-| Index library | Builder rules, open validation, append, search, dot-product search, and public API contracts | Passing |
-| Durability | Short writes, injected failures, process death, locks, and recovery on local APFS | Passing |
-| Serving kernel | 2,073,760 tile scores compared with the checked scalar scorer | Zero differences |
-| Retrieval quality | 14,000 recorded final hits checked against original-space truth | Zero enclosure failures |
-| Fuzz targets | Checked format, certificate, model, manifest, and `CURRENT` decoders | Builds and bounded no-crash runs; ASan runtime is unavailable on this host |
+### 3. Snap each coordinate to a grid (the coarse code)
 
-The full gate currently passes 218 tests with 12 explicitly skipped large
-qualifications. Large corpus runs and raw result files are kept under
-[`docs/benchmarks`](docs/benchmarks/README.md), rather than being hidden behind
-unverifiable headline numbers.
+Each coordinate of `y` is replaced by its nearest grid level:
+
+| Coordinate | y | Nearest level from (−0.75, −0.25, 0.25, 0.75) | Code |
+|---|---:|---:|---:|
+| c₁ | −0.642 | −0.75 | 0 |
+| c₂ | −0.522 | −0.75 | 0 |
+| c₃ | 0.562 | 0.75 | 3 |
+
+The coarse copy is `p = (−0.75, −0.75, 0.75)`, and only the codes `(0, 0, 3)`
+are stored. Its error is `‖y − p‖ = 0.315`.
+
+In Spherra every coordinate has its own 16 levels, so each code takes 4 bits.
+The levels are chosen from training vectors: they are 16 evenly spaced points
+in the sorted values seen for that coordinate (quantiles). This works well only
+because step 2 made the coordinates look alike.
+
+### 4. Fix the leftover with a codebook (the fine code)
+
+The leftover is `e = y − p = (0.108, 0.228, −0.188)`. Spherra doesn't store it
+directly. It stores the number of the closest entry in a shared codebook:
+
+$$\hat e = \arg\min_{c \in \text{codebook}} \lVert e - c \rVert = (0.2, 0.2, -0.2), \qquad r = p + \hat e = (-0.55, -0.55, 0.55)$$
+
+The error falls from 0.315 to `‖y − r‖ = 0.097`.
+
+In 768 dimensions this is **product quantization**: the leftover is cut into 96
+pieces of 8 numbers, and each piece picks one of 256 entries from its own
+codebook. That is 96 bytes. Each codebook is learned from training leftovers
+with k-means.
+
+## Searching
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/search-dark.svg">
+  <img src="docs/images/search-light.svg" alt="Left: the query q and the vectors y, p and r in 3D. Right: bars comparing scores with the true cosine 0.933: fast scan q·p gives 1.203, refined q·r gives 0.882, and length-corrected q·r divided by the length of r gives 0.926.">
+</picture>
+
+A query `z = (3, 2, 1)` is normalized and rotated with the same `S`, `P` and `H`,
+giving `q = (−0.535, −0.267, 0.802)`. Because rotation keeps dot products,
+`q·y` is exactly the true cosine between `z` and `x`: **0.933**.
+
+| Step | Formula | Example | Work in 768-D |
+|---|---|---:|---|
+| True cosine | `q·y` | 0.933 | not available: originals are not stored |
+| 1. Fast scan, every row | `q·p` | 1.203 | 768 table lookups |
+| 2. Refine the best candidates | `q·r = q·p + q·ê` | 0.882 | plus 96 lookups |
+| 3. Length correction | `q·r / ‖r‖` | 0.926 | one length per candidate |
+
+**Step 1: fast scan.** Since `p` uses only 16 possible values per coordinate,
+the query builds a table once: entry `[i][k]` holds `q[i] × level[i][k]`. A row's
+score is then the sum of 768 lookups. Table entries are stored as whole numbers
+scaled by 2²⁴, so the scan does exact integer addition. Spherra scores every row
+this way and keeps the best `max(200, 2k)` as candidates.
+
+**Step 2: refine.** For those candidates only, it reads the 96-byte fine code
+from disk and adds `q·ê`, which uses a second lookup table.
+
+**Step 3: correct the length.** The true `y` has length exactly 1, but `r` does
+not: here `‖r‖ = 0.953`. Its length stretches or shrinks the score, so Spherra
+divides it out. In the example this moves the score from 0.882 to 0.926, closer
+to the truth. The final top k are sorted by this corrected score.
+
+The coarse score overshoots in the example (1.203) because `‖p‖ = 1.30`. This
+does not break the scan, because ranking only needs good candidates to land in
+the top 200.
+
+### Dot-product search
+
+For embeddings where length matters, `search_dot_product` uses the stored length:
+
+$$z \cdot x \approx \lVert z \rVert \cdot \lVert x \rVert \cdot \frac{q \cdot r}{\lVert r \rVert}$$
+
+Both the scan and the refinement multiply each row's score by its stored length,
+so long vectors are not dropped before refinement.
+
+### Score ranges you can trust
+
+Every hit comes with an interval that contains its true score. The main tool is
+the Cauchy–Schwarz inequality:
+
+$$\lvert q \cdot y - q \cdot r \rvert \le \lVert q \rVert \cdot \lVert y - r \rVert$$
+
+When a segment is written, Spherra records the largest reconstruction error
+among its rows, for both `‖y − p‖` and `‖y − r‖`. It then adds bounds for every
+rounding step (floating-point rotation, the 2²⁴ integer scale). A hit's interval is its uncorrected score plus
+or minus that total. Spherra intersects the coarse and refined intervals.
+
+The interval is a promise about **that row's score**. It does not prove the
+returned rows are the exact top k. The corrected score can fall slightly
+outside the interval, because the interval is centered on the uncorrected score.
+
+## How well it works
+
+On an Apple M1 Pro with 32 GiB RAM, measured against exact search:
+
+| Workload | Rows | Recall@10 | Median / p99 latency |
+|---|---:|---:|---:|
+| Generated correlated cosine | 1,000,000 | 0.9255 | 72.31 / 113.56 ms |
+| MS MARCO cosine | 100,000 | 0.9770 | — |
+| DPR dot product | 1,000,000 | 0.9234 | 73.01 / 108.24 ms |
+
+Recall@10 is the share of the true 10 nearest rows that Spherra returns. The
+[benchmark notes](docs/benchmarks/README.md) have the commands, raw results, and
+limits of these numbers.
 
 ## Use the library
 
@@ -158,11 +216,9 @@ fn build_and_search(
 ```
 
 `candidate_budget: None` resolves to `max(200, 2*k)`, clamped to the index size.
-Search ordering is score descending, then dense row ID ascending. A returned
-interval encloses the original-space score for that row while its files remain
-intact; it is not a proof that the approximate result is the exact top-k set.
+Results are ordered by score, highest first, then by row ID.
 
-For non-normalized embeddings, the optional method preserves input magnitude:
+For non-normalized embeddings, the optional method uses input length:
 
 ```rust,no_run
 # fn example(index: &spherra::Index, query: &spherra::Vector) -> Result<(), spherra::Error> {
@@ -189,30 +245,34 @@ builder.commit()?;
 # Ok(row_id) }
 ```
 
-## Storage limits and boundaries
+## Storage and limits
 
+- Commits are atomic: files are written, checked, and synced before the
+  `CURRENT` pointer switches, so a crash leaves the previous version readable.
 - Training is capped at 32,768 rows; a segment at 65,536 rows; and the index at
   4,096 segments or `2^48 - 1` total rows.
-- Rows are dense ordinals scoped to one index. Commits report reconstruction
-  drift over a bounded deterministic sample.
-- The first serving index is a full scan. There is no global HNSW, routing,
-  filtering, deletion, compaction, replication, or server API.
-- Original vectors are not retained by the index. Original-vector reranking is
-  preserved only as a benchmark experiment and is not part of serving.
-- Durability is qualified on local APFS with fault injection and process death;
-  physical power loss and other filesystems remain unqualified.
+- Search scans every row. There is no graph index, filtering, deletion,
+  compaction, replication, or server.
+- Original vectors are not kept, so results are never re-scored against them.
+- Durability is tested on local APFS with injected faults and killed processes;
+  physical power loss and other filesystems are untested.
+
+The full design is in the [local index design](docs/design/2026-09-13-local-index-design.md)
+and [implementation specification](docs/design/2026-09-13-local-index-implementation-spec.md).
+Run `bash scripts/ci.sh` for the test suite.
 
 ## Repository map
 
 | Path | Contents |
 |---|---|
 | `crates/spherra/` | Public local index, builder, storage, publication, open, search, and recovery |
-| `crates/spherra-codec/` | Transform, direct-int4, PQ96x8, fixed-point scoring, certificates, and tile kernel |
+| `crates/spherra-codec/` | Rotation, 4-bit grid, product quantization, integer scoring, and score intervals |
 | `crates/spherra-format/` | Explicit durable model/segment formats and checked readers |
 | `crates/spherra-domain/` | 768-dimensional validation, IDs, and sequence/domain contracts |
 | `crates/spherra-testkit/` | Deterministic corpora, exact oracles, machine provenance, and measurement support |
 | `crates/spherra-bench/` | Reproducible quality, latency, memory, norm, and dot-product commands |
 | `docs/benchmarks/` | Protocols, schemas, raw results, and limitations |
+| `docs/images/` | README figures, drawn by `tools/readme_math_figures.py` |
 | `docs/design/` | Current local-index contracts plus clearly marked historical direction documents |
 | `corpora/` | Hash-pinned corpus descriptors; large vector payloads stay outside Git |
 | `fuzz/` | Nightly-only checked decoder targets |
