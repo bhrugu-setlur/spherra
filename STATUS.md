@@ -7,6 +7,10 @@ every latency gate. Documentation is complete.
 The approved budget-20 factual correction is applied; the algorithm and default
 budget of 200 are preserved.
 
+The [test technical note](docs/benchmarks/2026-09-13-local-index-test-note.md)
+records the delivery test data, setup, provenance and limitations. It consolidates
+existing measurements; no new performance or quality run was made for the note.
+
 ## Acceptance evidence
 
 | Gate | Result |

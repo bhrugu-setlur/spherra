@@ -8,6 +8,10 @@ committed after they have been checked for private paths and corpus content.
 A number is not evidence unless it can be reconstructed. Everything below exists
 to make reconstruction possible from the recorded file alone.
 
+The [local index test technical note](2026-09-13-local-index-test-note.md)
+consolidates September latency, memory, recall, correctness and recovery
+evidence with source revisions, raw data links and limitations.
+
 ## Schemas
 
 | Document | Produced by | Shape |
