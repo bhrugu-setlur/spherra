@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Draw the README's worked 3D example of Spherra's compression and scoring math.
+"""Draw the README's worked 4D example of Spherra's compression and scoring math.
 
 The real index works in 768 dimensions. This script runs the same steps on a
-3D toy vector so each stage can be drawn: normalize, randomly rotate, snap each
-coordinate to a small grid, and fix the leftover with a shared codebook. The
-toy grid has 4 levels (2 bits) instead of 16 (4 bits) and the codebook has 4
-entries instead of 256, so the errors are large enough to see.
+4D toy vector, the smallest size with a real Hadamard matrix: normalize, flip
+signs, shuffle, fast Walsh-Hadamard transform, round each coordinate to a grid,
+and correct the rounding with product-quantization codebooks. The toy grid has
+4 levels instead of 16, and each codebook has 4 entries instead of 256, so the
+errors are large enough to see. The toy does one round; Spherra does two.
 
 Run with no arguments; it rewrites the SVGs in docs/images and prints the
 numbers quoted in the README. Standard library only.
@@ -20,16 +21,15 @@ OUT = Path(__file__).resolve().parent.parent / "docs" / "images"
 
 # ---- The worked example ---------------------------------------------------
 
-X = (4.0, 1.0, 0.5)  # an indexed vector with one dominant coordinate
-QUERY = (3.0, 2.0, 1.0)
-SIGNS = (1.0, -1.0, -1.0)
-PERMUTATION = (1, 2, 0)  # new coordinate i reads old coordinate PERMUTATION[i]
-LEVELS = (-0.75, -0.25, 0.25, 0.75)  # the toy "2-bit" grid for every coordinate
-CODEBOOK = (
-    (0.2, 0.2, -0.2),
-    (-0.2, 0.2, 0.2),
-    (0.2, -0.2, 0.2),
-    (-0.2, -0.2, -0.2),
+X = (4.0, 2.0, 2.0, 1.0)  # length exactly 5, with one dominant coordinate
+QUERY = (2.0, 1.0, 0.0, 2.0)  # length exactly 3
+SIGNS = (1.0, -1.0, 1.0, 1.0)
+PERMUTATION = (2, 0, 1, 3)  # new coordinate i reads old coordinate PERMUTATION[i]
+LEVELS = (-0.6, -0.2, 0.2, 0.6)  # the toy 2-bit grid for every coordinate
+PIECES = ((0, 2), (2, 4))  # product quantization: two pieces of two coordinates
+CODEBOOKS = (
+    ((0.05, 0.05), (-0.15, 0.05), (0.05, -0.15), (-0.1, -0.1)),
+    ((0.15, -0.05), (-0.05, 0.15), (0.0, 0.0), (-0.1, -0.1)),
 )
 
 
@@ -53,47 +53,66 @@ def scale(a, s):
     return tuple(p * s for p in a)
 
 
-def mix(v):
-    """The 3D stand-in for a normalized Hadamard block: H = I - (2/3)J.
+def fwht_passes(values):
+    """Every intermediate state of the unnormalized fast Walsh-Hadamard transform.
 
-    Like Hadamard, H is orthogonal and its own inverse, and every output
-    coordinate blends every input coordinate.
+    Mirrors crates/spherra-simd/src/scalar.rs: for half-width h = 1, 2, ...,
+    each pair (a, a + h) becomes (left + right, left - right).
     """
-    total = sum(v)
-    return tuple(c - 2.0 * total / 3.0 for c in v)
+    v = list(values)
+    states = []
+    half = 1
+    while half < len(v):
+        for start in range(0, len(v), 2 * half):
+            for offset in range(half):
+                left, right = v[start + offset], v[start + offset + half]
+                v[start + offset], v[start + offset + half] = left + right, left - right
+        states.append(tuple(v))
+        half *= 2
+    return states
 
 
 def rotate(v):
+    """One round: signs, shuffle, then FWHT scaled by 1/sqrt(n)."""
     flipped = tuple(c * s for c, s in zip(v, SIGNS))
-    permuted = tuple(flipped[source] for source in PERMUTATION)
-    return mix(permuted)
-
-
-def snap(value):
-    return min(LEVELS, key=lambda level: abs(value - level))
+    shuffled = tuple(flipped[source] for source in PERMUTATION)
+    passes = fwht_passes(shuffled)
+    y = scale(passes[-1], 1.0 / math.sqrt(len(v)))
+    return flipped, shuffled, passes, y
 
 
 def example():
     u = scale(X, 1.0 / norm(X))
-    y = rotate(u)
-    codes = tuple(LEVELS.index(snap(c)) for c in y)
+    flipped, shuffled, passes, y = rotate(u)
+    codes = tuple(min(range(len(LEVELS)), key=lambda k: abs(c - LEVELS[k])) for c in y)
     p = tuple(LEVELS[code] for code in codes)
     e = sub(y, p)
-    centroid = min(range(len(CODEBOOK)), key=lambda i: norm(sub(e, CODEBOOK[i])))
-    e_hat = CODEBOOK[centroid]
+    entries = []
+    e_hat = []
+    for (start, end), book in zip(PIECES, CODEBOOKS):
+        piece = e[start:end]
+        best = min(range(len(book)), key=lambda k: norm(sub(piece, book[k])))
+        entries.append(best)
+        e_hat.extend(book[best])
+    e_hat = tuple(e_hat)
     r = add(p, e_hat)
-    q = rotate(scale(QUERY, 1.0 / norm(QUERY)))
+    z = scale(QUERY, 1.0 / norm(QUERY))
+    q = rotate(z)[3]
     return {
         "u": u,
+        "flipped": flipped,
+        "shuffled": shuffled,
+        "passes": passes,
         "y": y,
+        "unsigned": scale(fwht_passes(u)[-1], 0.5),
         "codes": codes,
         "p": p,
         "e": e,
-        "centroid": centroid,
+        "entries": tuple(entries),
         "e_hat": e_hat,
         "r": r,
         "q": q,
-        "truth": dot(scale(QUERY, 1.0 / norm(QUERY)), u),
+        "truth": dot(z, u),
         "truth_rotated": dot(q, y),
         "primary": dot(q, p),
         "refined": dot(q, r),
@@ -124,8 +143,7 @@ THEMES = {
     },
 }
 FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif"
-AZIMUTH = math.radians(125)
-ELEVATION = math.radians(20)
+SUB = "₁₂₃₄"
 
 
 def fmt(v, digits=2):
@@ -142,288 +160,176 @@ class Canvas:
     def raw(self, text):
         self.parts.append(text)
 
-    def text(self, x, y, body, size=13, color="text", weight=400, anchor="start", italic=False):
+    def text(self, x, y, body, size=13, color="text", weight=400, anchor="start", italic=False, extra=""):
         style = ' font-style="italic"' if italic else ""
         self.raw(
             f'<text x="{x:.1f}" y="{y:.1f}" font-size="{size}" font-weight="{weight}" '
-            f'fill="{self.t[color]}" text-anchor="{anchor}"{style}>{body}</text>'
+            f'fill="{self.t[color]}" text-anchor="{anchor}"{style}>{body}{extra}</text>'
         )
 
-    def line(self, a, b, color="grid", width=1.0, dash=None, arrow=False):
+    def line(self, a, b, color="grid", width=1.0, dash=None):
         dashed = f' stroke-dasharray="{dash}"' if dash else ""
-        head = f' marker-end="url(#head-{color})"' if arrow else ""
         self.raw(
             f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" '
-            f'stroke="{self.t[color]}" stroke-width="{width}" stroke-linecap="round"{dashed}{head}/>'
+            f'stroke="{self.t[color]}" stroke-width="{width}" stroke-linecap="round"{dashed}/>'
         )
-
-    def dot(self, c, radius, color, hollow=False):
-        if hollow:
-            paint = f'fill="{self.t["surface"]}" stroke="{self.t[color]}" stroke-width="2"'
-        else:
-            paint = f'fill="{self.t[color]}" stroke="{self.t["surface"]}" stroke-width="2"'
-        self.raw(f'<circle cx="{c[0]:.1f}" cy="{c[1]:.1f}" r="{radius}" {paint}/>')
 
     def svg(self, title):
-        heads = "".join(
-            f'<marker id="head-{name}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" '
-            f'markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" '
-            f'fill="{self.t[name]}"/></marker>'
-            for name in ("text", "text2", "blue", "orange", "aqua")
-        )
         return (
             f'<svg xmlns="http://www.w3.org/2000/svg" width="{self.width}" height="{self.height}" '
             f'viewBox="0 0 {self.width} {self.height}" font-family="{FONT}" role="img">'
-            f"<title>{title}</title><defs>{heads}</defs>"
+            f"<title>{title}</title>"
             f'<rect width="100%" height="100%" rx="12" fill="{self.t["surface"]}"/>'
             + "".join(self.parts)
             + "</svg>\n"
         )
 
 
-class Axes3D:
-    """Orthographic view of 3D space inside one panel."""
-
-    def __init__(self, canvas, cx, cy, size, focus=(0.0, 0.0, 0.0), azimuth=AZIMUTH):
-        self.c = canvas
-        self.cx = cx
-        self.cy = cy
-        self.size = size
-        self.focus = focus  # the 3D point drawn at (cx, cy); used to zoom in
-        self.azimuth = azimuth
-
-    def at(self, v):
-        x, y, z = sub(v, self.focus)
-        x1 = x * math.cos(self.azimuth) - y * math.sin(self.azimuth)
-        y1 = x * math.sin(self.azimuth) + y * math.cos(self.azimuth)
-        up = z * math.cos(ELEVATION) - y1 * math.sin(ELEVATION)
-        return (self.cx + self.size * x1, self.cy - self.size * up)
-
-    def frame(self, sphere=True):
-        origin = self.at((0, 0, 0))
-        for axis in range(3):
-            end = [0.0, 0.0, 0.0]
-            end[axis] = 1.15
-            start = [0.0, 0.0, 0.0]
-            start[axis] = -1.0
-            self.c.line(self.at(start), self.at(end), color="grid", width=1.2)
-            label = [0.0, 0.0, 0.0]
-            label[axis] = 1.27
-            lx, ly = self.at(label)
-            self.c.text(lx, ly + 4, f"c{'₁₂₃'[axis]}", size=12, color="text2", anchor="middle")
-        if sphere:
-            ring = [self.at((math.cos(a), math.sin(a), 0)) for a in _angles(72)]
-            self.c.raw(_polyline(ring, self.c.t["grid"], dash="3 4"))
-            self.c.raw(
-                f'<circle cx="{origin[0]:.1f}" cy="{origin[1]:.1f}" r="{self.size}" fill="none" '
-                f'stroke="{self.c.t["grid"]}" stroke-width="1"/>'
-            )
-
-    def cell(self, low, high, color="text2"):
-        """Edges of the grid box whose corners are the candidate values of p."""
-        corners = [
-            (low[0] if i & 1 == 0 else high[0], low[1] if i & 2 == 0 else high[1], low[2] if i & 4 == 0 else high[2])
-            for i in range(8)
-        ]
-        for i in range(8):
-            for bit in (1, 2, 4):
-                if i & bit == 0:
-                    self.c.line(self.at(corners[i]), self.at(corners[i | bit]), color=color, width=0.8, dash="2 3")
-        return corners
-
-    def shadow(self, v):
-        """Dashed drop-line to the c1-c2 floor, so depth is readable."""
-        floor = (v[0], v[1], 0.0)
-        self.c.line(self.at(floor), self.at(v), color="grid", width=1, dash="2 3")
-        self.c.line(self.at((0, 0, 0)), self.at(floor), color="grid", width=1, dash="2 3")
-
-    def arrow(self, v, color, width=2.0, start=(0, 0, 0), dash=None):
-        self.c.line(self.at(start), self.at(v), color=color, width=width, dash=dash, arrow=True)
-
-    def label(self, v, body, color, dx=8, dy=-8, anchor="start", size=13, weight=600):
-        x, y = self.at(v)
-        self.c.text(x + dx, y + dy, body, size=size, color=color, anchor=anchor, weight=weight)
+def signed_bar(zero, unit, value):
+    """Left edge and width of a bar growing right for positive, left for negative."""
+    return zero + min(0.0, value) * unit, abs(value) * unit
 
 
-def _angles(steps):
-    return [2 * math.pi * i / steps for i in range(steps + 1)]
-
-
-def _polyline(points, color, dash=None):
-    dashed = f' stroke-dasharray="{dash}"' if dash else ""
-    coords = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
-    return f'<polyline points="{coords}" fill="none" stroke="{color}" stroke-width="1"{dashed}/>'
-
-
-def coordinate_bars(canvas, x, y, values, color, caption):
-    """Three small bars of |coordinate|; a flat profile is what the grid wants."""
-    canvas.text(x, y, caption, size=12, color="text2")
+def bar_chart(c, left, top, values, color, unit, title, outline=None, row_gap=34):
+    """A small signed bar chart with one row per coordinate."""
+    c.text(left, top, title, size=14, weight=700)
+    zero = left + 140
+    c.line((zero, top + 14), (zero, top + 14 + row_gap * len(values)), color="grid", width=1.2)
     for i, value in enumerate(values):
-        top = y + 12 + i * 17
-        canvas.text(x, top + 10, f"c{'₁₂₃'[i]}", size=11, color="text2")
-        width = 120 * abs(value)
-        canvas.raw(
-            f'<rect x="{x + 24}" y="{top}" width="{width:.1f}" height="11" rx="3" '
-            f'fill="{canvas.t[color]}"/>'
-        )
-        canvas.text(x + 30 + width, top + 10, f"{abs(value):.2f}", size=11, color="text")
-
-
-def panel_header(canvas, x, y, number, title, formula):
-    canvas.text(x, y, f"{number}  {title}", size=16, weight=700)
-    canvas.text(x, y + 22, formula, size=13, color="text2")
+        y = top + 24 + i * row_gap
+        c.text(left, y + 15, f"c{SUB[i]}", size=12, color="text2")
+        c.text(left + 64, y + 15, f"{value:+.2f}", size=12, anchor="end")
+        x, width = signed_bar(zero, unit, value)
+        c.raw(f'<rect x="{x:.1f}" y="{y}" width="{width:.1f}" height="20" rx="4" fill="{c.t[color]}"/>')
+        if outline is not None:
+            ox, ow = signed_bar(zero, unit, outline[i])
+            c.raw(
+                f'<rect x="{ox:.1f}" y="{y - 2}" width="{ow:.1f}" height="24" rx="4" fill="none" '
+                f'stroke="{c.t["text"]}" stroke-width="1.2" stroke-dasharray="3 2"/>'
+            )
 
 
 def compression_figure(theme, ex):
-    c = Canvas(960, 950, theme)
-    w = 480
+    c = Canvas(960, 250, theme)
+    unit = 95
+    panels = [
+        (ex["u"], "blue", "u: direction", None, "largest 0.80, smallest 0.20"),
+        (ex["y"], "blue", "y: after one round", None, "sizes 0.1 to 0.7, length 1"),
+        (ex["p"], "orange", "p: rounded to grid", ex["y"], f"miss ‖y − p‖ = {norm(ex['e']):.3f}"),
+        (ex["r"], "aqua", "r: p + correction", ex["y"], f"miss ‖y − r‖ = {norm(sub(ex['y'], ex['r'])):.3f}"),
+    ]
+    for k, (values, color, title, outline, note) in enumerate(panels):
+        left = 24 + k * 234
+        bar_chart(c, left, 36, values, color, unit, title, outline)
+        c.text(left, 212, note, size=12, color="text2")
+    c.text(24, 238, "Dashed outline = y, the vector we are trying to store.", size=12, color="text2")
+    return c.svg("The example vector at each stage of compression")
 
-    # 1. Normalize
-    panel_header(c, 24, 36, "1", "Keep the direction", "u = x / ‖x‖   ·   ‖x‖ is stored separately (FP16)")
-    a = Axes3D(c, 250, 240, 150)
-    a.frame()
-    x_drawn = scale(X, 0.3)
-    a.shadow(x_drawn)
-    a.arrow(x_drawn, "text2", width=1.6, dash="5 4")
-    a.label(x_drawn, "x (drawn at 0.3×)", "text2", dx=4, dy=24, weight=400)
-    a.shadow(ex["u"])
-    a.arrow(ex["u"], "blue", width=2.5)
-    a.label(ex["u"], "u", "blue", dx=6, dy=-6)
-    c.text(24, 418, f"x = {fmt(X, 1)}   ‖x‖ = {norm(X):.3f}", size=13)
-    c.text(24, 438, f"u = {fmt(ex['u'], 3)}   ‖u‖ = 1", size=13)
 
-    # 2. Rotate
-    panel_header(c, w + 24, 36, "2", "Randomly rotate", "y = H·P·S·u   ·   flip signs, shuffle, mix")
-    a = Axes3D(c, w + 250, 240, 150)
-    a.frame()
-    a.arrow(ex["u"], "text2", width=1.4, dash="5 4")
-    a.label(ex["u"], "u", "text2", dx=6, dy=-6, weight=400)
-    a.shadow(ex["y"])
-    a.arrow(ex["y"], "blue", width=2.5)
-    a.label(ex["y"], "y", "blue", dx=8, dy=-4)
-    coordinate_bars(c, w + 24, 380, ex["u"], "text2", "|u| per coordinate")
-    coordinate_bars(c, w + 250, 380, ex["y"], "blue", "|y| per coordinate")
+def fwht_figure(theme, ex):
+    """A butterfly diagram of the two FWHT passes on the shuffled vector."""
+    c = Canvas(960, 400, theme)
+    columns = [
+        ("shuffled input", ex["shuffled"]),
+        ("pass 1  (h = 1)", ex["passes"][0]),
+        ("pass 2  (h = 2)", ex["passes"][1]),
+        ("× 1/√4  =  y", ex["y"]),
+    ]
+    xs = [70, 330, 590, 820]
+    box_w, box_h = 86, 34
+    row_y = [110 + i * 66 for i in range(4)]
+    c.text(24, 34, "Fast Walsh–Hadamard transform on 4 coordinates", size=16, weight=700)
+    c.text(24, 56, "Each pass turns a pair (a, b) into (a + b, a − b). Solid line = add, dashed line = subtract.", size=13, color="text2")
 
-    # The grid box around y: each coordinate lies between two neighbouring levels.
-    low = tuple(max(l for l in LEVELS if l <= c_) for c_ in ex["y"])
-    high = tuple(min(l for l in LEVELS if l >= c_) for c_ in ex["y"])
+    def node_left(col, row):
+        return (xs[col], row_y[row] + box_h / 2)
 
-    # 3. Snap to grid
-    top = 470
-    panel_header(c, 24, top + 36, "3", "Snap each coordinate to a grid", "p = nearest grid level, per coordinate")
-    a = Axes3D(c, 250, top + 250, 150)
-    a.frame(sphere=False)
-    for gx in LEVELS:
-        for gy in LEVELS:
-            for gz in LEVELS:
-                a.c.dot(a.at((gx, gy, gz)), 2.2, "text2")
-    a.cell(low, high)
-    a.arrow(ex["y"], "blue", width=2.5)
-    a.label(ex["y"], "y", "blue", dx=-10, dy=-2, anchor="end")
-    c.dot(a.at(ex["p"]), 5.5, "orange")
-    a.label(ex["p"], "p", "orange", dx=8, dy=-6)
-    c.text(24, top + 440, f"grid levels {LEVELS}  →  codes {ex['codes']}", size=13)
-    c.text(24, top + 460, f"y = {fmt(ex['y'])}   p = {fmt(ex['p'])}", size=13)
+    def node_right(col, row):
+        return (xs[col] + box_w, row_y[row] + box_h / 2)
 
-    # 4. Fix the leftover (zoomed into the grid box from panel 3)
-    panel_header(c, w + 24, top + 36, "4", "Fix the leftover with a codebook", "r = p + ê   ·   ê = codebook entry nearest to e = y − p")
-    # Zoom on p and turn the view so y and r do not overlap on screen.
-    focus = add(ex["p"], scale(ex["e_hat"], 0.5))
-    a = Axes3D(c, w + 240, top + 255, 380, focus=focus, azimuth=math.radians(20))
-    c.text(w + 24, top + 84, "zoomed in · hollow circles = other codebook entries", size=12, color="text2", italic=True)
-    for index, entry in enumerate(CODEBOOK):
-        if index != ex["centroid"]:
-            c.dot(a.at(add(ex["p"], entry)), 5, "aqua", hollow=True)
-    a.arrow(ex["y"], "orange", width=1.8, start=ex["p"], dash="4 3")
-    a.label(add(ex["p"], scale(ex["e"], 0.55)), "e", "orange", dx=-12, dy=4, anchor="end")
-    a.arrow(ex["r"], "aqua", width=2.2, start=ex["p"])
-    a.label(add(ex["p"], scale(ex["e_hat"], 0.55)), "ê", "aqua", dx=10, dy=12)
-    c.dot(a.at(ex["p"]), 5.5, "orange")
-    a.label(ex["p"], "p", "orange", dx=-10, dy=-6, anchor="end")
-    c.dot(a.at(ex["y"]), 5.5, "blue")
-    a.label(ex["y"], "y", "blue", dx=10, dy=-6)
-    c.dot(a.at(ex["r"]), 5.5, "aqua")
-    a.label(ex["r"], "r", "aqua", dx=10, dy=16)
-    c.text(w + 24, top + 440, f"ê = {fmt(ex['e_hat'], 1)}   r = {fmt(ex['r'])}", size=13)
-    c.text(
-        w + 24,
-        top + 460,
-        f"error ‖y − p‖ = {norm(ex['e']):.3f}  →  ‖y − r‖ = {norm(sub(ex['y'], ex['r'])):.3f}",
-        size=13,
-    )
-    c.line((24, top - 8), (936, top - 8), color="grid")
-    c.line((w, 20), (w, top + 470), color="grid")
-    return c.svg("Four steps that compress a 3D vector")
+    for col, half in ((0, 1), (1, 2)):
+        for start in range(0, 4, 2 * half):
+            for offset in range(half):
+                a, b = start + offset, start + offset + half
+                c.line(node_right(col, a), node_left(col + 1, a), color="text2", width=1.4)
+                c.line(node_right(col, b), node_left(col + 1, a), color="text2", width=1.4)
+                c.line(node_right(col, a), node_left(col + 1, b), color="text2", width=1.4)
+                c.line(node_right(col, b), node_left(col + 1, b), color="text2", width=1.4, dash="5 4")
+    for row in range(4):
+        c.line(node_right(2, row), node_left(3, row), color="text2", width=1.4)
+    for col, (title, values) in enumerate(columns):
+        c.text(xs[col] + box_w / 2, 94, title, size=13, weight=600, anchor="middle")
+        for row, value in enumerate(values):
+            color = "blue" if col in (0, 3) else "text2"
+            c.raw(
+                f'<rect x="{xs[col]}" y="{row_y[row]}" width="{box_w}" height="{box_h}" rx="6" '
+                f'fill="{c.t["surface"]}" stroke="{c.t[color]}" stroke-width="2"/>'
+            )
+            c.text(xs[col] + box_w / 2, row_y[row] + 22, f"{value:+.1f}", size=14, weight=600, anchor="middle")
+    for row in range(4):
+        c.text(xs[0] - 12, row_y[row] + 22, f"c{SUB[row]}", size=13, color="text2", anchor="end")
+    return c.svg("Butterfly diagram of the fast Walsh-Hadamard transform")
 
 
 def search_figure(theme, ex):
-    c = Canvas(960, 460, theme)
-    panel_header(c, 24, 36, "5", "Score a query", "rotation keeps dot products, so q·y is the true cosine")
-    a = Axes3D(c, 250, 250, 150)
-    a.frame()
-    a.arrow(ex["q"], "text", width=2.2)
-    a.label(ex["q"], "q", "text", dx=-10, dy=-2, anchor="end")
-    a.arrow(ex["y"], "blue", width=2.2)
-    a.label(ex["y"], "y", "blue", dx=8, dy=-6)
-    a.arrow(ex["p"], "orange", width=1.6, dash="4 3")
-    a.label(ex["p"], "p", "orange", dx=8, dy=-4)
-    a.arrow(ex["r"], "aqua", width=2.2)
-    a.label(ex["r"], "r", "aqua", dx=10, dy=14)
-    c.text(24, 436, f"q ={fmt(ex['q'])}  (the query, normalized and rotated the same way)", size=13)
-
+    c = Canvas(960, 300, theme)
+    c.text(24, 36, "Scoring the query against the stored vector", size=16, weight=700)
+    c.text(24, 58, "q·y is the true cosine similarity. Spherra only has p and r, so it estimates it.", size=13, color="text2")
     rows = [
         ("True cosine", "q·y", ex["truth"], "blue", 1.0),
-        ("Fast scan", "q·p", ex["primary"], "orange", 1.0),
-        ("Refined", "q·r", ex["refined"], "aqua", 0.45),
-        ("Length-corrected", "q·r / ‖r‖", ex["corrected"], "aqua", 1.0),
+        ("Quick score", "q·p", ex["primary"], "orange", 1.0),
+        ("With correction", "q·r", ex["refined"], "aqua", 0.45),
+        ("Length fixed", "q·r / ‖r‖", ex["corrected"], "aqua", 1.0),
     ]
-    left = 640
-    bar_max = 240
-    scale_top = max(value for *_, value, _, _ in rows)
-    top_y = 110
+    left = 260
+    bar_max = 420
+    top_value = max(value for _, _, value, _, _ in rows)
+    truth_x = left + bar_max * ex["truth"] / top_value
     for i, (name, formula, value, color, opacity) in enumerate(rows):
-        yy = top_y + i * 62
-        c.text(left - 14, yy + 2, name, size=14, weight=600, anchor="end")
-        c.text(left - 14, yy + 20, formula, size=12, color="text2", anchor="end")
-        width = bar_max * value / scale_top
+        y = 100 + i * 48
+        c.text(left - 16, y + 4, name, size=14, weight=600, anchor="end")
+        c.text(left - 16, y + 21, formula, size=12, color="text2", anchor="end")
+        width = bar_max * value / top_value
         c.raw(
-            f'<rect x="{left}" y="{yy - 10}" width="{width:.1f}" height="26" rx="4" '
+            f'<rect x="{left}" y="{y - 10}" width="{width:.1f}" height="26" rx="4" '
             f'fill="{c.t[color]}" fill-opacity="{opacity}"/>'
         )
-        truth_x = left + bar_max * ex["truth"] / scale_top
-        c.text(max(left + width, truth_x) + 8, yy + 8, f"{value:.3f}", size=14, weight=600)
-    c.line((truth_x, top_y - 26), (truth_x, top_y + 3 * 62 + 24), color="text2", width=1.2, dash="4 3")
-    c.text(truth_x, top_y - 32, "truth", size=12, color="text2", anchor="middle")
-    return c.svg("Scoring a query against the compressed vector")
+        c.text(max(left + width, truth_x) + 10, y + 8, f"{value:.3f}", size=14, weight=600)
+    c.line((truth_x, 80), (truth_x, 100 + 3 * 48 + 24), color="text2", width=1.2, dash="4 3")
+    c.text(truth_x, 74, "truth", size=12, color="text2", anchor="middle")
+    return c.svg("Scores estimated from the compressed vector")
 
 
-STEP_SECONDS = 2.4  # one stage: a move, then a pause to read it
-MOVE_SECONDS = 0.9
+STEP_SECONDS = 2.6  # one stage: a move, then a pause to read it
+MOVE_SECONDS = 1.0
 
 
 def animation_figure(theme, ex):
-    """An animated SVG (SMIL) of the vector passing through every transform.
+    """An animated SVG (SMIL) of the four coordinates through every step.
 
-    The projection is linear, so moving the arrow tip in a straight line on
-    screen matches moving the vector in a straight line in 3D.
+    Each bar keeps its identity through the shuffle, so readers can watch the
+    coordinates change rows before the Hadamard passes blend them.
     """
-    u = ex["u"]
-    flipped = tuple(c_ * s for c_, s in zip(u, SIGNS))
-    permuted = tuple(flipped[source] for source in PERMUTATION)
     stages = [
-        (scale(X, 0.3), X, "text2", "Start", "x = (4, 1, 0.5), drawn at 0.3× size to fit"),
-        (u, u, "blue", "Normalize", "u = x / ‖x‖: length 4.153 becomes 1"),
-        (flipped, flipped, "blue", "Flip signs", "S·u: multiply by (+1, −1, −1)"),
-        (permuted, permuted, "blue", "Shuffle", "P·S·u: each coordinate moves to a new slot"),
-        (ex["y"], ex["y"], "blue", "Mix", "y = H·P·S·u: coordinates blend and even out"),
-        (ex["p"], ex["p"], "orange", "Snap to grid", "p: each coordinate rounds to a grid level"),
-        (ex["r"], ex["r"], "aqua", "Add correction", "r = p + ê: a codebook entry fixes the leftover"),
+        (scale(X, 0.2), X, "text2", "Start", "x = (4, 2, 2, 1), bars drawn at 1/5 size", None, False),
+        (ex["u"], ex["u"], "blue", "1. Normalize", "u = x / ‖x‖ = x / 5, so the length is 1", None, False),
+        (ex["flipped"], ex["flipped"], "blue", "2. Flip signs", "multiply by random signs (+1, −1, +1, +1)", None, False),
+        (ex["shuffled"], ex["shuffled"], "blue", "3. Shuffle", "new order: old c₃, c₁, c₂, c₄", None, False),
+        (ex["passes"][0], ex["passes"][0], "blue", "4. FWHT pass 1 (h = 1)", "pairs (c₁, c₂) and (c₃, c₄): (a, b) becomes (a + b, a − b)", ((0, 1), (2, 3)), False),
+        (ex["passes"][1], ex["passes"][1], "blue", "4. FWHT pass 2 (h = 2)", "pairs (c₁, c₃) and (c₂, c₄): (a, b) becomes (a + b, a − b)", ((0, 2), (1, 3)), False),
+        (ex["y"], ex["y"], "blue", "4. Scale by 1/√4", "y = pass 2 × ½: length is 1 again, sizes are more even", None, False),
+        (ex["p"], ex["p"], "orange", "5. Round to the grid", "p: nearest of −0.6, −0.2, 0.2, 0.6 (dashed lines)", None, True),
+        (ex["r"], ex["r"], "aqua", "6. Add the correction", "r = p + ê, picked from two small codebooks", None, True),
     ]
     n = len(stages)
     total = n * STEP_SECONDS
-    c = Canvas(960, 420, theme)
-    a = Axes3D(c, 250, 225, 150)
-    a.frame()
+    shuffle_stage = 3
+    position = [PERMUTATION.index(k) for k in range(4)]  # row of original coordinate k
+
+    c = Canvas(960, 440, theme)
+    zero, unit = 470, 150
+    row_top = [150 + i * 62 for i in range(4)]
+    bar_h = 30
 
     def discrete(attr, values):
         times = ";".join(f"{k / n:.4f}" for k in range(n))
@@ -446,73 +352,76 @@ def animation_figure(theme, ex):
             f'keyTimes="{times}" values="{values}"/>'
         )
 
-    # The grid only matters once the vector snaps to it.
-    grid_on = discrete("opacity", [1 if k >= 5 else 0 for k in range(n)])
-    dots = "".join(
-        f'<circle cx="{a.at((gx, gy, gz))[0]:.1f}" cy="{a.at((gx, gy, gz))[1]:.1f}" r="2" fill="{c.t["text2"]}"/>'
-        for gx in LEVELS
-        for gy in LEVELS
-        for gz in LEVELS
+    # Axis, value ticks and the grid levels used in step 5.
+    c.line((zero, 136), (zero, row_top[-1] + bar_h + 14), color="grid", width=1.5)
+    for tick in (-1.0, 1.0):
+        c.line((zero + tick * unit, 136), (zero + tick * unit, row_top[-1] + bar_h + 14), color="grid", dash="2 4")
+        c.text(zero + tick * unit, row_top[-1] + bar_h + 32, f"{tick:+.0f}", size=11, color="text2", anchor="middle")
+    c.text(zero, row_top[-1] + bar_h + 32, "0", size=11, color="text2", anchor="middle")
+    grid_on = discrete("opacity", [1 if stage[6] else 0 for stage in stages])
+    levels = "".join(
+        f'<line x1="{zero + level * unit:.1f}" y1="136" x2="{zero + level * unit:.1f}" '
+        f'y2="{row_top[-1] + bar_h + 14}" stroke="{c.t["orange"]}" stroke-width="1.2" stroke-dasharray="4 3"/>'
+        for level in LEVELS
     )
-    c.raw(f'<g opacity="0">{grid_on}{dots}</g>')
+    c.raw(f'<g opacity="0">{grid_on}{levels}</g>')
 
-    screen = [a.at(vector) for vector, *_ in stages]
-    origin = a.at((0, 0, 0))
-    colors = [c.t[color] for _, _, color, _, _ in stages]
-
-    # A dashed ghost keeps the previous stage visible for comparison.
-    ghost = [origin] + screen[:-1]
-    c.raw(
-        f'<line x1="{origin[0]:.1f}" y1="{origin[1]:.1f}" x2="{origin[0]:.1f}" y2="{origin[1]:.1f}" '
-        f'stroke="{c.t["text2"]}" stroke-width="1.4" stroke-dasharray="4 4" opacity="0.7">'
-        + discrete("x2", [f"{g[0]:.1f}" for g in ghost])
-        + discrete("y2", [f"{g[1]:.1f}" for g in ghost])
-        + "</line>"
+    # Dashed outline of y while rounding and correcting, to show the miss.
+    outline = "".join(
+        f'<rect x="{signed_bar(zero, unit, ex["y"][row])[0]:.1f}" y="{row_top[row] - 3}" '
+        f'width="{signed_bar(zero, unit, ex["y"][row])[1]:.1f}" height="{bar_h + 6}" rx="5" fill="none" '
+        f'stroke="{c.t["text"]}" stroke-width="1.2" stroke-dasharray="3 2"/>'
+        for row in range(4)
     )
-    c.raw(
-        f'<line x1="{origin[0]:.1f}" y1="{origin[1]:.1f}" x2="{screen[0][0]:.1f}" y2="{screen[0][1]:.1f}" '
-        f'stroke="{colors[0]}" stroke-width="3" stroke-linecap="round">'
-        + moving("x2", [s[0] for s in screen])
-        + moving("y2", [s[1] for s in screen])
-        + discrete("stroke", colors)
-        + "</line>"
-    )
-    c.raw(
-        f'<circle cx="{screen[0][0]:.1f}" cy="{screen[0][1]:.1f}" r="6" fill="{colors[0]}" '
-        f'stroke="{c.t["surface"]}" stroke-width="2">'
-        + moving("cx", [s[0] for s in screen])
-        + moving("cy", [s[1] for s in screen])
-        + discrete("fill", colors)
-        + "</circle>"
-    )
+    c.raw(f'<g opacity="0">{grid_on}{outline}</g>')
 
-    # Right side: the stage name, its formula, and the three coordinates.
-    left = 520
-    for k, (_, shown, color, title, formula) in enumerate(stages):
-        visible = discrete("opacity", [1 if i == k else 0 for i in range(n)])
-        c.raw(f'<g opacity="{1 if k == 0 else 0}">{visible}')
-        c.text(left, 70, f"Step {k + 1} of {n}", size=13, color="text2")
-        c.text(left, 98, title, size=22, weight=700, color=color if color != "text2" else "text")
-        c.text(left, 124, formula, size=14, color="text2")
-        for i, value in enumerate(shown):
-            c.text(left + 340, 184 + i * 44, f"{value:+.3f}", size=14, weight=600)
-        c.raw("</g>")
-
-    bar_scale = 200
-    for i in range(3):
-        top = 168 + i * 44
-        c.text(left, top + 16, f"c{'₁₂₃'[i]}", size=14, color="text2")
-        widths = [bar_scale * abs(vector[i]) for vector, *_ in stages]
+    colors = [c.t[stage[2]] for stage in stages]
+    for k in range(4):
+        rows = [k if s < shuffle_stage else position[k] for s in range(n)]
+        values = [stages[s][0][rows[s]] for s in range(n)]
+        xs = [signed_bar(zero, unit, v)[0] for v in values]
+        widths = [signed_bar(zero, unit, v)[1] for v in values]
+        ys = [row_top[row] for row in rows]
         c.raw(
-            f'<rect x="{left + 30}" y="{top}" width="{widths[0]:.1f}" height="22" rx="4" fill="{colors[0]}">'
+            f'<rect x="{xs[0]:.1f}" y="{ys[0]}" width="{widths[0]:.1f}" height="{bar_h}" rx="4" fill="{colors[0]}">'
+            + moving("x", xs)
             + moving("width", widths)
+            + moving("y", ys)
             + discrete("fill", colors)
             + "</rect>"
         )
-    c.text(left, 318, "Bar length = size of each coordinate, at the arrow's scale.", size=12, color="text2")
-    c.text(left, 338, "After mixing, the three bars are about equal: that is why one grid fits all.", size=12, color="text2")
-    c.text(24, 396, "Dashed arrow = the previous step. Loops every 17 seconds.", size=12, color="text2")
-    return c.svg("Animation: one vector moving through each Spherra transform")
+
+    for row in range(4):
+        c.text(zero - 250, row_top[row] + 20, f"c{SUB[row]}", size=15, color="text2")
+
+    # Brackets showing which rows each Hadamard pass pairs up.
+    for s, stage in enumerate(stages):
+        if stage[5] is None:
+            continue
+        visible = discrete("opacity", [1 if i == s else 0 for i in range(n)])
+        paths = []
+        for depth, (a, b) in enumerate(stage[5]):
+            x0 = zero - 270 - depth * 18
+            ya, yb = row_top[a] + bar_h / 2, row_top[b] + bar_h / 2
+            paths.append(
+                f'<path d="M{x0 + 14},{ya} H{x0} V{yb} H{x0 + 14}" fill="none" '
+                f'stroke="{c.t["blue"]}" stroke-width="2"/>'
+            )
+        c.raw(f'<g opacity="0">{visible}{"".join(paths)}</g>')
+
+    # Stage titles, formulas and exact values.
+    for s, (_, shown, color, title, formula, _, _) in enumerate(stages):
+        visible = discrete("opacity", [1 if i == s else 0 for i in range(n)])
+        c.raw(f'<g opacity="{1 if s == 0 else 0}">{visible}')
+        c.text(24, 44, f"Step {s + 1} of {n}", size=13, color="text2")
+        c.text(24, 74, title, size=24, weight=700, color=color if color != "text2" else "text")
+        c.text(24, 100, formula, size=15, color="text2")
+        for row, value in enumerate(shown):
+            c.text(920, row_top[row] + 21, f"{value:+.2f}", size=16, weight=600, anchor="end")
+        c.raw("</g>")
+
+    c.text(24, 424, "Each bar is one coordinate. Loops every 23 seconds.", size=12, color="text2")
+    return c.svg("Animation: a 4D vector moving through each Spherra transform")
 
 
 def main():
@@ -520,12 +429,17 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for theme in THEMES:
         (OUT / f"transform-animation-{theme}.svg").write_text(animation_figure(theme, ex))
+        (OUT / f"fwht-{theme}.svg").write_text(fwht_figure(theme, ex))
         (OUT / f"compression-{theme}.svg").write_text(compression_figure(theme, ex))
         (OUT / f"search-{theme}.svg").write_text(search_figure(theme, ex))
-    for key in ("u", "y", "p", "e", "e_hat", "r", "q"):
+    for key in ("u", "flipped", "shuffled", "y", "unsigned", "p", "e", "e_hat", "r", "q"):
         print(f"{key:>9} = {fmt(ex[key], 3)}")
-    print(f"    codes = {ex['codes']}  centroid = {ex['centroid']}")
-    print(f"   |e|    = {norm(ex['e']):.3f}   |y-r| = {norm(sub(ex['y'], ex['r'])):.3f}   |r| = {norm(ex['r']):.3f}")
+    print(f"   passes = {[fmt(v, 3) for v in ex['passes']]}")
+    print(f"    codes = {ex['codes']}  entries = {ex['entries']}")
+    print(f"   |e| = {norm(ex['e']):.3f}   |y-r| = {norm(sub(ex['y'], ex['r'])):.3f}   |r| = {norm(ex['r']):.3f}")
+    for (start, end), book in zip(PIECES, CODEBOOKS):
+        piece = ex["e"][start:end]
+        print(f"   piece {fmt(piece)} distances {[round(norm(sub(piece, entry)), 3) for entry in book]}")
     for key in ("truth", "truth_rotated", "primary", "refined", "corrected"):
         print(f"{key:>13} = {ex[key]:.4f}")
 

@@ -4,13 +4,14 @@ Spherra is a local, embedded Rust vector index for 768-dimensional embeddings.
 It shrinks each vector to about one sixth of its size, searches the small
 copies, and returns the best matches with a proven range for each score.
 
-This README explains the math by following one small 3D vector through every
-step. The real index does exactly the same steps, just with 768 numbers instead
-of 3.
+This README explains the math by following one small 4D vector through every
+step. Four is the smallest size where the real Hadamard transform exists, so
+nothing here is a stand-in: Spherra does exactly these steps, just with 768
+numbers instead of 4.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/transform-animation-dark.svg">
-  <img src="docs/images/transform-animation-light.svg" alt="Animation: the vector x = (4, 1, 0.5) is normalized to length 1, has signs flipped, coordinates shuffled and mixed until all three are similar in size, then snaps to a grid point p and is corrected to r = p + ê.">
+  <img src="docs/images/transform-animation-light.svg" alt="Animation of four coordinate bars: x = (4, 2, 2, 1) is normalized, has one sign flipped, is shuffled, goes through two fast Walsh-Hadamard passes and a scale by one half to become y = (0.5, -0.5, 0.7, 0.1), then is rounded to the grid and corrected.">
 </picture>
 
 ## The problem
@@ -34,7 +35,7 @@ The plan has two parts:
 
 We will follow this example vector the whole way:
 
-$$x = (4,\ 1,\ 0.5)$$
+$$x = (4,\ 2,\ 2,\ 1)$$
 
 ## Part 1: Reshape the vector
 
@@ -43,66 +44,35 @@ $$x = (4,\ 1,\ 0.5)$$
 Cosine similarity only cares about direction. So we split `x` into two pieces:
 its **length**, and a **direction** vector of length 1.
 
-The length comes from the Pythagorean theorem:
+$$\lVert x \rVert = \sqrt{4^2 + 2^2 + 2^2 + 1^2} = \sqrt{25} = 5$$
 
-$$\lVert x \rVert = \sqrt{4^2 + 1^2 + 0.5^2} = \sqrt{17.25} = 4.153$$
+$$u = \frac{x}{\lVert x \rVert} = (0.8,\ 0.4,\ 0.4,\ 0.2)$$
 
-Dividing every coordinate by the length gives the direction:
+The length 5 is saved separately in 2 bytes, for searches where length matters.
 
-$$u = \frac{x}{\lVert x \rVert} = \left(\frac{4}{4.153},\ \frac{1}{4.153},\ \frac{0.5}{4.153}\right) = (0.963,\ 0.241,\ 0.120)$$
-
-`u` points the same way as `x` but has length exactly 1. The length 4.153 is
-saved separately in 2 bytes, for searches where length matters.
-
-**The problem with `u`:** almost all of its size is in the first coordinate
-(0.963), while the last one is tiny (0.120). In Part 2 we will round every
-coordinate. Rounding a big coordinate can cause a big mistake, and one coordinate
-should not carry all the risk. We want all three coordinates to be about the
-same size. Steps 2 to 4 fix this.
+**The problem with `u`:** its coordinates are uneven. The first is 0.8 and the
+last is 0.2. In Part 2 every coordinate is rounded, and a vector whose size is
+concentrated in a few coordinates suffers the biggest rounding mistakes there.
+We want all four coordinates to be about the same size. Steps 2 to 4 do that.
 
 ### Step 2: Flip some signs
 
-Multiply each coordinate by a random `+1` or `−1`. Here the random choice is
-`(+1, −1, −1)`:
+Multiply each coordinate by a random `+1` or `−1`. Here the random signs are
+`(+1, −1, +1, +1)`:
 
-$$(0.963 \times 1,\ \ 0.241 \times -1,\ \ 0.120 \times -1) = (0.963,\ -0.241,\ -0.120)$$
+$$(0.8,\ 0.4,\ 0.4,\ 0.2) \rightarrow (0.8,\ -0.4,\ 0.4,\ 0.2)$$
 
 ### Step 3: Shuffle the coordinates
 
-Move the coordinates into a random new order. Here the second coordinate moves
-to the first slot, the third to the second, and the first to the third:
+Move the coordinates into a random new order. Here the new order is: old
+coordinate 3, then 1, then 2, then 4:
 
-$$(0.963,\ -0.241,\ -0.120) \rightarrow (-0.241,\ -0.120,\ 0.963)$$
+$$(0.8,\ -0.4,\ 0.4,\ 0.2) \rightarrow w = (0.4,\ 0.8,\ -0.4,\ 0.2)$$
 
-Steps 2 and 3 do not spread anything out by themselves. Step 4 does the
-spreading, and Step 4b explains why it needs the random signs and shuffle first.
+Signs and order do not change any coordinate's size yet. Step 4 does the
+spreading, and Step 4c explains why it needs Steps 2 and 3 first.
 
-### Step 4: Mix the coordinates together
-
-Mixing means replacing every coordinate with a signed blend of all the
-coordinates. Spherra mixes with a **Hadamard matrix**. Hadamard matrices only
-exist in sizes 1, 2 and multiples of 4, so there is none for our 3D example.
-The 3D example uses the closest 3D equivalent instead:
-
-$$y = \left(I - \tfrac{2}{3}J\right)v \quad\text{where } J \text{ is the all-ones matrix}$$
-
-In words: add up the three coordinates, take 2/3 of the total, and subtract it
-from each coordinate. The total is `−0.241 − 0.120 + 0.963 = 0.602`, and 2/3 of
-that is `0.401`:
-
-$$y = (-0.241 - 0.401,\ \ -0.120 - 0.401,\ \ 0.963 - 0.401) \approx (-0.642,\ -0.522,\ 0.562)$$
-
-(Numbers in this README are rounded to 3 decimals, so the last digit can be off
-by one.)
-
-| | Coordinate 1 | Coordinate 2 | Coordinate 3 |
-|---|---:|---:|---:|
-| Before (`u`) | 0.963 | 0.241 | 0.120 |
-| After (`y`) | 0.642 | 0.522 | 0.562 |
-
-Like a Hadamard matrix, $I - \tfrac{2}{3}J$ keeps lengths the same, undoes itself
-when applied twice, and blends every coordinate into every other one. The rest of
-this step explains the real mixer in 4 dimensions, where Hadamard matrices exist.
+### Step 4: Mix with the Hadamard transform
 
 #### 4a. The Hadamard matrix
 
@@ -115,60 +85,37 @@ $$H_1 = \begin{pmatrix}1\end{pmatrix}, \qquad H_{2n} = \begin{pmatrix} H_n & H_n
 $$H_2 = \begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix}, \qquad
 H_4 = \begin{pmatrix} 1 & 1 & 1 & 1 \\ 1 & -1 & 1 & -1 \\ 1 & 1 & -1 & -1 \\ 1 & -1 & -1 & 1 \end{pmatrix}$$
 
-Written directly, the entry in row `i` and column `j` (counting from 0) is
-$(-1)^{\text{popcount}(i \text{ AND } j)}$: it is `−1` when `i` and `j` share an odd
-number of 1 bits.
+The mix is $y = \tfrac{1}{\sqrt{4}} H_4\, w = \tfrac{1}{2} H_4\, w$. Each output
+coordinate is one row of $H_4$ dotted with `w = (0.4, 0.8, −0.4, 0.2)`, then
+halved:
 
-Three facts make it a good mixer:
+| Output | Row of H₄ | Sum | ÷ 2 |
+|---|---|---|---:|
+| y₁ | (+1, +1, +1, +1) | 0.4 + 0.8 − 0.4 + 0.2 = 1.0 | **0.5** |
+| y₂ | (+1, −1, +1, −1) | 0.4 − 0.8 − 0.4 − 0.2 = −1.0 | **−0.5** |
+| y₃ | (+1, +1, −1, −1) | 0.4 + 0.8 + 0.4 − 0.2 = 1.4 | **0.7** |
+| y₄ | (+1, −1, −1, +1) | 0.4 − 0.8 + 0.4 + 0.2 = 0.2 | **0.1** |
+
+$$y = (0.5,\ -0.5,\ 0.7,\ 0.1)$$
+
+Three facts make this a good mixer:
 
 1. **It keeps lengths.** Two different rows agree in `n/2` positions and
    disagree in `n/2`, so their dot product is `0`. Each row dotted with itself is
-   `n`. So $H_n H_n^\top = nI$, and the scaled matrix $\tfrac{1}{\sqrt n}H_n$ is a
-   rotation: it changes no lengths and no angles.
-2. **It undoes itself.** $H_n$ is symmetric, so $\tfrac{1}{\sqrt n}H_n$ applied
+   `n`. So $H_n H_n^\top = nI$, and $\tfrac{1}{\sqrt n}H_n$ is a rotation. Check:
+   $0.5^2 + 0.5^2 + 0.7^2 + 0.1^2 = 1$.
+2. **It undoes itself.** $H_n$ is symmetric, so applying $\tfrac{1}{\sqrt n}H_n$
    twice gives back the original vector.
-3. **Every output uses every input with equal weight.** Each output coordinate
-   is $\tfrac{1}{\sqrt n}(\pm u_0 \pm u_1 \pm \dots \pm u_{n-1})$. No input
-   coordinate matters more than another.
+3. **Every output uses every input with equal weight.** Each output is
+   $\tfrac{1}{\sqrt n}(\pm w_1 \pm w_2 \pm \dots \pm w_n)$. No input coordinate
+   counts more than another.
 
-#### 4b. Why the random signs matter
+#### 4b. Computing it fast: the fast Walsh–Hadamard transform
 
-Fact 3 spreads out a spiky vector perfectly:
-
-$$\tfrac{1}{2}H_4\,(1,\ 0,\ 0,\ 0) = (0.5,\ 0.5,\ 0.5,\ 0.5)$$
-
-But because the matrix undoes itself, it also turns an already even vector into a
-spike:
-
-$$\tfrac{1}{2}H_4\,(0.5,\ 0.5,\ 0.5,\ 0.5) = (1,\ 0,\ 0,\ 0)$$
-
-A fixed mixer always has some inputs it handles badly. The random signs from
-Step 2 fix this. Flip the sign of one coordinate of that even vector, and it
-stays even:
-
-$$\tfrac{1}{2}H_4\,(0.5,\ -0.5,\ 0.5,\ 0.5) = (0.5,\ 0.5,\ -0.5,\ 0.5)$$
-
-Here is why this works for any input. With random signs $s_j = \pm 1$, output
-coordinate `i` is
-
-$$y_i = \frac{1}{\sqrt n}\sum_j H_{ij}\, s_j\, u_j$$
-
-a sum of terms whose signs are random coin flips. Its average is `0`, and its
-average square is $\tfrac{1}{n}\sum_j u_j^2 = \tfrac{1}{n}$, **no matter what
-`u` looks like**. So every output coordinate has the same expected size,
-$1/\sqrt{n}$. Large coordinates also become very unlikely. Hoeffding's
-inequality bounds how far a sum of random-sign terms can stray:
-
-$$P\left(\lvert y_i \rvert > t\right) \le 2\,e^{-n t^2 / 2}$$
-
-With `n = 128`, a coordinate above `0.3` has a probability of at most `0.0063`.
-Before mixing, a single coordinate could be as large as `1`.
-
-#### 4c. Computing it fast: the fast Walsh–Hadamard transform
-
-Multiplying by a 128 × 128 matrix directly takes 16,384 multiplications. The
-**fast Walsh–Hadamard transform** (FWHT) gets the same answer with only
-additions and subtractions. It follows Sylvester's doubling rule:
+Multiplying by the matrix, as in the table above, takes $n^2$ multiplications:
+16,384 for a 128 × 128 matrix. The **fast Walsh–Hadamard transform** (FWHT) gets
+the same answer using only additions and subtractions, without ever building the
+matrix:
 
 ```text
 for half-width h = 1, 2, 4, …, n/2:
@@ -177,41 +124,94 @@ for half-width h = 1, 2, 4, …, n/2:
 finally multiply everything by 1/√n
 ```
 
-Each pass applies $H_2$ to pairs of positions `h` apart. Stacking the passes for
-`h = 1, 2, 4, …` builds exactly $H_n$. Here it is on `u = (0.9, 0.3, 0.3, 0.1)`:
+Here it is on `w`:
 
-| Pass | Pairs combined | Result |
-|---|---|---|
-| Start | | (0.9, 0.3, 0.3, 0.1) |
-| h = 1 | positions (0,1) and (2,3) | (0.9+0.3, 0.9−0.3, 0.3+0.1, 0.3−0.1) = (1.2, 0.6, 0.4, 0.2) |
-| h = 2 | positions (0,2) and (1,3) | (1.2+0.4, 0.6+0.2, 1.2−0.4, 0.6−0.2) = (1.6, 0.8, 0.8, 0.4) |
-| Scale by 1/√4 | | (0.8, 0.4, 0.4, 0.2) |
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/fwht-dark.svg">
+  <img src="docs/images/fwht-light.svg" alt="Butterfly diagram. Input (0.4, 0.8, -0.4, 0.2). Pass 1 pairs positions 1-2 and 3-4, giving (1.2, -0.4, -0.2, -0.6). Pass 2 pairs positions 1-3 and 2-4, giving (1.0, -1.0, 1.4, 0.2). Scaling by one half gives (0.5, -0.5, 0.7, 0.1).">
+</picture>
 
-For 128 coordinates there are 7 passes of 64 pairs each: 448 add-and-subtract
-steps instead of 16,384 multiplications. The result for this input is only
-slightly more even (largest coordinate 0.9 → 0.8), because no signs were
-flipped. That is 4b's point.
+| Pass | Pairs | Calculation | Result |
+|---|---|---|---|
+| Start | | | (0.4, 0.8, −0.4, 0.2) |
+| h = 1 | (1, 2) and (3, 4) | (0.4 + 0.8, 0.4 − 0.8, −0.4 + 0.2, −0.4 − 0.2) | (1.2, −0.4, −0.2, −0.6) |
+| h = 2 | (1, 3) and (2, 4) | (1.2 − 0.2, −0.4 − 0.6, 1.2 + 0.2, −0.4 + 0.6) | (1.0, −1.0, 1.4, 0.2) |
+| × 1/√4 | | | **(0.5, −0.5, 0.7, 0.1)** |
 
-#### 4d. How Spherra puts it together
+This matches the matrix result exactly. **Why it works:** a pass with
+half-width `h` applies $H_2$ to every pair of positions `h` apart. Look at
+Sylvester's rule: $H_{2n}$ combines two copies of $H_n$ by sum and difference.
+Pass `h = 1` builds the $H_2$ mixing inside each pair. Pass `h = 2` combines two
+already-mixed pairs by sum and difference, which is exactly how $H_4$ is built
+from $H_2$. Each further pass doubles the size again.
 
-A 128-coordinate mix is fast, but 768 coordinates need more care. Spherra splits
-them into **6 blocks of 128** and runs the FWHT on each block separately. One
-**round** is:
+**Cost:** there are $\log_2 n$ passes, each doing $n/2$ add-and-subtract steps.
+For a 128-coordinate block that is 7 passes × 64 steps = **448** steps instead
+of 16,384 multiplications. Spherra's code for this is
+[`hadamard_128`](crates/spherra-simd/src/scalar.rs).
+
+#### 4c. Why the random signs and shuffle matter
+
+Now the result:
+
+| | c₁ | c₂ | c₃ | c₄ | Largest | Smallest |
+|---|---:|---:|---:|---:|---:|---:|
+| `u` (before) | 0.8 | 0.4 | 0.4 | 0.2 | 0.8 | 0.2 |
+| `y` (after) | 0.5 | −0.5 | 0.7 | 0.1 | 0.7 | 0.1 |
+
+The largest coordinate dropped and two coordinates reached the middle. But look
+at what happens if we skip Steps 2 and 3 and mix `u` directly:
+
+$$\tfrac{1}{2}H_4\,(0.8,\ 0.4,\ 0.4,\ 0.2) = (0.9,\ 0.3,\ 0.3,\ 0.1)$$
+
+That is **worse** than `u`. Because the Hadamard transform undoes itself, it
+turns some even vectors into spiky ones just as easily as it turns spiky ones
+into even ones. The extreme cases:
+
+$$\tfrac{1}{2}H_4\,(1,\ 0,\ 0,\ 0) = (0.5,\ 0.5,\ 0.5,\ 0.5) \qquad \tfrac{1}{2}H_4\,(0.5,\ 0.5,\ 0.5,\ 0.5) = (1,\ 0,\ 0,\ 0)$$
+
+A fixed mixer always has inputs it handles badly. Random signs make sure no
+input is reliably bad. With random signs $s_j = \pm 1$, output coordinate `i` is
+
+$$y_i = \frac{1}{\sqrt n}\sum_j H_{ij}\, s_j\, u_j$$
+
+a sum whose terms have random coin-flip signs. Its average is `0`, and its
+average square is $\tfrac{1}{n}\sum_j u_j^2 = \tfrac{1}{n}$, **no matter what
+`u` looks like**. Every output coordinate has the same expected size,
+$1/\sqrt n$.
+
+In 4D, that promise is weak. There are 16 sign choices × 24 orders = 384 random
+choices for our `u`. Exactly half of them produce sizes `(0.1, 0.5, 0.5, 0.7)`
+like our `y`, and the other half produce the worse `(0.1, 0.3, 0.3, 0.9)`. A sum
+of only four random terms can still land far from average.
+
+With more coordinates, the sum has more random terms and lands close to its
+average far more reliably. Hoeffding's inequality puts a number on it:
+
+$$P\left(\lvert y_i \rvert > t\right) \le 2\,e^{-n t^2 / 2}$$
+
+For a 128-coordinate block, a coordinate above `0.3` has a probability of at
+most `0.0063`. For comparison, the average coordinate size is
+$1/\sqrt{128} \approx 0.088$, and before mixing a coordinate could be as large
+as `1`.
+
+#### 4d. How Spherra uses it on 768 coordinates
+
+Spherra splits the 768 coordinates into **6 blocks of 128** and runs the FWHT on
+each block separately. One **round** is:
 
 1. flip each of the 768 signs at random (Step 2),
 2. shuffle all 768 coordinates at random (Step 3),
 3. run the FWHT on each of the 6 blocks (Step 4).
 
-A block can only spread out what is already inside it. The shuffle decides which
-coordinates land in each block, but after one round some blocks can still hold
-much more of the vector than others. So Spherra runs **two rounds** with
-different random signs and shuffles. The second shuffle scatters every block's
-coordinates across all six blocks, and the second mix spreads them out again.
+A block can only spread out what is already inside it. After one round, some
+blocks can hold much more of the vector than others. So Spherra runs **two
+rounds** with different random signs and shuffles. The second shuffle scatters
+every block's coordinates across all six blocks, and the second mix spreads them
+out again.
 
-Here is an extreme test: our spiky vector `(4, 1, 0.5)` padded with 765 zeros
-and normalized, sent through two rounds with one random seed. The table shows
-how many coordinates are nonzero and how much of the vector's squared length
-sits in each block:
+An extreme test: a vector with all its size in 3 of the 768 coordinates, sent
+through two rounds with one random seed:
 
 | | Nonzero coordinates | Share of squared length in blocks 1–6 |
 |---|---:|---|
@@ -220,130 +220,126 @@ sits in each block:
 | After round 2 | 749 of 768 | 0.19, 0.17, 0.17, 0.14, 0.14, 0.18 |
 
 After round 1, one block holds 93% of the vector and half the coordinates are
-still zero. After round 2, every block holds close to its fair 1/6 share. Real
-embeddings are far less spiky than this test.
+still zero. After round 2, every block holds close to its fair 1/6 share.
 
 The random signs and shuffles come from a saved seed, so every stored vector
-and every query gets exactly the same two rounds.
+and every query goes through exactly the same two rounds.
 
 ### Why reshaping is allowed
 
-Steps 2, 3 and 4 are all **rotations** (or mirror flips) of space. They move the
-vector around without stretching it, so:
-
-- `y` still has length 1: $0.642^2 + 0.522^2 + 0.562^2 = 1$.
-- The angle between any two vectors stays the same. So if we reshape the query
-  the same way, the cosine similarity between query and vector is unchanged.
-
-That means we never need to undo Steps 2 to 4. Spherra searches directly in the
-reshaped space.
+Sign flips, shuffles and $\tfrac{1}{\sqrt n}H_n$ are all rotations or mirror
+flips of space. They never stretch anything, so the angle between any two
+vectors stays the same. If the query is reshaped the same way, its cosine
+similarity with every stored vector is unchanged. Spherra never undoes the
+reshaping; it searches directly in the reshaped space.
 
 ## Part 2: Store the vector in a few bits
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/compression-dark.svg">
+  <img src="docs/images/compression-light.svg" alt="Four small bar charts: u = (0.8, 0.4, 0.4, 0.2); y = (0.5, -0.5, 0.7, 0.1); p = (0.6, -0.6, 0.6, 0.2) with y outlined, miss 0.2; r = (0.45, -0.55, 0.75, 0.15) with y outlined, miss 0.1.">
+</picture>
 
 ### Step 5: Round each coordinate to a grid
 
 Instead of storing exact numbers, we only allow a few values per coordinate.
-To keep the rounding mistakes easy to see, this example allows just 4 values:
+This example allows 4 values, each with a number called its **code**:
 
-$$\text{allowed values} = (-0.75,\ -0.25,\ 0.25,\ 0.75)$$
+| Code | 0 | 1 | 2 | 3 |
+|---|---:|---:|---:|---:|
+| Value | −0.6 | −0.2 | 0.2 | 0.6 |
 
-Each allowed value gets a number, called its **code**: `0, 1, 2, 3`. We round
-each coordinate of `y` to the nearest allowed value and keep only its code:
+Each coordinate of `y` is rounded to the nearest allowed value:
 
 | Coordinate | Value in `y` | Nearest allowed value | Code stored |
 |---|---:|---:|---:|
-| 1 | −0.642 | −0.75 (0.108 away) | 0 |
-| 2 | −0.522 | −0.75 (0.228 away) | 0 |
-| 3 | 0.562 | 0.75 (0.188 away) | 3 |
+| 1 | 0.5 | 0.6 (0.1 away) | 3 |
+| 2 | −0.5 | −0.6 (0.1 away) | 0 |
+| 3 | 0.7 | 0.6 (0.1 away) | 3 |
+| 4 | 0.1 | 0.2 (0.1 away) | 2 |
 
-The rounded vector is `p = (−0.75, −0.75, 0.75)`, and all we store is
-`(0, 0, 3)`. Four possible codes need only 2 bits each, so this takes 6 bits
-instead of 96.
+The rounded vector is `p = (0.6, −0.6, 0.6, 0.2)`, and all we store is
+`(3, 0, 3, 2)`: 2 bits per coordinate. The mistake is:
 
-How big was the mistake? The distance between `y` and `p` is:
+$$\lVert y - p \rVert = \sqrt{0.1^2 + 0.1^2 + 0.1^2 + 0.1^2} = 0.2$$
 
-$$\lVert y - p \rVert = \sqrt{0.108^2 + 0.228^2 + 0.188^2} = 0.315$$
-
-Spherra allows 16 values per coordinate (4 bits each). It picks those 16 values
-separately for each coordinate by looking at training vectors and choosing
-values spread evenly through the numbers it saw. That is where 768 × 4 bits =
-**384 bytes** comes from.
+Notice how the reshaping helped: every coordinate of `y` landed near an allowed
+value. Spherra allows 16 values per coordinate (4 bits each), chosen separately
+for each coordinate by spreading them evenly through the values seen in training
+vectors. That gives 768 × 4 bits = **384 bytes**.
 
 ### Step 6: Store a correction for the rounding mistake
 
 The mistake left over from rounding is:
 
-$$e = y - p = (-0.642 + 0.75,\ \ -0.522 + 0.75,\ \ 0.562 - 0.75) = (0.108,\ 0.228,\ -0.188)$$
+$$e = y - p = (-0.1,\ 0.1,\ 0.1,\ -0.1)$$
 
-Storing `e` exactly would cost as much as storing `y`. Instead, Spherra keeps a
-shared list of typical mistakes, called a **codebook**, that is learned once
-from training vectors. For each vector we store only the position of the list
-entry closest to its mistake.
+Instead of storing `e`, Spherra uses **product quantization**. It cuts `e` into
+pieces and, for each piece, stores the position of the closest entry in a list
+of typical mistakes for that piece, called a **codebook**. Codebooks are
+learned once from training vectors with k-means clustering.
 
-This example uses a codebook with 4 entries:
+Here `e` is cut into two pieces of two numbers, each with its own 4-entry
+codebook:
 
-| Entry | Correction | Distance from `e` |
-|---:|---|---:|
-| **0** | **(0.2, 0.2, −0.2)** | **0.097** |
-| 1 | (−0.2, 0.2, 0.2) | 0.496 |
-| 2 | (0.2, −0.2, 0.2) | 0.585 |
-| 3 | (−0.2, −0.2, −0.2) | 0.528 |
+| Entry | Codebook A (for coordinates 1–2) | Distance from (−0.1, 0.1) | Codebook B (for coordinates 3–4) | Distance from (0.1, −0.1) |
+|---:|---|---:|---|---:|
+| 0 | (0.05, 0.05) | 0.158 | **(0.15, −0.05)** | **0.071** |
+| 1 | **(−0.15, 0.05)** | **0.071** | (−0.05, 0.15) | 0.292 |
+| 2 | (0.05, −0.15) | 0.292 | (0, 0) | 0.141 |
+| 3 | (−0.1, −0.1) | 0.200 | (−0.1, −0.1) | 0.200 |
 
-Entry 0 is closest, so we store `0`. Call that correction `ê`. Adding it to the
-rounded vector gives our best rebuilt version of `y`:
+We store entry `1` for piece A and entry `0` for piece B. Joining the two chosen
+entries gives the correction `ê`, and adding it to `p` rebuilds the vector:
 
-$$r = p + \hat e = (-0.75 + 0.2,\ \ -0.75 + 0.2,\ \ 0.75 - 0.2) = (-0.55,\ -0.55,\ 0.55)$$
+$$\hat e = (-0.15,\ 0.05,\ 0.15,\ -0.05)$$
 
-The mistake shrank from 0.315 to:
+$$r = p + \hat e = (0.45,\ -0.55,\ 0.75,\ 0.15)$$
 
-$$\lVert y - r \rVert = 0.097$$
+The mistake halves, from 0.2 to $\lVert y - r \rVert = 0.1$.
 
-A single codebook for all 768 numbers would need to be enormous. So Spherra
-cuts the mistake into **96 pieces of 8 numbers** and gives each piece its own
-codebook of 256 entries. One byte is enough to pick one of 256 entries, so the
-correction costs **96 bytes**. This technique is called **product
-quantization**, and the codebooks are learned with k-means clustering.
-
-### The whole process in one picture
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/images/compression-dark.svg">
-  <img src="docs/images/compression-light.svg" alt="Four panels. 1: x is scaled to the unit vector u. 2: a random rotation turns u, whose coordinates are 0.96, 0.24 and 0.12, into y, whose coordinates are 0.64, 0.52 and 0.56. 3: each coordinate of y snaps to the nearest grid level, giving p. 4: the leftover e = y − p is replaced by its nearest codebook entry ê, and r = p + ê lands much closer to y.">
-</picture>
+Spherra cuts the 768 numbers into **96 pieces of 8**, each with its own
+codebook of 256 entries. One byte picks one of 256 entries, so the correction
+costs **96 bytes**.
 
 ### What gets stored
 
-| | 3D example | Spherra (768 numbers) |
+| | 4D example | Spherra (768 numbers) |
 |---|---|---:|
-| Original vector | 3 floats = 12 bytes | 3,072 bytes |
-| Rounded codes (Step 5) | `(0, 0, 3)` = 6 bits | 384 bytes |
-| Correction code (Step 6) | `0` = 2 bits | 96 bytes |
-| Length and flags (Step 1) | 4.153 | 4 bytes |
+| Original vector | 4 floats = 16 bytes | 3,072 bytes |
+| Rounded codes (Step 5) | `(3, 0, 3, 2)` = 8 bits | 384 bytes |
+| Correction codes (Step 6) | `(1, 0)` = 4 bits | 96 bytes |
+| Length and flags (Step 1) | 5 | 4 bytes |
 | **Total** | | **484 bytes, 6.3× smaller** |
 
 To rebuild a vector: look up the rounded values from the codes to get `p`, look
-up the correction to get `ê`, and add them to get `r`.
+up the codebook entries to get `ê`, and add them to get `r`.
 
 ## Searching
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/search-dark.svg">
-  <img src="docs/images/search-light.svg" alt="Left: the query q and the vectors y, p and r in 3D. Right: bars comparing scores with the true cosine 0.933: fast scan q·p gives 1.203, refined q·r gives 0.882, and length-corrected q·r divided by the length of r gives 0.926.">
+  <img src="docs/images/search-light.svg" alt="Bars comparing scores with the true cosine 0.800: quick score q·p gives 0.933, with correction q·r gives 0.833, and with the length fixed gives 0.798.">
 </picture>
 
-A query such as `(3, 2, 1)` goes through Steps 1 to 4 with the same random
-choices, giving `q`. Because reshaping keeps angles, `q·y` is the true cosine
-similarity: **0.933**. Spherra never has `y`, so it estimates that score in three
+Take the query $z = (2,\ 1,\ 0,\ 2)$, with length 3. Its true cosine similarity
+with `x` is
+
+$$\frac{z \cdot x}{\lVert z \rVert\,\lVert x \rVert} = \frac{8 + 2 + 0 + 2}{3 \times 5} = 0.800$$
+
+The query goes through Steps 1 to 4 with the same random signs and shuffle,
+giving `q = (0.500, −0.833, 0.167, 0.167)`. Because reshaping keeps angles,
+`q·y` is also 0.800. Spherra never has `y`, so it estimates the score in three
 rounds:
 
 | Round | Score | Example | Done for |
 |---|---|---:|---|
-| 1. Quick score | `q·p` | 1.203 | every stored vector |
-| 2. Add the correction | `q·r` | 0.882 | the best 200 from round 1 |
-| 3. Fix the length | `q·r / ‖r‖` | 0.926 | the same 200 |
+| 1. Quick score | `q·p` | 0.933 | every stored vector |
+| 2. Add the correction | `q·r` | 0.833 | the best 200 from round 1 |
+| 3. Fix the length | `q·r / ‖r‖` | 0.798 | the same 200 |
 
-Round 3 is needed because `r` is only close to length 1 (here 0.953), and a
-shorter or longer vector skews the score. Dividing by its length removes that
+Round 3 is needed because `r` is not exactly length 1 (here `‖r‖ = 1.044`), and
+a longer or shorter vector skews the score. Dividing by its length removes that
 skew. The final results are sorted by the round 3 score.
 
 **Proven score ranges.** The Cauchy–Schwarz inequality says
