@@ -163,7 +163,15 @@ across models; they are not 1,800 independent queries. The bootstrap resamples
 seed 20260804. Its percentile interval is descriptive, conditional on this
 fixed corpus/model/query sampling, and not adjusted for repeated comparisons.
 
-## Interpretation and next change
+## Decision after the investigation
+
+The user declined the original-vector storage/read tradeoff and chose to move
+on from this investigation. Keep compressed-only serving and budget 200. The
+prototype and measurements below remain evidence; original-vector production
+integration is not planned. The completed local-index plan defines no further
+checkpoint, so the next milestone needs to be specified separately.
+
+## Interpretation and possible future changes
 
 Keep budget 200 and the current training setup: neither a larger pool nor more
 training inputs demonstrated a reliable gain. Do not change Q24 precision to

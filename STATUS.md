@@ -73,6 +73,8 @@ README examples compile as doctests. The final CI gate passed 191 tests with
   physical power loss or other filesystems. ASan runtime is unavailable here.
 - No unsafe/NEON kernel, routing, deletes, filters, compaction or server is added.
 - The original delivery plan is complete. The separately authorized accuracy
-  investigation above is complete. A production original-vector option requires
-  an approved API/design amendment and cold-cache qualification; compressed
-  trainer changes remain unproven.
+  investigation above is complete. The user declined original-vector reranking
+  because of its storage/read tradeoff; compressed-only search and budget 200
+  remain the chosen behavior. The prototype is retained as experiment evidence.
+- No subsequent checkpoint is defined in the approved plan. Direction for the
+  next milestone is awaiting user input; no additional feature scope is assumed.
