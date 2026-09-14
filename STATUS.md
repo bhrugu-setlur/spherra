@@ -1,6 +1,6 @@
 # Local index status
 
-Updated: 2026-09-13. Branch/worktree: `local-index` / `.worktrees/local-index`.
+Updated: 2026-09-14. Branch/worktree: `local-index` / `.worktrees/local-index`.
 
 Tasks 1–11, 13 and 14 are complete. Task 12 was skipped because stage 2 met
 every latency gate. Documentation is complete.
@@ -24,6 +24,17 @@ the warm-cache 1M prototype adds a median paired 3.223 ms and needs 3.072 GB
 of extra originals per million rows. Exact vector ranking does not improve
 sparse relevance-label scores on this sample. Production contracts/defaults
 are unchanged. All nine complete candidate traces passed independent audits.
+
+## Active checkpoint: vector-length audit
+
+The user authorized a pre-ingestion/benchmark length diagnostic. It streams
+hash-pinned FP32 rows, reports FP64 norm distributions and FP16 underflow,
+checks explicit unit-length/reference policies and reports invalid inputs.
+Focused tests and full verification pass (201 CI tests, 12 skipped; workspace
+tests and strict clippy). An existing CRC test received one transient nextest
+LEAK flag; its isolated rerun passed cleanly. Clean real/anomaly runs are next.
+No public index API, search path or durable format changes are included.
+[Protocol and results](docs/benchmarks/2026-09-14-vector-length-audit.md).
 
 ## Acceptance evidence
 
@@ -76,5 +87,4 @@ README examples compile as doctests. The final CI gate passed 191 tests with
   investigation above is complete. The user declined original-vector reranking
   because of its storage/read tradeoff; compressed-only search and budget 200
   remain the chosen behavior. The prototype is retained as experiment evidence.
-- No subsequent checkpoint is defined in the approved plan. Direction for the
-  next milestone is awaiting user input; no additional feature scope is assumed.
+- The separately authorized vector-length audit above is the next checkpoint.

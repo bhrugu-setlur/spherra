@@ -28,6 +28,7 @@ use spherra_testkit::results::{
 
 mod index_quality;
 mod local_index;
+mod norm_audit;
 mod original_rerank;
 
 const LAYOUT_TILED_SOA_32: &str = "tiled-soa-32";
@@ -62,6 +63,7 @@ fn run(arguments: &[String]) -> Result<(), BenchError> {
         "index-diagnose" => index_quality::diagnose(&options),
         "dataset-oracle" => index_quality::dataset_oracle(&options),
         "original-rerank" => original_rerank::run(&options),
+        "norm-audit" => norm_audit::run(&options),
         other => Err(BenchError::UnknownSubcommand(other.to_owned())),
     }
 }
@@ -706,7 +708,7 @@ impl fmt::Display for BenchError {
             Self::MissingSubcommand => {
                 write!(
                     formatter,
-                    "expected a subcommand: codec-format, certify, prune-rate, oracle-reference, index, index-diagnose, dataset-oracle, latency, or build-memory"
+                    "expected a subcommand: codec-format, certify, prune-rate, oracle-reference, index, index-diagnose, dataset-oracle, original-rerank, norm-audit, latency, or build-memory"
                 )
             }
             Self::UnknownSubcommand(name) => write!(formatter, "unknown subcommand {name}"),

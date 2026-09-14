@@ -1,0 +1,332 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "git_commit",
+    "dirty_worktree",
+    "timestamp",
+    "machine",
+    "command",
+    "input",
+    "policy",
+    "counts",
+    "statistics",
+    "maximum_relative_fp16_rounding_error",
+    "first_invalid",
+    "warnings",
+    "baseline",
+    "gate_passed",
+    "elapsed_seconds"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        1
+      ]
+    },
+    "kind": {
+      "enum": [
+        "norm-audit"
+      ]
+    },
+    "git_commit": {
+      "type": "string"
+    },
+    "dirty_worktree": {
+      "type": "boolean"
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "architecture",
+        "cpu",
+        "physical_memory_bytes",
+        "rustc",
+        "cargo_profile"
+      ],
+      "properties": {
+        "os": {
+          "type": "string"
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "physical_memory_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rustc": {
+          "type": "string"
+        },
+        "cargo_profile": {
+          "type": "string"
+        }
+      }
+    },
+    "command": {
+      "type": "string"
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "rows",
+        "dimension",
+        "byte_len",
+        "blake3"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "dimension": {
+          "enum": [
+            768
+          ]
+        },
+        "byte_len": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blake3": {
+          "type": "string"
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expect_unit",
+        "unit_tolerance",
+        "max_outside_fraction",
+        "near_zero",
+        "shift_factor",
+        "fail_on_warning"
+      ],
+      "properties": {
+        "expect_unit": {
+          "type": "boolean"
+        },
+        "unit_tolerance": {
+          "type": "number"
+        },
+        "max_outside_fraction": {
+          "type": "number"
+        },
+        "near_zero": {
+          "type": "number"
+        },
+        "shift_factor": {
+          "type": "number"
+        },
+        "fail_on_warning": {
+          "type": "boolean"
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "finite_rows",
+        "accepted_rows",
+        "invalid_rows",
+        "non_finite_rows",
+        "norm_below_minimum",
+        "norm_above_fp16_maximum",
+        "positive_fp16_underflow",
+        "near_unit_rows",
+        "near_zero_rows"
+      ],
+      "properties": {
+        "finite_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accepted_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "invalid_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "non_finite_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "norm_below_minimum": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "norm_above_fp16_maximum": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "positive_fp16_underflow": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "near_unit_rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "near_zero_rows": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "statistics": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "minimum",
+            "median",
+            "p95",
+            "p99",
+            "maximum",
+            "near_unit_fraction"
+          ],
+          "properties": {
+            "minimum": {
+              "type": "number"
+            },
+            "median": {
+              "type": "number"
+            },
+            "p95": {
+              "type": "number"
+            },
+            "p99": {
+              "type": "number"
+            },
+            "maximum": {
+              "type": "number"
+            },
+            "near_unit_fraction": {
+              "type": "number"
+            }
+          }
+        }
+      ]
+    },
+    "maximum_relative_fp16_rounding_error": {
+      "type": "number"
+    },
+    "first_invalid": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "row",
+          "reason"
+        ],
+        "properties": {
+          "row": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reason": {
+            "enum": [
+              "non_finite_component",
+              "norm_above_fp16_maximum",
+              "norm_below_minimum"
+            ]
+          }
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "unit_length_policy_exceeded",
+          "near_zero_inputs",
+          "fp16_magnitude_underflow",
+          "median_scale_shift",
+          "p95_scale_shift"
+        ]
+      }
+    },
+    "baseline": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "report_blake3",
+            "input_blake3",
+            "median_ratio",
+            "p95_ratio"
+          ],
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "report_blake3": {
+              "type": "string"
+            },
+            "input_blake3": {
+              "type": "string"
+            },
+            "median_ratio": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "p95_ratio": {
+              "oneOf": [
+                {
+                  "type": "null"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "gate_passed": {
+      "type": "boolean"
+    },
+    "elapsed_seconds": {
+      "type": "number"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pre-rounding vector length input audit"
+}
