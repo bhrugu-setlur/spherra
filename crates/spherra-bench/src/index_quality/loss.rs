@@ -11,6 +11,9 @@ struct Candidate {
     floating: f64,
     // Experiment only: `floating` divided by the reconstruction length |p + e|.
     renormalized: f64,
+    // Experiment only: option 2 simulations, see `stored_corrections`.
+    stored: [f64; 3],
+    alignment: f64,
     truth: f64,
 }
 fn overlap(rows: impl Iterator<Item = usize>, exact: &[Neighbor]) -> u64 {
@@ -36,6 +39,40 @@ pub(crate) fn reconstruction_length(p: &[f32; 768], e: &[f32; 768]) -> f64 {
         })
         .sum::<f64>()
         .sqrt()
+}
+/// Floor of the simulated one-byte alignment-ratio code.
+const U8_ALIGNMENT_FLOOR: f64 = 0.5;
+/// Nearest FP16 value for a positive normal-range input (1024 steps per power of two).
+fn nearest_half(x: f64) -> f64 {
+    let step = 2.0_f64.powi(x.log2().floor() as i32 - 10);
+    (x / step).round() * step
+}
+/// Option 2 simulation. `alignment` is dot(T(normalize(original)), p + e), which
+/// only the builder knows. Returns the score divided by: the exact alignment;
+/// the alignment stored as FP16 (2 bytes); and |p + e| times a one-byte code of
+/// alignment / |p + e| over [0.5, 1] (1 byte). Also returns that ratio.
+pub(crate) fn stored_corrections(
+    score: f64,
+    original: &[f32; 768],
+    p: &[f32; 768],
+    e: &[f32; 768],
+    length: f64,
+) -> ([f64; 3], f64) {
+    let alignment = (0..768)
+        .map(|c| f64::from(original[c]) * (f64::from(p[c]) + f64::from(e[c])))
+        .sum::<f64>();
+    let ratio = alignment / length;
+    let span = 1.0 - U8_ALIGNMENT_FLOOR;
+    let code = ((ratio.clamp(U8_ALIGNMENT_FLOOR, 1.0) - U8_ALIGNMENT_FLOOR) / span * 255.0).round();
+    let byte = (U8_ALIGNMENT_FLOOR + code / 255.0 * span) * length;
+    (
+        [
+            score / alignment,
+            score / nearest_half(alignment),
+            score / byte,
+        ],
+        ratio,
+    )
 }
 fn require(condition: bool, message: &str) -> Result<(), BenchError> {
     if condition {
@@ -105,7 +142,18 @@ fn analyze(
         let floating = (0..768)
             .map(|c| f64::from(query.transformed()[c]) * (f64::from(p[c]) + f64::from(e[c])))
             .sum::<f64>();
-        let renormalized = floating / reconstruction_length(&p, &e);
+        let length = reconstruction_length(&p, &e);
+        let renormalized = floating / length;
+        let original = scorer
+            .prepare_query(
+                &reference.plan,
+                &rows[row],
+                &reference.table,
+                &reference.book,
+            )
+            .map_err(BenchError::harness)?;
+        let (stored, alignment) =
+            stored_corrections(floating, original.transformed(), &p, &e, length);
         let truth = dot_f64(
             &normalized,
             &normalize_fp64(&rows[row]).map_err(BenchError::harness)?,
@@ -117,6 +165,8 @@ fn analyze(
             raw: refined,
             floating,
             renormalized,
+            stored,
+            alignment,
             truth,
         });
     }
@@ -144,6 +194,17 @@ fn analyze(
                 .total_cmp(&a.renormalized)
                 .then_with(|| a.row.cmp(&b.row))
         });
+        let stored_matches = (0..3)
+            .map(|i| {
+                let mut order = refined.clone();
+                order.sort_unstable_by(|a, b| {
+                    b.stored[i]
+                        .total_cmp(&a.stored[i])
+                        .then_with(|| a.row.cmp(&b.row))
+                });
+                overlap(order.iter().take(10).map(|c| c.row), exact)
+            })
+            .collect::<Vec<_>>();
         let result = index
             .search(
                 raw,
@@ -198,7 +259,7 @@ fn analyze(
             let (lower,upper)=h.interval();
             json!({"row":c.row,"raw":c.raw,"public_raw":raw_score(h.score()).unwrap(),"truth":c.truth,"floating":c.floating,"lower":lower,"upper":upper})
         }).collect::<Vec<_>>();
-        reports.push(json!({"budget":budget,"requested_budget":requested,"candidate_count":pool.len(),"candidate_matches":covered,"delivered_matches":delivered,"exact_rerank_matches":exact_matches,"floating_matches":overlap(floating.iter().take(10).map(|c|c.row),exact),"renormalized_matches":overlap(renormalized.iter().take(10).map(|c|c.row),exact),"floating_top10_differences":floating.iter().take(10).zip(refined.iter()).filter(|(a,b)|a.row!=b.row).count(),"maximum_fixed_point_error":pool.iter().map(|c|(c.raw as f64/(1_u64<<24) as f64-c.floating).abs()).fold(0.0_f64,f64::max),"selection_losses":10-covered,"ranking_losses":covered-delivered,"neighbors":neighbors,"hits":hits}));
+        reports.push(json!({"budget":budget,"requested_budget":requested,"candidate_count":pool.len(),"candidate_matches":covered,"delivered_matches":delivered,"exact_rerank_matches":exact_matches,"floating_matches":overlap(floating.iter().take(10).map(|c|c.row),exact),"renormalized_matches":overlap(renormalized.iter().take(10).map(|c|c.row),exact),"stored_exact_matches":stored_matches[0],"stored_fp16_matches":stored_matches[1],"stored_u8_matches":stored_matches[2],"minimum_alignment":pool.iter().map(|c|c.alignment).fold(f64::INFINITY,f64::min),"floating_top10_differences":floating.iter().take(10).zip(refined.iter()).filter(|(a,b)|a.row!=b.row).count(),"maximum_fixed_point_error":pool.iter().map(|c|(c.raw as f64/(1_u64<<24) as f64-c.floating).abs()).fold(0.0_f64,f64::max),"selection_losses":10-covered,"ranking_losses":covered-delivered,"neighbors":neighbors,"hits":hits}));
     }
     Ok((json!({"query":ordinal,"budgets":reports}), trace))
 }
@@ -343,7 +404,7 @@ pub(crate) fn run(o: &Options) -> Result<(), BenchError> {
     let summaries=(0..budgets.len()).map(|i|{
         let sum=|key:&str|query_results.iter().map(|q|q["budgets"][i][key].as_u64().unwrap()).sum::<u64>();
         let total=(queries.len()*10) as f64;
-        json!({"budget":budgets[i].min(rows.len()),"candidate_recall_at_10":sum("candidate_matches") as f64/total,"recall_at_10":sum("delivered_matches") as f64/total,"floating_recall_at_10":sum("floating_matches") as f64/total,"renormalized_recall_at_10":sum("renormalized_matches") as f64/total,"selection_losses":sum("selection_losses"),"ranking_losses":sum("ranking_losses"),"floating_top10_differences":sum("floating_top10_differences")})
+        json!({"budget":budgets[i].min(rows.len()),"candidate_recall_at_10":sum("candidate_matches") as f64/total,"recall_at_10":sum("delivered_matches") as f64/total,"floating_recall_at_10":sum("floating_matches") as f64/total,"renormalized_recall_at_10":sum("renormalized_matches") as f64/total,"stored_exact_recall_at_10":sum("stored_exact_matches") as f64/total,"stored_fp16_recall_at_10":sum("stored_fp16_matches") as f64/total,"stored_u8_recall_at_10":sum("stored_u8_matches") as f64/total,"minimum_alignment":query_results.iter().map(|q|q["budgets"][i]["minimum_alignment"].as_f64().unwrap()).fold(f64::INFINITY,f64::min),"selection_losses":sum("selection_losses"),"ranking_losses":sum("ranking_losses"),"floating_top10_differences":sum("floating_top10_differences")})
     }).collect::<Vec<_>>();
     let mut value = json!({"schema_version":1,"kind":"index-diagnose","timestamp":timestamp_rfc3339_utc(),"git_commit":revision.commit,"dirty_worktree":revision.dirty,"machine":MachineProfile::capture(),"command":format!("spherra-bench index-diagnose {}",o.0.iter().map(|(k,v)|format!("--{k} {v}")).collect::<Vec<_>>().join(" ")),"source":source_value,"corpus_hash":corpus_hash,"query_hash":hash_rows(&queries),"seed":seed,"vector_count":rows.len(),"query_count":queries.len(),"training_rows":training,"validation_rows":(training/4).min(4096),"model":model_metadata(dir)?,"index_current_blake3":hash_file(&dir.join("CURRENT"))?,"build_source_commit":build["git_commit"],"build_dirty_worktree":build["dirty_worktree"],"oracle_reference":oracle,"trace":{"path":trace_path,"blake3":hash_file(&trace_path)?,"bytes":fs::metadata(&trace_path).map_err(BenchError::harness)?.len()},"checks_passed":true,"summaries":summaries,"query_results":query_results,"elapsed_seconds":start.elapsed().as_secs_f64()});
     finish_revision(&mut value);
@@ -353,4 +414,24 @@ pub(crate) fn run(o: &Options) -> Result<(), BenchError> {
     .map_err(BenchError::serialize)?;
     validate_against_schema(&schema, &value).map_err(BenchError::harness)?;
     write_output(output, &value)
+}
+
+#[cfg(test)]
+mod correction_tests {
+    use super::*;
+    #[test]
+    fn stored_corrections_divide_by_alignment_and_its_encodings() {
+        // Reconstruction 0.8 * u + 0.6 * w: length 1, alignment 0.8, ratio 0.8.
+        let (mut u, mut p, e) = ([0.0_f32; 768], [0.0_f32; 768], [0.0_f32; 768]);
+        u[0] = 1.0;
+        p[0] = 0.8;
+        p[1] = 0.6;
+        let length = reconstruction_length(&p, &e);
+        let (scores, ratio) = stored_corrections(0.4, &u, &p, &e, length);
+        assert!((length - 1.0).abs() < 1e-6 && (ratio - 0.8).abs() < 1e-6);
+        assert!((scores[0] - 0.5).abs() < 1e-6);
+        assert!((scores[1] - 0.5).abs() < 1e-3);
+        assert!((scores[2] - 0.5).abs() < 2e-3);
+        assert_eq!(nearest_half(0.8), (0.8 * 2048.0_f64).round() / 2048.0);
+    }
 }

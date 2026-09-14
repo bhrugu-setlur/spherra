@@ -133,6 +133,18 @@
     "renormalized_dot_recall_at_k": {
       "type": "number"
     },
+    "stored_exact_dot_recall_at_k": {
+      "type": "number"
+    },
+    "stored_fp16_dot_recall_at_k": {
+      "type": "number"
+    },
+    "stored_u8_dot_recall_at_k": {
+      "type": "number"
+    },
+    "minimum_alignment": {
+      "type": "number"
+    },
     "budget_sweep": {
       "type": "array",
       "items": {

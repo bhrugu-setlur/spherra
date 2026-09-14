@@ -1,6 +1,6 @@
 //! Hash-pinned dot-product retrieval qualification over external vectors.
 use super::{BenchError, Options, write_output};
-use crate::index_quality::{Reference, reconstruction_length};
+use crate::index_quality::{Reference, reconstruction_length, stored_corrections};
 use crate::local_index::{allowed, number};
 use serde_json::json;
 use spherra::{CreateOptions, Index, IndexBuilder, SearchOptions, Vector};
@@ -85,16 +85,19 @@ fn exact_rows(q: &Vector, indexed: &[Vector], k: usize) -> Vec<u64> {
     best.truncate(k);
     best.into_iter().map(|x| x.1 as u64).collect()
 }
-/// Experiment only: rescore the public dot candidate pool by
-/// dot(T(q), p + e) / |p + e| times the stored length, then return its top-k rows.
-/// The common query norm does not affect order.
-fn renormalized_rows(
+/// Experiment only: rescore the public dot candidate pool, times the stored
+/// length. Option 1 divides dot(T(q), p + e) by |p + e|; the option 2
+/// simulations divide by the build-time alignment (exact, FP16, one byte).
+/// Returns top-k rows for [option 1, exact, FP16, one byte] and the minimum
+/// alignment ratio. The common query norm does not affect order.
+fn corrected_rows(
     index: &Index,
     reference: &Reference,
+    indexed: &[Vector],
     q: &Vector,
     k: usize,
     budget: usize,
-) -> Result<Vec<u64>, BenchError> {
+) -> Result<([Vec<u64>; 4], f64), BenchError> {
     let pool = index
         .search_dot_product(
             q,
@@ -107,7 +110,9 @@ fn renormalized_rows(
     let prepared = FixedPointScorer::new()
         .prepare_query(&reference.plan, q, &reference.table, &reference.book)
         .map_err(BenchError::harness)?;
-    let mut scored = Vec::with_capacity(pool.hits().len());
+    let scorer = FixedPointScorer::new();
+    let mut scored: [Vec<(f64, usize)>; 4] = Default::default();
+    let mut minimum = f64::INFINITY;
     for hit in pool.hits() {
         let row = hit.row().get() as usize;
         let segment =
@@ -123,13 +128,28 @@ fn renormalized_rows(
         let dot = (0..768)
             .map(|c| f64::from(prepared.transformed()[c]) * (f64::from(p[c]) + f64::from(e[c])))
             .sum::<f64>();
-        scored.push((
-            dot / reconstruction_length(&p, &e) * f64::from(hit.stored_magnitude()),
-            row,
-        ));
+        let length = reconstruction_length(&p, &e);
+        let magnitude = f64::from(hit.stored_magnitude());
+        let original = scorer
+            .prepare_query(
+                &reference.plan,
+                &indexed[row],
+                &reference.table,
+                &reference.book,
+            )
+            .map_err(BenchError::harness)?;
+        let (stored, ratio) = stored_corrections(dot, original.transformed(), &p, &e, length);
+        minimum = minimum.min(ratio);
+        scored[0].push((dot / length * magnitude, row));
+        for (i, score) in stored.into_iter().enumerate() {
+            scored[i + 1].push((score * magnitude, row));
+        }
     }
-    scored.sort_unstable_by(better);
-    Ok(scored.into_iter().take(k).map(|x| x.1 as u64).collect())
+    let rows = scored.map(|mut s| {
+        s.sort_unstable_by(better);
+        s.into_iter().take(k).map(|x| x.1 as u64).collect()
+    });
+    Ok((rows, minimum))
 }
 fn sweep_budgets(o: &Options, k: usize) -> Result<Vec<usize>, BenchError> {
     let Some(list) = o.get("sweep-budgets") else {
@@ -229,7 +249,8 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
     let (mut dot_found, mut cosine_found, mut violations) = (0_usize, 0_usize, 0_usize);
     let mut sweep_found = vec![0_usize; sweep.len()];
     let reference = Reference::open(dir, seed, &index)?;
-    let mut renormalized_found = 0_usize;
+    let mut corrected_found = [0_usize; 4];
+    let mut minimum_alignment = f64::INFINITY;
     for (ordinal, q) in queries.iter().enumerate() {
         let exact_rows = exact_rows(q, &indexed, k.min(n));
         let start = Instant::now();
@@ -294,10 +315,11 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
                 .filter(|h| exact_rows.contains(&h.row().get()))
                 .count();
         }
-        renormalized_found += renormalized_rows(&index, &reference, q, k, budget)?
-            .iter()
-            .filter(|r| exact_rows.contains(r))
-            .count();
+        let (corrected, ratio) = corrected_rows(&index, &reference, &indexed, q, k, budget)?;
+        minimum_alignment = minimum_alignment.min(ratio);
+        for (rows, total) in corrected.iter().zip(&mut corrected_found) {
+            *total += rows.iter().filter(|r| exact_rows.contains(r)).count();
+        }
         dot_found += found;
         cosine_found += cosine_matches;
         records.push(json!({"query":ordinal,"exact_rows":exact_rows,"dot_hits":hits,"cosine_rows":cosine_rows,"dot_matches":found,"cosine_matches":cosine_matches,"dot_ms":dot_ms,"cosine_ms":cosine_ms}));
@@ -313,7 +335,7 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
         "indexed_blake3":o.require("indexed-blake3")?,"training_blake3":o.require("training-blake3")?,"queries_blake3":o.require("queries-blake3")?,
         "index_current_blake3":current,"rows":n,"training_rows":training_count,"query_count":query_count,"seed":seed,"k":k,"candidate_budget":budget.min(n),
         "build_seconds":build_seconds,"dot_recall_at_k":dot_found as f64/checked,
-        "cosine_recall_against_dot_at_k":cosine_found as f64/checked,"renormalized_dot_recall_at_k":renormalized_found as f64/checked,"enclosure_failures":violations,"queries":records});
+        "cosine_recall_against_dot_at_k":cosine_found as f64/checked,"renormalized_dot_recall_at_k":corrected_found[0] as f64/checked,"stored_exact_dot_recall_at_k":corrected_found[1] as f64/checked,"stored_fp16_dot_recall_at_k":corrected_found[2] as f64/checked,"stored_u8_dot_recall_at_k":corrected_found[3] as f64/checked,"minimum_alignment":minimum_alignment,"enclosure_failures":violations,"queries":records});
     if !sweep.is_empty() {
         value["budget_sweep"] = sweep
             .iter()

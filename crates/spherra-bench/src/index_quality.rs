@@ -4,8 +4,8 @@
 mod dataset;
 mod loss;
 pub(super) use dataset::oracle_reference as dataset_oracle;
-pub(crate) use loss::reconstruction_length;
 pub(super) use loss::run as diagnose;
+pub(crate) use loss::{reconstruction_length, stored_corrections};
 
 use crate::local_index::{
     allowed, build_index, finish_revision, hash_file, hash_rows, model_metadata, number,

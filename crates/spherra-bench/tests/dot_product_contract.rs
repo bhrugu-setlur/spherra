@@ -92,9 +92,21 @@ fn dot_product_report_is_complete_reproducible_and_rejects_bad_inputs() {
                 .any(|x| x == field)
         );
     }
-    // The one optional field without a sweep is the renormalization experiment.
-    assert!(value["renormalized_dot_recall_at_k"].is_number());
-    assert_eq!(value.as_object().unwrap().len(), required.len() + 1);
+    // Optional fields without a sweep are the correction experiments.
+    let experiments = [
+        "renormalized_dot_recall_at_k",
+        "stored_exact_dot_recall_at_k",
+        "stored_fp16_dot_recall_at_k",
+        "stored_u8_dot_recall_at_k",
+        "minimum_alignment",
+    ];
+    for field in experiments {
+        assert!(value[field].is_number(), "{field}");
+    }
+    assert_eq!(
+        value.as_object().unwrap().len(),
+        required.len() + experiments.len()
+    );
     assert_eq!(value["enclosure_failures"], 0);
     assert_eq!(value["dot_recall_at_k"], 1.0);
     assert_eq!(value["queries"].as_array().unwrap().len(), 4);

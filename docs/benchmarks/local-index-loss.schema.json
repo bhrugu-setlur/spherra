@@ -602,6 +602,18 @@
           "renormalized_recall_at_10": {
             "type": "number"
           },
+          "stored_exact_recall_at_10": {
+            "type": "number"
+          },
+          "stored_fp16_recall_at_10": {
+            "type": "number"
+          },
+          "stored_u8_recall_at_10": {
+            "type": "number"
+          },
+          "minimum_alignment": {
+            "type": "number"
+          },
           "selection_losses": {
             "type": "integer",
             "minimum": 0
@@ -685,6 +697,21 @@
                 "renormalized_matches": {
                   "type": "integer",
                   "minimum": 0
+                },
+                "stored_exact_matches": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "stored_fp16_matches": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "stored_u8_matches": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "minimum_alignment": {
+                  "type": "number"
                 },
                 "floating_top10_differences": {
                   "type": "integer",
