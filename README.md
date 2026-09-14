@@ -217,12 +217,3 @@ builder.commit()?;
 | `corpora/` | Hash-pinned corpus descriptors; large vector payloads stay outside Git |
 | `fuzz/` | Nightly-only checked decoder targets |
 | `scripts/` and `tools/` | CI, dependency policy, corpus builders, audits, and result summaries |
-
-## Where the project is now
-
-Spherra's active product direction is the embedded local library. The earlier
-PolarLSM/PolarRouter distributed database design is retained as historical
-context, but it is not implemented or part of the current contract. The next
-useful measurements are cold-cache behavior under memory pressure and recall on
-larger labeled sets at 10M rows. Additional distance metrics are a separate
-future decision for workloads whose vector magnitudes carry meaning.
