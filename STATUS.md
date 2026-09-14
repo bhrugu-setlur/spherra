@@ -21,7 +21,8 @@ these measurements establish the next change. Generated 1M diagnostics prove
 0.9095/0.9135/0.9190/0.9145. All losses occur in compressed reranking.
 Real-query preparation and an original-vector reranking cost prototype are in
 progress; the model-selection rule is preregistered in the experiment note.
-The real snapshot is complete and hash-verified. The new measurement tooling
+The real snapshot is complete and hash-verified; both exact-query references
+are pinned before index measurement. The new measurement tooling
 passes 197 CI tests (12 skipped), workspace tests and strict clippy.
 
 ## Acceptance evidence

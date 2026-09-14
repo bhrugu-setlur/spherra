@@ -106,3 +106,8 @@ skipped large qualifications, workspace tests, strict all-target clippy, and
 three Python sampling tests. New tests reject wrong query oracles and corrupted
 vector hashes, validate reusable training identity, compare original reranking
 with exhaustive truth and reject truncated original files.
+
+Both real-query exact top100 references are now pinned under
+`docs/benchmarks/results/2026-09-13-msmarco-{tuning,test}-oracle.json`,
+generated on clean `2f8fcb8` before any real index measurement. No final-query
+model result has been run or inspected.
