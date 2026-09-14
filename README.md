@@ -13,6 +13,16 @@ See [STATUS.md](STATUS.md) for delivery and verification status.
 
 ## Measured results
 
+With reconstruction-length correction, recall@10 is **0.9255** on generated
+1M cosine, **0.9770** on real MS MARCO 100k queries and **0.9234** on native
+DPR 1M dot search. Latest 1M median/p99 latency is **72.31/113.56 ms** for cosine
+and **73.01/108.24 ms** for dot; both pass their gates. No new 10M qualification
+is claimed. [Current test data and limitations](docs/benchmarks/2026-09-14-reconstruction-length-results.md).
+
+### Original delivery measurements
+
+The evidence below predates reconstruction-length correction.
+
 Generated correlated 768-dimensional data, six workers, k=10, candidate budget
 200, 50 warmups followed by 1,000 timed public searches, release build on AC:
 

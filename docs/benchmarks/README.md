@@ -13,7 +13,8 @@ consolidates September latency, memory, recall, correctness and recovery
 evidence with source revisions, raw data links and limitations.
 
 The [reconstruction-length amendment](../design/2026-09-14-reconstruction-length-amendment.md)
-adopts correction in both serving methods. Quality, loss and dot reports now
+adopts correction in both serving methods. [Production test data](2026-09-14-reconstruction-length-results.md)
+records the accuracy gains, unchanged bounds and measured latency. Quality, loss and dot reports now
 use version 2. `recall_at_10` / `dot_recall_at_k` measure corrected production
 ranking; `renormalized_*` remains the experiment with an FP64 numerator.
 Quality equality checks compare public corrected scores with independent scalar

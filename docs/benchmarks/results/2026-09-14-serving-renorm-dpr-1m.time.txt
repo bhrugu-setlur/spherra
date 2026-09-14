@@ -1,0 +1,38 @@
+query: 50/1000 complete
+query: 100/1000 complete
+query: 150/1000 complete
+query: 200/1000 complete
+query: 250/1000 complete
+query: 300/1000 complete
+query: 350/1000 complete
+query: 400/1000 complete
+query: 450/1000 complete
+query: 500/1000 complete
+query: 550/1000 complete
+query: 600/1000 complete
+query: 650/1000 complete
+query: 700/1000 complete
+query: 750/1000 complete
+query: 800/1000 complete
+query: 850/1000 complete
+query: 900/1000 complete
+query: 950/1000 complete
+query: 1000/1000 complete
+      323.44 real       911.65 user        14.27 sys
+          8313159680  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              564464  page reclaims
+                  36  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+               70224  voluntary context switches
+             2009902  involuntary context switches
+      15837405040993  instructions retired
+       2683340920366  cycles elapsed
+          8312264920  peak memory footprint

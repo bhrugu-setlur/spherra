@@ -70,7 +70,7 @@ Timing commit: `84065a9`; quality commit: `9a48a77`. Both used clean release
 builds. [Full protocol, raw timing samples and every quality hit](docs/benchmarks/README.md).
 The 1M oracle artifact was pinned at `2ad9a34`, before index measurement.
 
-The latest full quality gate passed 213 tests with 12 explicitly skipped large
+The latest full quality gate passed 218 tests with 12 explicitly skipped large
 qualifications. Workspace tests and strict all-target clippy pass. The release
 kernel qualification passed on archived SciFact and generated 100k. Earlier
 builder, recovery and decoder-fuzz qualifications remain recorded in the task
@@ -146,15 +146,23 @@ reconstructions align with their originals to at least 0.994; it is not worth a
 format change.
 [Results](docs/benchmarks/2026-09-14-renormalization-experiment.md).
 
-## Current checkpoint: reconstruction-length correction
+## Completed checkpoint: reconstruction-length correction
 
 The user approved Option 1 in production. Both cosine and dot finalists now use
 Q24 scores divided by the reconstructed compressed length; the primary scan,
 budget and index bytes are unchanged. Raw-score truth certificates are retained.
-Independent scalar and benchmark checks cover the corrected ranking. CI passes
-218 tests with 12 skipped; strict clippy and the release full-corpus scalar
-qualification pass. The workspace gate also passes. Clean production cosine recall matches the
-experiment: generated 1M 0.9255, MS MARCO test 0.9770. DPR and latency
-measurements remain in progress. The dot benchmark now supports explicitly
-hash-pinned exact-reference/index reuse to avoid repeating its expensive oracle.
+CI passes 218 tests with 12 skipped; workspace tests, strict clippy and the
+release full-corpus scalar qualification pass.
+
+Clean serving recall@10 is 0.9255 generated 1M / 0.9770 MS MARCO test / 0.9234
+DPR 1M dot, versus 0.9095 / 0.9705 / 0.9024 previously. All 14,000 recorded
+final hits enclose truth; candidate/score/bound audits pass. DPR reuses explicitly
+hash-pinned exact answers and the existing index; the result is one neighbor
+below the experiment's FP64-numerator variant out of 10,000. The production
+numerator remains Q24. Existing indexes need no rebuild or extra stored data.
+
+1M cosine median/p99 is 72.313/113.564 ms; dot is 73.009/108.237 ms. Both pass.
+Medians are higher than previous separate runs; isolated correction overhead is
+unmeasured. No new 10M recall or full latency claim is made.
+[Technical note and raw evidence](docs/benchmarks/2026-09-14-reconstruction-length-results.md).
 [Contract](docs/design/2026-09-14-reconstruction-length-amendment.md).

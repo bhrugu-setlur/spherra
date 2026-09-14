@@ -1,0 +1,52 @@
+diagnosed6/200 queries
+diagnosed12/200 queries
+diagnosed18/200 queries
+diagnosed24/200 queries
+diagnosed30/200 queries
+diagnosed36/200 queries
+diagnosed42/200 queries
+diagnosed48/200 queries
+diagnosed54/200 queries
+diagnosed60/200 queries
+diagnosed66/200 queries
+diagnosed72/200 queries
+diagnosed78/200 queries
+diagnosed84/200 queries
+diagnosed90/200 queries
+diagnosed96/200 queries
+diagnosed102/200 queries
+diagnosed108/200 queries
+diagnosed114/200 queries
+diagnosed120/200 queries
+diagnosed126/200 queries
+diagnosed132/200 queries
+diagnosed138/200 queries
+diagnosed144/200 queries
+diagnosed150/200 queries
+diagnosed156/200 queries
+diagnosed162/200 queries
+diagnosed168/200 queries
+diagnosed174/200 queries
+diagnosed180/200 queries
+diagnosed186/200 queries
+diagnosed192/200 queries
+diagnosed198/200 queries
+diagnosed200/200 queries
+       13.46 real        56.90 user         0.79 sys
+           467189760  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+               38834  page reclaims
+                  32  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                  52  voluntary context switches
+               13474  involuntary context switches
+        641309637642  instructions retired
+        130528353746  cycles elapsed
+           461996800  peak memory footprint
