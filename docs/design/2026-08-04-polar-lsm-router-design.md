@@ -1,5 +1,13 @@
 # Spherra: PolarLSM + PolarRouter approved production design
 
+> **Superseded for current implementation (2026-09-13).** This document records
+> the stopped distributed-database direction. The approved
+> [local index design](2026-09-13-local-index-design.md) and
+> [implementation specification](2026-09-13-local-index-implementation-spec.md)
+> govern current work. Historical codec/certificate material remains reference;
+> residuals remain candidate-only disk/page-cache data. Do not resume the
+> distributed milestones from this document.
+
 Status: **R7 approved; Spherra branding amendment applied on 2026-08-04 without behavioral changes**
 Revision: R7 plus naming amendment (frozen architecture; benchmark-selected constants remain provisional)
 Target: 768-dimensional RAG and semantic-search embeddings

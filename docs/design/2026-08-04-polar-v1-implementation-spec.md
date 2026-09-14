@@ -1,5 +1,12 @@
 # Spherra v1 implementation specification
 
+> **Superseded for current implementation (2026-09-13).** This specification
+> records the stopped distributed-database direction. Follow the approved
+> [local index design](2026-09-13-local-index-design.md) and
+> [local implementation specification](2026-09-13-local-index-implementation-spec.md).
+> Its completed codec/format work remains historical evidence; its later
+> database milestones are not the current plan.
+
 Status: **I4 technical specification approved; Spherra naming amendment applied on 2026-08-04**
 Revision: I4 plus naming amendment
 Date: 2026-08-04
