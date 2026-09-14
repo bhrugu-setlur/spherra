@@ -74,38 +74,157 @@ to the first slot, the third to the second, and the first to the third:
 
 $$(0.963,\ -0.241,\ -0.120) \rightarrow (-0.241,\ -0.120,\ 0.963)$$
 
-Steps 2 and 3 do not spread anything out yet. They add randomness, so that the
-mixing in Step 4 never lines up badly with some unlucky input vector.
+Steps 2 and 3 do not spread anything out by themselves. Step 4 does the
+spreading, and Step 4b explains why it needs the random signs and shuffle first.
 
 ### Step 4: Mix the coordinates together
 
-Now every coordinate is blended with every other one. In this 3D example, the
-mix is:
+Mixing means replacing every coordinate with a signed blend of all the
+coordinates. Spherra mixes with a **Hadamard matrix**. Hadamard matrices only
+exist in sizes 1, 2 and multiples of 4, so there is none for our 3D example.
+The 3D example uses the closest 3D equivalent instead:
 
-> add up the three coordinates, take 2/3 of that total, and subtract it from
-> each coordinate.
+$$y = \left(I - \tfrac{2}{3}J\right)v \quad\text{where } J \text{ is the all-ones matrix}$$
 
-The total is `−0.241 − 0.120 + 0.963 = 0.602`, and 2/3 of that is `0.401`:
+In words: add up the three coordinates, take 2/3 of the total, and subtract it
+from each coordinate. The total is `−0.241 − 0.120 + 0.963 = 0.602`, and 2/3 of
+that is `0.401`:
 
 $$y = (-0.241 - 0.401,\ \ -0.120 - 0.401,\ \ 0.963 - 0.401) \approx (-0.642,\ -0.522,\ 0.562)$$
 
 (Numbers in this README are rounded to 3 decimals, so the last digit can be off
 by one.)
 
-Look at what happened to the sizes of the coordinates:
-
 | | Coordinate 1 | Coordinate 2 | Coordinate 3 |
 |---|---:|---:|---:|
 | Before (`u`) | 0.963 | 0.241 | 0.120 |
 | After (`y`) | 0.642 | 0.522 | 0.562 |
 
-The big coordinate got smaller, the small ones got bigger, and now all three are
-similar. That was the goal.
+Like a Hadamard matrix, $I - \tfrac{2}{3}J$ keeps lengths the same, undoes itself
+when applied twice, and blends every coordinate into every other one. The rest of
+this step explains the real mixer in 4 dimensions, where Hadamard matrices exist.
 
-Spherra uses a **Hadamard transform** for the mix. It follows the same idea
-across 128 coordinates at a time. Spherra runs Steps 2 to 4 twice, with
-different random choices each time. The random choices come from a saved seed,
-so the exact same reshaping can be repeated for every vector and every query.
+#### 4a. The Hadamard matrix
+
+A Hadamard matrix contains only `+1` and `−1`, and any two different rows agree
+in exactly half of their positions. The standard way to build one (Sylvester's
+construction) starts from `[1]` and doubles the size each time:
+
+$$H_1 = \begin{pmatrix}1\end{pmatrix}, \qquad H_{2n} = \begin{pmatrix} H_n & H_n \\ H_n & -H_n \end{pmatrix}$$
+
+$$H_2 = \begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix}, \qquad
+H_4 = \begin{pmatrix} 1 & 1 & 1 & 1 \\ 1 & -1 & 1 & -1 \\ 1 & 1 & -1 & -1 \\ 1 & -1 & -1 & 1 \end{pmatrix}$$
+
+Written directly, the entry in row `i` and column `j` (counting from 0) is
+$(-1)^{\text{popcount}(i \,\&\, j)}$: it is `−1` when `i` and `j` share an odd
+number of 1 bits.
+
+Three facts make it a good mixer:
+
+1. **It keeps lengths.** Two different rows agree in `n/2` positions and
+   disagree in `n/2`, so their dot product is `0`. Each row dotted with itself is
+   `n`. So $H_n H_n^\top = nI$, and the scaled matrix $\tfrac{1}{\sqrt n}H_n$ is a
+   rotation: it changes no lengths and no angles.
+2. **It undoes itself.** $H_n$ is symmetric, so $\tfrac{1}{\sqrt n}H_n$ applied
+   twice gives back the original vector.
+3. **Every output uses every input with equal weight.** Each output coordinate
+   is $\tfrac{1}{\sqrt n}(\pm u_0 \pm u_1 \pm \dots \pm u_{n-1})$. No input
+   coordinate matters more than another.
+
+#### 4b. Why the random signs matter
+
+Fact 3 spreads out a spiky vector perfectly:
+
+$$\tfrac{1}{2}H_4\,(1,\ 0,\ 0,\ 0) = (0.5,\ 0.5,\ 0.5,\ 0.5)$$
+
+But because the matrix undoes itself, it also turns an already even vector into a
+spike:
+
+$$\tfrac{1}{2}H_4\,(0.5,\ 0.5,\ 0.5,\ 0.5) = (1,\ 0,\ 0,\ 0)$$
+
+A fixed mixer always has some inputs it handles badly. The random signs from
+Step 2 fix this. Flip the sign of one coordinate of that even vector, and it
+stays even:
+
+$$\tfrac{1}{2}H_4\,(0.5,\ -0.5,\ 0.5,\ 0.5) = (0.5,\ 0.5,\ -0.5,\ 0.5)$$
+
+Here is why this works for any input. With random signs $s_j = \pm 1$, output
+coordinate `i` is
+
+$$y_i = \frac{1}{\sqrt n}\sum_j H_{ij}\, s_j\, u_j$$
+
+a sum of terms whose signs are random coin flips. Its average is `0`, and its
+average square is $\tfrac{1}{n}\sum_j u_j^2 = \tfrac{1}{n}$, **no matter what
+`u` looks like**. So every output coordinate has the same expected size,
+$1/\sqrt{n}$. Large coordinates also become very unlikely. Hoeffding's
+inequality bounds how far a sum of random-sign terms can stray:
+
+$$P\left(\lvert y_i \rvert > t\right) \le 2\,e^{-n t^2 / 2}$$
+
+With `n = 128`, a coordinate above `0.3` has a probability of at most `0.0063`.
+Before mixing, a single coordinate could be as large as `1`.
+
+#### 4c. Computing it fast: the fast Walsh–Hadamard transform
+
+Multiplying by a 128 × 128 matrix directly takes 16,384 multiplications. The
+**fast Walsh–Hadamard transform** (FWHT) gets the same answer with only
+additions and subtractions. It follows Sylvester's doubling rule:
+
+```text
+for half-width h = 1, 2, 4, …, n/2:
+    for every pair of positions (a, a + h) inside each 2h-wide group:
+        (left, right) ← (left + right, left − right)
+finally multiply everything by 1/√n
+```
+
+Each pass applies $H_2$ to pairs of positions `h` apart. Stacking the passes for
+`h = 1, 2, 4, …` builds exactly $H_n$. Here it is on `u = (0.9, 0.3, 0.3, 0.1)`:
+
+| Pass | Pairs combined | Result |
+|---|---|---|
+| Start | | (0.9, 0.3, 0.3, 0.1) |
+| h = 1 | positions (0,1) and (2,3) | (0.9+0.3, 0.9−0.3, 0.3+0.1, 0.3−0.1) = (1.2, 0.6, 0.4, 0.2) |
+| h = 2 | positions (0,2) and (1,3) | (1.2+0.4, 0.6+0.2, 1.2−0.4, 0.6−0.2) = (1.6, 0.8, 0.8, 0.4) |
+| Scale by 1/√4 | | (0.8, 0.4, 0.4, 0.2) |
+
+For 128 coordinates there are 7 passes of 64 pairs each: 448 add-and-subtract
+steps instead of 16,384 multiplications. The result for this input is only
+slightly more even (largest coordinate 0.9 → 0.8), because no signs were
+flipped. That is 4b's point.
+
+#### 4d. How Spherra puts it together
+
+A 128-coordinate mix is fast, but 768 coordinates need more care. Spherra splits
+them into **6 blocks of 128** and runs the FWHT on each block separately. One
+**round** is:
+
+1. flip each of the 768 signs at random (Step 2),
+2. shuffle all 768 coordinates at random (Step 3),
+3. run the FWHT on each of the 6 blocks (Step 4).
+
+A block can only spread out what is already inside it. The shuffle decides which
+coordinates land in each block, but after one round some blocks can still hold
+much more of the vector than others. So Spherra runs **two rounds** with
+different random signs and shuffles. The second shuffle scatters every block's
+coordinates across all six blocks, and the second mix spreads them out again.
+
+Here is an extreme test: our spiky vector `(4, 1, 0.5)` padded with 765 zeros
+and normalized, sent through two rounds with one random seed. The table shows
+how many coordinates are nonzero and how much of the vector's squared length
+sits in each block:
+
+| | Nonzero coordinates | Share of squared length in blocks 1–6 |
+|---|---:|---|
+| Input | 3 of 768 | 1.00, 0, 0, 0, 0, 0 |
+| After round 1 | 384 of 768 | 0, 0, 0.93, 0.06, 0, 0.01 |
+| After round 2 | 749 of 768 | 0.19, 0.17, 0.17, 0.14, 0.14, 0.18 |
+
+After round 1, one block holds 93% of the vector and half the coordinates are
+still zero. After round 2, every block holds close to its fair 1/6 share. Real
+embeddings are far less spiky than this test.
+
+The random signs and shuffles come from a saved seed, so every stored vector
+and every query gets exactly the same two rounds.
 
 ### Why reshaping is allowed
 
