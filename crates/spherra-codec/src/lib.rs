@@ -3,6 +3,7 @@
 mod certificate;
 mod identity;
 pub mod int4;
+mod kernel;
 mod pq96;
 mod restore;
 mod scorer;
@@ -18,6 +19,7 @@ pub use certificate::{
 };
 pub use identity::CODEC_ID;
 pub use int4::{DirectCode, DirectCodeError, QuantizerTable, RadiusFlags};
+pub use kernel::{KernelError, KernelPath, score_tile_primary};
 pub use pq96::{
     CodecError, Pq96Code, Pq96Codebook, Pq96TrainingDiagnostics, PreparedCandidate, PreparedQuery,
     PrimaryCodes, PrimaryScore, ResidualCodes, ResidualVector, rerank_candidates, scan_primary,

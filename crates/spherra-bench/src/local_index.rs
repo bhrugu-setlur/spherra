@@ -363,7 +363,9 @@ pub(super) fn latency_child(o: &Options) -> Result<(), BenchError> {
     value["k"] = json!(10);
     value["candidate_budget"] = json!(200);
     value["workers"] = json!(6);
-    value["kernel"] = json!("checked-scalar");
+    // Public preparation caps every entry at i64::MAX / 864, so all successfully
+    // prepared benchmark queries satisfy the tile kernel's 768-term proof.
+    value["kernel"] = json!("safe-tile");
     value["cache_state"] = json!("warm-after-explicit-queries");
     value["ac_power"] = json!(on_ac);
     value["build_seconds"] = build["build_seconds"].clone();

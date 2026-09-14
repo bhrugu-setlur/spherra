@@ -276,6 +276,11 @@ pub struct PreparedScorerQuery {
 }
 
 impl PreparedScorerQuery {
+    /// Immutable Q24 lookup entries, indexed by coordinate then four-bit code.
+    pub fn primary_lookup_entries(&self) -> &[[i64; PRIMARY_CODES_PER_COORDINATE]; DIMENSION] {
+        &self.primary_lookup
+    }
+
     pub const fn transformed(&self) -> &[f32; DIMENSION] {
         &self.transformed
     }
@@ -901,3 +906,7 @@ mod tests {
 #[cfg(test)]
 #[path = "restoration_tests.rs"]
 mod restoration_tests;
+
+#[cfg(test)]
+#[path = "kernel_tests.rs"]
+mod kernel_tests;

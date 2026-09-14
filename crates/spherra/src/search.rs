@@ -3,7 +3,9 @@ use crate::{
     builder::validate,
     open::{Data, TILE_BYTES},
 };
-use spherra_codec::{DirectCode, FixedPointScorer, Pq96Code, PreparedScorerQuery};
+#[cfg(test)]
+use spherra_codec::DirectCode;
+use spherra_codec::{FixedPointScorer, Pq96Code, PreparedScorerQuery, score_tile_primary};
 use std::{
     cmp::{Ordering, Reverse},
     collections::BinaryHeap,
@@ -106,7 +108,6 @@ fn scan(
     end: usize,
     budget: usize,
 ) -> Vec<Candidate> {
-    let scorer = FixedPointScorer::new();
     let mut heap = BinaryHeap::new();
     for (segment, s) in data.segments.iter().enumerate() {
         let count = s.tiles.len() / TILE_BYTES;
@@ -116,9 +117,9 @@ fn scan(
             let ordinal = global - s.tile_start;
             let tile = &s.tiles[ordinal * TILE_BYTES..(ordinal + 1) * TILE_BYTES];
             let lanes = (s.entry.row_count as usize - ordinal * 32).min(32);
-            for lane in 0..lanes {
-                let code = decode_lane(tile, lane);
-                let score = scorer.score_primary(query, &code).raw();
+            let mut scores = [0; 32];
+            score_tile_primary(query, tile, lanes, &mut scores).expect("opened tile geometry");
+            for (lane, &score) in scores[..lanes].iter().enumerate() {
                 let local = (ordinal * 32 + lane) as u32;
                 admit(
                     &mut heap,
@@ -135,6 +136,7 @@ fn scan(
     }
     heap.into_iter().map(|c| c.0).collect()
 }
+#[cfg(test)]
 pub(crate) fn decode_lane(tile: &[u8], lane: usize) -> DirectCode {
     let nibbles = std::array::from_fn(|c| (tile[c * 16 + lane / 2] >> ((lane % 2) * 4)) & 15);
     DirectCode::from_nibbles(nibbles).expect("masked four-bit codes")
