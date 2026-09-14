@@ -104,6 +104,46 @@ fn dot_product_report_is_complete_reproducible_and_rejects_bad_inputs() {
     }
     assert!(!run(&ih).status.success());
     assert_eq!(std::fs::read(&output).unwrap(), bytes);
+
+    let sweep = |budgets: &str, name: &str| {
+        Command::new(env!("CARGO_BIN_EXE_spherra-bench"))
+            .arg("dot-product")
+            .arg("--indexed")
+            .arg(&indexed)
+            .args(["--rows", "10", "--indexed-blake3", &ih])
+            .arg("--training")
+            .arg(&training)
+            .args([
+                "--training-rows",
+                &corpus.calibration().len().to_string(),
+                "--training-blake3",
+                &th,
+            ])
+            .arg("--queries")
+            .arg(&queries)
+            .args(["--query-count", "4", "--queries-blake3", &qh])
+            .args(["--k", "2", "--candidate-budget", "2"])
+            .args(["--sweep-budgets", budgets])
+            .arg("--index-dir")
+            .arg(dir.path().join(format!("index-{name}")))
+            .arg("--output")
+            .arg(dir.path().join(format!("{name}.json")))
+            .output()
+            .unwrap()
+    };
+    assert!(!sweep("1,10", "short").status.success());
+    assert!(!sweep("2,x", "garbled").status.success());
+    let r = sweep("2,20", "sweep");
+    assert!(r.status.success(), "{}", String::from_utf8_lossy(&r.stderr));
+    let value: Value =
+        serde_json::from_slice(&std::fs::read(dir.path().join("sweep.json")).unwrap()).unwrap();
+    let rows = value["budget_sweep"].as_array().unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows[0]["candidate_budget"], 2);
+    // Budgets are capped at the row count, matching the public search result.
+    assert_eq!(rows[1]["candidate_budget"], 10);
+    assert_eq!(rows[1]["dot_recall_at_k"], 1.0);
+    assert_eq!(value["dot_recall_at_k"], rows[0]["dot_recall_at_k"]);
 }
 #[test]
 fn dot_latency_dispatch_records_its_metric_and_rejects_bad_workloads() {

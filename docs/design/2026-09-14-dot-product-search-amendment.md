@@ -41,7 +41,15 @@ The two-byte-per-row cache already introduced for stored magnitude is reused.
 There is no additional per-row cache or original-vector storage. Dot candidate
 heaps use i128 keys and therefore have modest additional O(workers * budget)
 query memory. The existing worker pool and bounded candidate-only residual
-reads are reused; the cosine scan itself is unchanged.
+reads are reused. Both methods share one internal scan/refinement routine that
+differs only in its ordering key; the cosine key is the unchanged i64 score and
+never reads the magnitude cache, so cosine ordering, scores and intervals are
+unchanged.
+
+Stored lengths use a fixed 2^-24 FP16 step below 2^-14. Lengths below about
+3e-8 store as zero, so those rows tie at score zero in row-ID order; below about
+1e-5 the rounding exceeds 0.5% of the length. Such rows may be misordered among
+themselves, while their intervals still enclose truth.
 
 ## Original-dot intervals
 

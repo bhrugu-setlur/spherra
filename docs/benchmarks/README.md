@@ -499,6 +499,9 @@ cover `Hit::stored_magnitude()` and the compact resident cache.
 The `dot-product` command qualifies external hash-pinned factors against exact
 original-vector dot products; its [schema](dot-product.schema.json) records all
 query results, intervals and the cosine comparison against the dot objective.
+It accepts up to 2,000,000 indexed rows. Optional `--sweep-budgets 20,50,...`
+reruns dot search on the same index at each budget and records `budget_sweep`
+recall; exact references use six threads outside timing.
 `dot-product-latency` accepts the same options as `latency` and records a distinct
 `kind` in the shared latency schema; `latency` continues to measure cosine.
 [Design and protocol](../design/2026-09-14-dot-product-search-amendment.md).

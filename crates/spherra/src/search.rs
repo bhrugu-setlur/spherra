@@ -77,30 +77,53 @@ impl SearchResult {
         &self.hits
     }
 }
+/// How a search method orders rows from their i64 Q24 primary or refined score.
+/// Keys sort descending, then by ascending row ID.
+pub(crate) trait Ranking: 'static {
+    type Key: Copy + Ord + Send + 'static;
+    /// `magnitudes` is the row's segment cache. Cosine never reads it, keeping
+    /// its scan free of magnitude access.
+    fn key(score: i64, magnitudes: &[u16], local: usize) -> Self::Key;
+}
+pub(crate) struct Cosine;
+impl Ranking for Cosine {
+    type Key = i64;
+    #[inline(always)]
+    fn key(score: i64, _: &[u16], _: usize) -> i64 {
+        score
+    }
+}
 #[derive(Clone, Copy)]
-struct Candidate {
-    score: i64,
+struct Candidate<K> {
+    key: K,
+    primary: i64,
     row: u64,
     segment: usize,
     local: u32,
 }
-impl PartialEq for Candidate {
+impl<K: Ord> PartialEq for Candidate<K> {
     fn eq(&self, o: &Self) -> bool {
-        (self.score, self.row) == (o.score, o.row)
+        self.cmp(o) == Ordering::Equal
     }
 }
-impl Eq for Candidate {}
-impl PartialOrd for Candidate {
+impl<K: Ord> Eq for Candidate<K> {}
+impl<K: Ord> PartialOrd for Candidate<K> {
     fn partial_cmp(&self, o: &Self) -> Option<Ordering> {
         Some(self.cmp(o))
     }
 }
-impl Ord for Candidate {
+impl<K: Ord> Ord for Candidate<K> {
     fn cmp(&self, o: &Self) -> Ordering {
-        (self.score, Reverse(self.row)).cmp(&(o.score, Reverse(o.row)))
+        self.key
+            .cmp(&o.key)
+            .then_with(|| Reverse(self.row).cmp(&Reverse(o.row)))
     }
 }
-fn admit(heap: &mut BinaryHeap<Reverse<Candidate>>, candidate: Candidate, budget: usize) {
+fn admit<K: Ord>(
+    heap: &mut BinaryHeap<Reverse<Candidate<K>>>,
+    candidate: Candidate<K>,
+    budget: usize,
+) {
     if heap.len() < budget {
         heap.push(Reverse(candidate))
     } else if heap.peek().is_some_and(|worst| candidate > worst.0) {
@@ -108,13 +131,13 @@ fn admit(heap: &mut BinaryHeap<Reverse<Candidate>>, candidate: Candidate, budget
         heap.push(Reverse(candidate));
     }
 }
-fn scan(
+fn scan<R: Ranking>(
     data: &Data,
     query: &PreparedScorerQuery,
     begin: usize,
     end: usize,
     budget: usize,
-) -> Vec<Candidate> {
+) -> Vec<Candidate<R::Key>> {
     let mut heap = BinaryHeap::new();
     for (segment, s) in data.segments.iter().enumerate() {
         let count = s.tiles.len() / TILE_BYTES;
@@ -131,7 +154,8 @@ fn scan(
                 admit(
                     &mut heap,
                     Candidate {
-                        score,
+                        key: R::key(score, &s.magnitudes, local as usize),
+                        primary: score,
                         row: s.entry.first_row + u64::from(local),
                         segment,
                         local,
@@ -143,6 +167,17 @@ fn scan(
     }
     heap.into_iter().map(|c| c.0).collect()
 }
+/// A refined candidate in final order, before its certificate interval.
+pub(crate) struct Selected<K> {
+    pub key: K,
+    pub primary: i64,
+    pub raw: i64,
+    pub row: u64,
+    pub segment: usize,
+    pub local: u32,
+}
+/// The effective candidate budget and at most k refined candidates.
+pub(crate) type Selection<K> = (usize, Vec<Selected<K>>);
 #[cfg(test)]
 pub(crate) fn decode_lane(tile: &[u8], lane: usize) -> DirectCode {
     let nibbles = std::array::from_fn(|c| (tile[c * 16 + lane / 2] >> ((lane % 2) * 4)) & 15);
@@ -179,10 +214,7 @@ impl WorkerPool {
         }
         Ok(pool)
     }
-    pub(crate) fn worker_count(&self) -> usize {
-        self.threads.len()
-    }
-    pub(crate) fn submit(&self, job: Job) -> Result<(), Error> {
+    fn submit(&self, job: Job) -> Result<(), Error> {
         self.sender
             .as_ref()
             .ok_or(Error::Corrupt)?
@@ -199,7 +231,13 @@ impl Drop for WorkerPool {
     }
 }
 impl Index {
-    pub fn search(&self, query: &Vector, options: SearchOptions) -> Result<SearchResult, Error> {
+    /// Shared option validation, full primary scan, candidate refinement and
+    /// final ordering. Returns the effective budget and at most k candidates.
+    pub(crate) fn select<R: Ranking>(
+        &self,
+        query: &Vector,
+        options: SearchOptions,
+    ) -> Result<Selection<R::Key>, Error> {
         if options.k == 0 {
             return Err(Error::InvalidOptions);
         }
@@ -233,7 +271,7 @@ impl Index {
             let sender = sender.clone();
             let end = (begin + width).min(data.tiles);
             self.pool.submit(Box::new(move || {
-                let _ = sender.send(scan(&data, &query, begin, end, budget));
+                let _ = sender.send(scan::<R>(&data, &query, begin, end, budget));
             }))?;
             submitted += 1;
         }
@@ -246,30 +284,36 @@ impl Index {
         }
         let mut refined = Vec::with_capacity(heap.len());
         for Reverse(candidate) in heap {
-            let residual = Pq96Code::from_bytes(
-                self.data.segments[candidate.segment]
-                    .residual
-                    .residual_code(candidate.local)?,
-            );
-            let raw = scorer.refine_from_primary(&query, candidate.score, &residual);
-            refined.push((raw, candidate));
+            let s = &self.data.segments[candidate.segment];
+            let residual = Pq96Code::from_bytes(s.residual.residual_code(candidate.local)?);
+            let raw = scorer.refine_from_primary(&query, candidate.primary, &residual);
+            refined.push(Selected {
+                key: R::key(raw, &s.magnitudes, candidate.local as usize),
+                primary: candidate.primary,
+                raw,
+                row: candidate.row,
+                segment: candidate.segment,
+                local: candidate.local,
+            });
         }
-        refined.sort_unstable_by(|(a, ca), (b, cb)| b.cmp(a).then_with(|| ca.row.cmp(&cb.row)));
-        let mut hits = Vec::with_capacity(options.k.min(refined.len()));
-        for (raw, candidate) in refined.into_iter().take(options.k) {
-            let interval = self.data.segments[candidate.segment].certificate.interval(
-                self.data.binding(candidate.segment),
-                candidate.row,
-                candidate.score,
-                raw,
-            )?;
+        refined.sort_unstable_by(|a, b| b.key.cmp(&a.key).then_with(|| a.row.cmp(&b.row)));
+        refined.truncate(options.k);
+        Ok((budget, refined))
+    }
+    pub fn search(&self, query: &Vector, options: SearchOptions) -> Result<SearchResult, Error> {
+        let (budget, selected) = self.select::<Cosine>(query, options)?;
+        let mut hits = Vec::with_capacity(selected.len());
+        for c in selected {
+            let s = &self.data.segments[c.segment];
+            let interval =
+                s.certificate
+                    .interval(self.data.binding(c.segment), c.row, c.primary, c.raw)?;
             hits.push(Hit {
-                row: RowId(candidate.row),
-                segment: candidate.segment as u32,
-                raw,
+                row: RowId(c.row),
+                segment: c.segment as u32,
+                raw: c.raw,
                 interval,
-                magnitude_bits: self.data.segments[candidate.segment].magnitudes
-                    [candidate.local as usize],
+                magnitude_bits: s.magnitudes[c.local as usize],
             });
         }
         Ok(SearchResult {

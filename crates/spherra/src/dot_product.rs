@@ -1,15 +1,10 @@
-//! Optional magnitude-aware search. The cosine search implementation is separate.
+//! Optional magnitude-aware search. It shares the cosine scan and refinement
+//! machinery through `search::Ranking`; only the ordering key differs.
 use crate::{
     Error, Index, RowId, SearchOptions, Vector,
-    builder::validate,
-    open::{Data, TILE_BYTES},
+    search::{Ranking, Selected},
 };
-use spherra_codec::{FixedPointScorer, Pq96Code, PreparedScorerQuery, score_tile_primary};
-use std::{
-    cmp::{Ordering, Reverse},
-    collections::BinaryHeap,
-    sync::{Arc, mpsc},
-};
+use spherra_codec::FixedPointScorer;
 
 /// Approximate original-vector dot product, with an enclosing score interval.
 /// Ranking uses exact integer products; the displayed f64 score may round ties.
@@ -82,73 +77,13 @@ fn magnitude_units(bits: u16) -> i128 {
         (1024 + fraction) << (exponent - 1)
     }
 }
-#[derive(Clone, Copy)]
-struct Candidate {
-    weighted: i128,
-    primary: i64,
-    row: u64,
-    segment: usize,
-    local: u32,
-}
-impl PartialEq for Candidate {
-    fn eq(&self, other: &Self) -> bool {
-        (self.weighted, self.row) == (other.weighted, other.row)
+struct DotProduct;
+impl Ranking for DotProduct {
+    type Key = i128;
+    #[inline(always)]
+    fn key(score: i64, magnitudes: &[u16], local: usize) -> i128 {
+        i128::from(score) * magnitude_units(magnitudes[local])
     }
-}
-impl Eq for Candidate {}
-impl Ord for Candidate {
-    fn cmp(&self, other: &Self) -> Ordering {
-        (self.weighted, Reverse(self.row)).cmp(&(other.weighted, Reverse(other.row)))
-    }
-}
-impl PartialOrd for Candidate {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-fn admit(heap: &mut BinaryHeap<Reverse<Candidate>>, c: Candidate, budget: usize) {
-    if heap.len() < budget {
-        heap.push(Reverse(c));
-    } else if heap.peek().is_some_and(|worst| c > worst.0) {
-        heap.pop();
-        heap.push(Reverse(c));
-    }
-}
-fn scan(
-    data: &Data,
-    query: &PreparedScorerQuery,
-    begin: usize,
-    end: usize,
-    budget: usize,
-) -> Vec<Candidate> {
-    let mut heap = BinaryHeap::new();
-    for (segment, s) in data.segments.iter().enumerate() {
-        let first = begin.max(s.tile_start);
-        let last = end.min(s.tile_start + s.tiles.len() / TILE_BYTES);
-        for global in first..last {
-            let ordinal = global - s.tile_start;
-            let tile = &s.tiles[ordinal * TILE_BYTES..(ordinal + 1) * TILE_BYTES];
-            let lanes = (s.entry.row_count as usize - ordinal * 32).min(32);
-            let mut scores = [0; 32];
-            score_tile_primary(query, tile, lanes, &mut scores).expect("opened tile geometry");
-            for (lane, &primary) in scores[..lanes].iter().enumerate() {
-                let local = (ordinal * 32 + lane) as u32;
-                admit(
-                    &mut heap,
-                    Candidate {
-                        weighted: i128::from(primary)
-                            * magnitude_units(s.magnitudes[local as usize]),
-                        primary,
-                        row: s.entry.first_row + u64::from(local),
-                        segment,
-                        local,
-                    },
-                    budget,
-                );
-            }
-        }
-    }
-    heap.into_iter().map(|c| c.0).collect()
 }
 
 // 2^-40 exceeds the FP64 gamma bounds for 768-term norm/dot reductions,
@@ -224,77 +159,40 @@ impl Index {
     /// during the full primary scan and residual refinement. Options and query
     /// validation match `search`; this method does not change cosine search.
     /// Candidate selection is approximate; intervals certify scores, not top-k.
+    ///
+    /// Stored lengths are FP16 with a fixed 2^-24 step below 2^-14. Lengths
+    /// below about 3e-8 are stored as zero, so those rows score zero and tie in
+    /// row-ID order; below about 1e-5 the rounding exceeds 0.5% of the length,
+    /// so such short rows may be misordered among themselves. Intervals still
+    /// enclose the true dot product.
     pub fn search_dot_product(
         &self,
         query: &Vector,
         options: SearchOptions,
     ) -> Result<DotProductResult, Error> {
-        if options.k == 0 {
-            return Err(Error::InvalidOptions);
-        }
-        let budget = match options.candidate_budget {
-            Some(b) => b,
-            None => options
-                .k
-                .checked_mul(2)
-                .ok_or(Error::InvalidOptions)?
-                .max(200),
-        };
-        if budget < options.k {
-            return Err(Error::InvalidOptions);
-        }
-        let budget = budget.min(self.len() as usize);
-        validate(query, 0)?;
+        // Validation happens in `select` before the query norm is trusted.
+        let (budget, selected) = self.select::<DotProduct>(query, options)?;
         let (query_norm, query_norm_interval) = query_length(query);
-        let scorer = FixedPointScorer::new();
-        let model = &self.data.model;
-        let query = Arc::new(
-            scorer
-                .prepare_query(&model.plan, query, &model.quantizer, &model.codebook)
-                .map_err(|_| Error::Corrupt)?,
-        );
-        let jobs = self.pool.worker_count().min(self.data.tiles);
-        let width = self.data.tiles.div_ceil(jobs);
-        let (sender, receiver) = mpsc::channel();
-        let mut submitted = 0;
-        for begin in (0..self.data.tiles).step_by(width) {
-            let data = self.data.clone();
-            let query = query.clone();
-            let sender = sender.clone();
-            let end = (begin + width).min(data.tiles);
-            self.pool.submit(Box::new(move || {
-                let _ = sender.send(scan(&data, &query, begin, end, budget));
-            }))?;
-            submitted += 1;
-        }
-        drop(sender);
-        let mut heap = BinaryHeap::new();
-        for _ in 0..submitted {
-            for c in receiver.recv().map_err(|_| Error::Corrupt)? {
-                admit(&mut heap, c, budget);
-            }
-        }
-        let mut refined = Vec::with_capacity(heap.len());
-        for Reverse(c) in heap {
-            let s = &self.data.segments[c.segment];
-            let residual = Pq96Code::from_bytes(s.residual.residual_code(c.local)?);
-            let raw = scorer.refine_from_primary(&query, c.primary, &residual);
-            let key = i128::from(raw) * magnitude_units(s.magnitudes[c.local as usize]);
-            refined.push((key, raw, c));
-        }
-        refined.sort_unstable_by(|a, b| b.0.cmp(&a.0).then_with(|| a.2.row.cmp(&b.2.row)));
-        let mut hits = Vec::with_capacity(options.k.min(refined.len()));
-        for (key, raw, c) in refined.into_iter().take(options.k) {
-            let s = &self.data.segments[c.segment];
-            let bits = s.magnitudes[c.local as usize];
-            let cosine =
-                s.certificate
-                    .interval(self.data.binding(c.segment), c.row, c.primary, raw)?;
+        let scale = FixedPointScorer::new().metadata().comparison_scale() as f64 * 16777216.0;
+        let mut hits = Vec::with_capacity(selected.len());
+        for Selected {
+            key,
+            primary,
+            raw,
+            row,
+            segment,
+            local,
+        } in selected
+        {
+            let s = &self.data.segments[segment];
+            let bits = s.magnitudes[local as usize];
+            let cosine = s
+                .certificate
+                .interval(self.data.binding(segment), row, primary, raw)?;
             hits.push(DotProductHit {
-                row: RowId(c.row),
-                segment: c.segment as u32,
-                score: (key as f64 / (scorer.metadata().comparison_scale() as f64 * 16777216.0))
-                    * query_norm,
+                row: RowId(row),
+                segment: segment as u32,
+                score: (key as f64 / scale) * query_norm,
                 interval: dot_interval(cosine, bits, query_norm_interval)?,
                 magnitude_bits: bits,
             });

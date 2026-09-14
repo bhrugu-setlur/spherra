@@ -114,8 +114,11 @@ Dot-product search uses stored lengths during the full scan and refinement.
 Its distinct result type reports approximate original-vector dot products,
 including query length, and intervals that account for compression and stored
 length rounding. Exact integer products determine ranking; displayed floating
-scores may round ties. Top-k remains approximate. Tiny stored lengths can round
-to zero. When all stored row lengths equal one, row ordering matches cosine.
+scores may round ties. Top-k remains approximate. Very short vectors rank poorly
+among themselves: lengths below about 3e-8 are stored as zero (those rows score
+zero and tie in row-ID order), and below about 1e-5 length rounding exceeds 0.5%.
+Their intervals remain valid. When all stored row lengths equal one, row
+ordering matches cosine.
 It uses the existing length cache and needs no index rebuild or original vectors.
 `search()` keeps its existing cosine behavior.
 

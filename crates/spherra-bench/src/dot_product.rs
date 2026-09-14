@@ -1,4 +1,4 @@
-//! Small, hash-pinned dot-product retrieval qualification over external factors.
+//! Hash-pinned dot-product retrieval qualification over external vectors.
 use super::{BenchError, Options, write_output};
 use crate::local_index::{allowed, number};
 use serde_json::json;
@@ -8,6 +8,9 @@ use spherra_testkit::{
     results::validate_against_schema,
 };
 use std::{fs, io::Read, path::Path, time::Instant};
+
+const MAX_ROWS: usize = 2_000_000;
+const EXACT_THREADS: usize = 6;
 
 fn rows(path: &str, count: usize, hash: &str) -> Result<Vec<Vector>, BenchError> {
     let mut file = fs::File::open(path).map_err(BenchError::harness)?;
@@ -45,6 +48,57 @@ fn truth(q: &Vector, x: &Vector) -> f64 {
         .zip(x)
         .fold(0.0, |s, (&q, &x)| f64::from(q).mul_add(f64::from(x), s))
 }
+fn better(a: &(f64, usize), b: &(f64, usize)) -> std::cmp::Ordering {
+    b.0.total_cmp(&a.0).then(a.1.cmp(&b.1))
+}
+/// Exhaustive FP64 top-k by descending dot product, then ascending row. Each
+/// thread keeps its local top-k, so the merged order equals one full sort.
+fn exact_rows(q: &Vector, indexed: &[Vector], k: usize) -> Vec<u64> {
+    let chunk = indexed.len().div_ceil(EXACT_THREADS).max(1);
+    let mut best: Vec<(f64, usize)> = std::thread::scope(|scope| {
+        let handles: Vec<_> = indexed
+            .chunks(chunk)
+            .enumerate()
+            .map(|(c, part)| {
+                scope.spawn(move || {
+                    let mut scored: Vec<_> = part
+                        .iter()
+                        .enumerate()
+                        .map(|(i, x)| (truth(q, x), c * chunk + i))
+                        .collect();
+                    if scored.len() > k {
+                        scored.select_nth_unstable_by(k - 1, better);
+                        scored.truncate(k);
+                    }
+                    scored
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .flat_map(|h| h.join().expect("exact scan thread"))
+            .collect()
+    });
+    best.sort_unstable_by(better);
+    best.truncate(k);
+    best.into_iter().map(|x| x.1 as u64).collect()
+}
+fn sweep_budgets(o: &Options, k: usize) -> Result<Vec<usize>, BenchError> {
+    let Some(list) = o.get("sweep-budgets") else {
+        return Ok(Vec::new());
+    };
+    let budgets = list
+        .split(',')
+        .map(|b| {
+            b.parse::<usize>()
+                .map_err(|_| BenchError::UnparsableOption("sweep-budgets".to_owned()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if budgets.is_empty() || budgets.iter().any(|&b| b < k) {
+        return Err(BenchError::harness("every sweep budget must be at least k"));
+    }
+    Ok(budgets)
+}
 pub(super) fn run(o: &Options) -> Result<(), BenchError> {
     allowed(
         o,
@@ -63,6 +117,7 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
             "seed",
             "k",
             "candidate-budget",
+            "sweep-budgets",
         ],
     )?;
     let n = number(o, "rows", 0_usize)?;
@@ -71,7 +126,7 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
     let k = number(o, "k", 10_usize)?;
     let budget = number(o, "candidate-budget", 200_usize)?;
     let seed = number(o, "seed", 20260804_u64)?;
-    if !(1..=20000).contains(&n)
+    if !(1..=MAX_ROWS).contains(&n)
         || !(342..=32768).contains(&training_count)
         || !(1..=2000).contains(&query_count)
         || k == 0
@@ -81,6 +136,7 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
             "invalid or oversized qualification workload",
         ));
     }
+    let sweep = sweep_budgets(o, k)?;
     let output = Path::new(o.require("output")?);
     if output.exists() {
         return Err(BenchError::harness("output already exists"));
@@ -108,8 +164,12 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
         },
     )
     .map_err(BenchError::harness)?;
-    for row in &indexed {
+    drop(training);
+    for (i, row) in indexed.iter().enumerate() {
         builder.push(row).map_err(BenchError::harness)?;
+        if (i + 1) % 65536 == 0 {
+            eprintln!("build: {} rows staged", i + 1);
+        }
     }
     builder.commit().map_err(BenchError::harness)?;
     let build_seconds = build.elapsed().as_secs_f64();
@@ -119,14 +179,9 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
         .to_string();
     let mut records = Vec::new();
     let (mut dot_found, mut cosine_found, mut violations) = (0_usize, 0_usize, 0_usize);
+    let mut sweep_found = vec![0_usize; sweep.len()];
     for (ordinal, q) in queries.iter().enumerate() {
-        let mut exact: Vec<_> = indexed
-            .iter()
-            .enumerate()
-            .map(|(i, x)| (i, truth(q, x)))
-            .collect();
-        exact.sort_unstable_by(|a, b| b.1.total_cmp(&a.1).then(a.0.cmp(&b.0)));
-        let exact_rows: Vec<_> = exact[..k.min(n)].iter().map(|x| x.0 as u64).collect();
+        let exact_rows = exact_rows(q, &indexed, k.min(n));
         let start = Instant::now();
         let dot = index
             .search_dot_product(
@@ -173,18 +228,45 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
             .iter()
             .filter(|r| exact_rows.contains(r))
             .count();
+        for (&b, total) in sweep.iter().zip(&mut sweep_found) {
+            let result = index
+                .search_dot_product(
+                    q,
+                    SearchOptions {
+                        k,
+                        candidate_budget: Some(b),
+                    },
+                )
+                .map_err(BenchError::harness)?;
+            *total += result
+                .hits()
+                .iter()
+                .filter(|h| exact_rows.contains(&h.row().get()))
+                .count();
+        }
         dot_found += found;
         cosine_found += cosine_matches;
         records.push(json!({"query":ordinal,"exact_rows":exact_rows,"dot_hits":hits,"cosine_rows":cosine_rows,"dot_matches":found,"cosine_matches":cosine_matches,"dot_ms":dot_ms,"cosine_ms":cosine_ms}));
+        if (ordinal + 1) % 50 == 0 {
+            eprintln!("query: {}/{query_count} complete", ordinal + 1);
+        }
     }
     let end = SourceRevision::capture();
-    let value = json!({"schema_version":1,"kind":"dot-product","timestamp":timestamp_rfc3339_utc(),
+    let checked = (query_count * k.min(n)) as f64;
+    let mut value = json!({"schema_version":1,"kind":"dot-product","timestamp":timestamp_rfc3339_utc(),
         "git_commit":source.commit,"dirty_worktree":source.dirty || end.dirty || source.commit!=end.commit,
         "machine":MachineProfile::capture(),"command":format!("spherra-bench dot-product {}",o.0.iter().map(|(k,v)|format!("--{k} {v}")).collect::<Vec<_>>().join(" ")),
         "indexed_blake3":o.require("indexed-blake3")?,"training_blake3":o.require("training-blake3")?,"queries_blake3":o.require("queries-blake3")?,
         "index_current_blake3":current,"rows":n,"training_rows":training_count,"query_count":query_count,"seed":seed,"k":k,"candidate_budget":budget.min(n),
-        "build_seconds":build_seconds,"dot_recall_at_k":dot_found as f64/(query_count*k.min(n)) as f64,
-        "cosine_recall_against_dot_at_k":cosine_found as f64/(query_count*k.min(n)) as f64,"enclosure_failures":violations,"queries":records});
+        "build_seconds":build_seconds,"dot_recall_at_k":dot_found as f64/checked,
+        "cosine_recall_against_dot_at_k":cosine_found as f64/checked,"enclosure_failures":violations,"queries":records});
+    if !sweep.is_empty() {
+        value["budget_sweep"] = sweep
+            .iter()
+            .zip(&sweep_found)
+            .map(|(&b, &found)| json!({"candidate_budget":b.min(n),"dot_recall_at_k":found as f64/checked}))
+            .collect();
+    }
     let schema = serde_json::from_str(include_str!(
         "../../../docs/benchmarks/dot-product.schema.json"
     ))
