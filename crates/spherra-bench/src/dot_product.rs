@@ -1,8 +1,10 @@
 //! Hash-pinned dot-product retrieval qualification over external vectors.
 use super::{BenchError, Options, write_output};
+use crate::index_quality::{Reference, reconstruction_length};
 use crate::local_index::{allowed, number};
 use serde_json::json;
 use spherra::{CreateOptions, Index, IndexBuilder, SearchOptions, Vector};
+use spherra_codec::{FixedPointScorer, Pq96Code};
 use spherra_testkit::{
     machine::{MachineProfile, SourceRevision, timestamp_rfc3339_utc},
     results::validate_against_schema,
@@ -82,6 +84,52 @@ fn exact_rows(q: &Vector, indexed: &[Vector], k: usize) -> Vec<u64> {
     best.sort_unstable_by(better);
     best.truncate(k);
     best.into_iter().map(|x| x.1 as u64).collect()
+}
+/// Experiment only: rescore the public dot candidate pool by
+/// dot(T(q), p + e) / |p + e| times the stored length, then return its top-k rows.
+/// The common query norm does not affect order.
+fn renormalized_rows(
+    index: &Index,
+    reference: &Reference,
+    q: &Vector,
+    k: usize,
+    budget: usize,
+) -> Result<Vec<u64>, BenchError> {
+    let pool = index
+        .search_dot_product(
+            q,
+            SearchOptions {
+                k: budget.min(index.len() as usize),
+                candidate_budget: Some(budget),
+            },
+        )
+        .map_err(BenchError::harness)?;
+    let prepared = FixedPointScorer::new()
+        .prepare_query(&reference.plan, q, &reference.table, &reference.book)
+        .map_err(BenchError::harness)?;
+    let mut scored = Vec::with_capacity(pool.hits().len());
+    for hit in pool.hits() {
+        let row = hit.row().get() as usize;
+        let segment =
+            &reference.segments[reference.segments.partition_point(|s| s.first <= row) - 1];
+        let code = Pq96Code::from_bytes(
+            segment
+                .residual
+                .residual_code((row - segment.first) as u32)
+                .map_err(BenchError::harness)?,
+        );
+        let p = reference.table.decode(&reference.codes[row]);
+        let e = reference.book.decode(&code);
+        let dot = (0..768)
+            .map(|c| f64::from(prepared.transformed()[c]) * (f64::from(p[c]) + f64::from(e[c])))
+            .sum::<f64>();
+        scored.push((
+            dot / reconstruction_length(&p, &e) * f64::from(hit.stored_magnitude()),
+            row,
+        ));
+    }
+    scored.sort_unstable_by(better);
+    Ok(scored.into_iter().take(k).map(|x| x.1 as u64).collect())
 }
 fn sweep_budgets(o: &Options, k: usize) -> Result<Vec<usize>, BenchError> {
     let Some(list) = o.get("sweep-budgets") else {
@@ -180,6 +228,8 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
     let mut records = Vec::new();
     let (mut dot_found, mut cosine_found, mut violations) = (0_usize, 0_usize, 0_usize);
     let mut sweep_found = vec![0_usize; sweep.len()];
+    let reference = Reference::open(dir, seed, &index)?;
+    let mut renormalized_found = 0_usize;
     for (ordinal, q) in queries.iter().enumerate() {
         let exact_rows = exact_rows(q, &indexed, k.min(n));
         let start = Instant::now();
@@ -244,6 +294,10 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
                 .filter(|h| exact_rows.contains(&h.row().get()))
                 .count();
         }
+        renormalized_found += renormalized_rows(&index, &reference, q, k, budget)?
+            .iter()
+            .filter(|r| exact_rows.contains(r))
+            .count();
         dot_found += found;
         cosine_found += cosine_matches;
         records.push(json!({"query":ordinal,"exact_rows":exact_rows,"dot_hits":hits,"cosine_rows":cosine_rows,"dot_matches":found,"cosine_matches":cosine_matches,"dot_ms":dot_ms,"cosine_ms":cosine_ms}));
@@ -259,7 +313,7 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
         "indexed_blake3":o.require("indexed-blake3")?,"training_blake3":o.require("training-blake3")?,"queries_blake3":o.require("queries-blake3")?,
         "index_current_blake3":current,"rows":n,"training_rows":training_count,"query_count":query_count,"seed":seed,"k":k,"candidate_budget":budget.min(n),
         "build_seconds":build_seconds,"dot_recall_at_k":dot_found as f64/checked,
-        "cosine_recall_against_dot_at_k":cosine_found as f64/checked,"enclosure_failures":violations,"queries":records});
+        "cosine_recall_against_dot_at_k":cosine_found as f64/checked,"renormalized_dot_recall_at_k":renormalized_found as f64/checked,"enclosure_failures":violations,"queries":records});
     if !sweep.is_empty() {
         value["budget_sweep"] = sweep
             .iter()

@@ -9,6 +9,8 @@ struct Candidate {
     primary_raw: i64,
     raw: i64,
     floating: f64,
+    // Experiment only: `floating` divided by the reconstruction length |p + e|.
+    renormalized: f64,
     truth: f64,
 }
 fn overlap(rows: impl Iterator<Item = usize>, exact: &[Neighbor]) -> u64 {
@@ -23,6 +25,17 @@ fn raw_score(score: f64) -> Result<i64, BenchError> {
         ));
     }
     Ok(raw as i64)
+}
+/// FP64 length of the reconstruction p + e, as used by the renormalization experiment.
+pub(crate) fn reconstruction_length(p: &[f32; 768], e: &[f32; 768]) -> f64 {
+    p.iter()
+        .zip(e)
+        .map(|(&p, &e)| {
+            let v = f64::from(p) + f64::from(e);
+            v * v
+        })
+        .sum::<f64>()
+        .sqrt()
 }
 fn require(condition: bool, message: &str) -> Result<(), BenchError> {
     if condition {
@@ -91,7 +104,8 @@ fn analyze(
         // renormalization. Difference from Q24 isolates lookup rounding/reduction.
         let floating = (0..768)
             .map(|c| f64::from(query.transformed()[c]) * (f64::from(p[c]) + f64::from(e[c])))
-            .sum();
+            .sum::<f64>();
+        let renormalized = floating / reconstruction_length(&p, &e);
         let truth = dot_f64(
             &normalized,
             &normalize_fp64(&rows[row]).map_err(BenchError::harness)?,
@@ -102,6 +116,7 @@ fn analyze(
             primary_raw,
             raw: refined,
             floating,
+            renormalized,
             truth,
         });
     }
@@ -121,6 +136,12 @@ fn analyze(
         floating.sort_unstable_by(|a, b| {
             b.floating
                 .total_cmp(&a.floating)
+                .then_with(|| a.row.cmp(&b.row))
+        });
+        let mut renormalized = refined.clone();
+        renormalized.sort_unstable_by(|a, b| {
+            b.renormalized
+                .total_cmp(&a.renormalized)
                 .then_with(|| a.row.cmp(&b.row))
         });
         let result = index
@@ -177,7 +198,7 @@ fn analyze(
             let (lower,upper)=h.interval();
             json!({"row":c.row,"raw":c.raw,"public_raw":raw_score(h.score()).unwrap(),"truth":c.truth,"floating":c.floating,"lower":lower,"upper":upper})
         }).collect::<Vec<_>>();
-        reports.push(json!({"budget":budget,"requested_budget":requested,"candidate_count":pool.len(),"candidate_matches":covered,"delivered_matches":delivered,"exact_rerank_matches":exact_matches,"floating_matches":overlap(floating.iter().take(10).map(|c|c.row),exact),"floating_top10_differences":floating.iter().take(10).zip(refined.iter()).filter(|(a,b)|a.row!=b.row).count(),"maximum_fixed_point_error":pool.iter().map(|c|(c.raw as f64/(1_u64<<24) as f64-c.floating).abs()).fold(0.0_f64,f64::max),"selection_losses":10-covered,"ranking_losses":covered-delivered,"neighbors":neighbors,"hits":hits}));
+        reports.push(json!({"budget":budget,"requested_budget":requested,"candidate_count":pool.len(),"candidate_matches":covered,"delivered_matches":delivered,"exact_rerank_matches":exact_matches,"floating_matches":overlap(floating.iter().take(10).map(|c|c.row),exact),"renormalized_matches":overlap(renormalized.iter().take(10).map(|c|c.row),exact),"floating_top10_differences":floating.iter().take(10).zip(refined.iter()).filter(|(a,b)|a.row!=b.row).count(),"maximum_fixed_point_error":pool.iter().map(|c|(c.raw as f64/(1_u64<<24) as f64-c.floating).abs()).fold(0.0_f64,f64::max),"selection_losses":10-covered,"ranking_losses":covered-delivered,"neighbors":neighbors,"hits":hits}));
     }
     Ok((json!({"query":ordinal,"budgets":reports}), trace))
 }
@@ -322,7 +343,7 @@ pub(crate) fn run(o: &Options) -> Result<(), BenchError> {
     let summaries=(0..budgets.len()).map(|i|{
         let sum=|key:&str|query_results.iter().map(|q|q["budgets"][i][key].as_u64().unwrap()).sum::<u64>();
         let total=(queries.len()*10) as f64;
-        json!({"budget":budgets[i].min(rows.len()),"candidate_recall_at_10":sum("candidate_matches") as f64/total,"recall_at_10":sum("delivered_matches") as f64/total,"floating_recall_at_10":sum("floating_matches") as f64/total,"selection_losses":sum("selection_losses"),"ranking_losses":sum("ranking_losses"),"floating_top10_differences":sum("floating_top10_differences")})
+        json!({"budget":budgets[i].min(rows.len()),"candidate_recall_at_10":sum("candidate_matches") as f64/total,"recall_at_10":sum("delivered_matches") as f64/total,"floating_recall_at_10":sum("floating_matches") as f64/total,"renormalized_recall_at_10":sum("renormalized_matches") as f64/total,"selection_losses":sum("selection_losses"),"ranking_losses":sum("ranking_losses"),"floating_top10_differences":sum("floating_top10_differences")})
     }).collect::<Vec<_>>();
     let mut value = json!({"schema_version":1,"kind":"index-diagnose","timestamp":timestamp_rfc3339_utc(),"git_commit":revision.commit,"dirty_worktree":revision.dirty,"machine":MachineProfile::capture(),"command":format!("spherra-bench index-diagnose {}",o.0.iter().map(|(k,v)|format!("--{k} {v}")).collect::<Vec<_>>().join(" ")),"source":source_value,"corpus_hash":corpus_hash,"query_hash":hash_rows(&queries),"seed":seed,"vector_count":rows.len(),"query_count":queries.len(),"training_rows":training,"validation_rows":(training/4).min(4096),"model":model_metadata(dir)?,"index_current_blake3":hash_file(&dir.join("CURRENT"))?,"build_source_commit":build["git_commit"],"build_dirty_worktree":build["dirty_worktree"],"oracle_reference":oracle,"trace":{"path":trace_path,"blake3":hash_file(&trace_path)?,"bytes":fs::metadata(&trace_path).map_err(BenchError::harness)?.len()},"checks_passed":true,"summaries":summaries,"query_results":query_results,"elapsed_seconds":start.elapsed().as_secs_f64()});
     finish_revision(&mut value);

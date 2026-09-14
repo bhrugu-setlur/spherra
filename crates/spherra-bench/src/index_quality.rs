@@ -4,6 +4,7 @@
 mod dataset;
 mod loss;
 pub(super) use dataset::oracle_reference as dataset_oracle;
+pub(crate) use loss::reconstruction_length;
 pub(super) use loss::run as diagnose;
 
 use crate::local_index::{
@@ -196,19 +197,19 @@ fn history(
     )
 }
 
-struct ReferenceSegment {
-    first: usize,
-    residual: PairedResidualReader,
+pub(crate) struct ReferenceSegment {
+    pub(crate) first: usize,
+    pub(crate) residual: PairedResidualReader,
 }
-struct Reference {
-    plan: TransformPlan,
-    table: QuantizerTable,
-    book: Pq96Codebook,
-    codes: Vec<DirectCode>,
-    segments: Vec<ReferenceSegment>,
+pub(crate) struct Reference {
+    pub(crate) plan: TransformPlan,
+    pub(crate) table: QuantizerTable,
+    pub(crate) book: Pq96Codebook,
+    pub(crate) codes: Vec<DirectCode>,
+    pub(crate) segments: Vec<ReferenceSegment>,
 }
 impl Reference {
-    fn open(dir: &Path, seed: u64, index: &Index) -> Result<Self, BenchError> {
+    pub(crate) fn open(dir: &Path, seed: u64, index: &Index) -> Result<Self, BenchError> {
         let paths = fs::read_dir(dir)
             .map_err(BenchError::harness)?
             .map(|e| e.map(|e| e.path()))

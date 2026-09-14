@@ -130,6 +130,9 @@
     "cosine_recall_against_dot_at_k": {
       "type": "number"
     },
+    "renormalized_dot_recall_at_k": {
+      "type": "number"
+    },
     "budget_sweep": {
       "type": "array",
       "items": {

@@ -92,7 +92,9 @@ fn dot_product_report_is_complete_reproducible_and_rejects_bad_inputs() {
                 .any(|x| x == field)
         );
     }
-    assert_eq!(value.as_object().unwrap().len(), required.len());
+    // The one optional field without a sweep is the renormalization experiment.
+    assert!(value["renormalized_dot_recall_at_k"].is_number());
+    assert_eq!(value.as_object().unwrap().len(), required.len() + 1);
     assert_eq!(value["enclosure_failures"], 0);
     assert_eq!(value["dot_recall_at_k"], 1.0);
     assert_eq!(value["queries"].as_array().unwrap().len(), 4);
