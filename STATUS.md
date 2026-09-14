@@ -11,21 +11,19 @@ The [test technical note](docs/benchmarks/2026-09-13-local-index-test-note.md)
 records the delivery test data, setup, provenance and limitations. It consolidates
 existing measurements; no new performance or quality run was made for the note.
 
-## Active accuracy investigation
+## Completed accuracy investigation
 
-The user authorized the [accuracy experiments](docs/benchmarks/2026-09-13-local-index-accuracy-experiments.md):
-neighbor-loss diagnosis, representative real queries/documents, then a controlled
-training-size sweep. Production behavior remains the delivered baseline while
-these measurements establish the next change. Generated 1M diagnostics prove
-100% candidate coverage at budget 200 for all four training sizes, with recall
-0.9095/0.9135/0.9190/0.9145. All losses occur in compressed reranking.
-The real 100k snapshot and both exact references are pinned and verified.
-Real tuning recall is 0.9715/0.9680/0.9700/0.9725; the preregistered rule
-selects the baseline 4096-input model. Its untouched final-query run is next.
-The original-vector prototype adds a median paired 3.223 ms on warm-cache
-1M queries and needs 3.072 GB of extra stored originals per million rows.
-Measurement tooling passes 197 CI tests (12 skipped), workspace tests and
-strict clippy. Production contracts and defaults remain unchanged.
+The [accuracy technical note](docs/benchmarks/2026-09-13-local-index-accuracy-results.md)
+records the separately authorized diagnosis, real-data pipeline, training sweep
+and original-vector reranking prototype. Generated 1M and real 100k queries all
+have 100% true-neighbor coverage at budget 200. The real tuning rule retained
+4096 training inputs; untouched final recall is 0.9705 (1,941/2,000), with all
+59 misses in compressed ranking. Larger pools and training sizes show no
+reliable improvement. Original reranking recovers every observed true neighbor;
+the warm-cache 1M prototype adds a median paired 3.223 ms and needs 3.072 GB
+of extra originals per million rows. Exact vector ranking does not improve
+sparse relevance-label scores on this sample. Production contracts/defaults
+are unchanged. All nine complete candidate traces passed independent audits.
 
 ## Acceptance evidence
 
@@ -46,7 +44,7 @@ Timing commit: `84065a9`; quality commit: `9a48a77`. Both used clean release
 builds. [Full protocol, raw timing samples and every quality hit](docs/benchmarks/README.md).
 The 1M oracle artifact was pinned at `2ad9a34`, before index measurement.
 
-The latest full quality gate passed 191 tests with 12 explicitly skipped large
+The latest full quality gate passed 197 tests with 12 explicitly skipped large
 qualifications. Workspace tests and strict all-target clippy pass. The release
 kernel qualification passed on archived SciFact and generated 100k. Earlier
 builder, recovery and decoder-fuzz qualifications remain recorded in the task
@@ -75,4 +73,6 @@ README examples compile as doctests. The final CI gate passed 191 tests with
   physical power loss or other filesystems. ASan runtime is unavailable here.
 - No unsafe/NEON kernel, routing, deletes, filters, compaction or server is added.
 - The original delivery plan is complete. The separately authorized accuracy
-  investigation above is now active.
+  investigation above is complete. A production original-vector option requires
+  an approved API/design amendment and cold-cache qualification; compressed
+  trainer changes remain unproven.

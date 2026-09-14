@@ -1,6 +1,7 @@
 # Local index accuracy experiments
 
-Status: in progress; authorized after the local-index delivery.
+Status: completed; authorized after the local-index delivery.
+Results: [accuracy technical note](2026-09-13-local-index-accuracy-results.md).
 
 ## Questions and order
 
@@ -129,3 +130,13 @@ with no concurrent training/embedding/test load: 1,000 queries, 50 warmups,
 AC power, normal p50/p99 66.125/181.195 ms, original p50/p99
 69.081/209.124 ms. Raw samples and `/usr/bin/time -l` output are archived.
 This warm-cache prototype is not a new production API or SLO qualification.
+
+## Final outcome
+
+The selected baseline ran on the 200 final queries at clean `372c362`, reaching
+0.9705 recall@10 with 1.0000 candidate coverage and 59 compressed ranking losses.
+Exact reranking recovers all 2,000 true neighbors; larger pools recover none.
+No serving default, public API, score/certificate contract or codec format changed.
+The result note records confidence intervals, label metrics, timing/storage
+costs, independent trace audits and limits. Subsequent model experiments need
+new held-out queries because this final set is now exposed.

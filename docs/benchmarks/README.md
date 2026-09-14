@@ -445,3 +445,39 @@ evidence at smoke scale; the rest are unmeasured.
 
 Consequently the primary/residual codec, transform rounds, layout, and candidate
 budget **are not frozen** by this milestone. They remain provisional.
+
+## Reconstruction accuracy investigation
+
+The [accuracy technical note](2026-09-13-local-index-accuracy-results.md) records
+stage-by-stage neighbor losses, the pinned 100k real-passage/real-query snapshot,
+training selection and the original-vector reranking prototype. The
+[preregistered protocol](2026-09-13-local-index-accuracy-experiments.md) fixes
+splits, budgets and selection before measurements. Production defaults remain
+unchanged. Run commands from the worktree root; large data/artifacts stay under
+ignored `target/` and are verified by descriptor/report hashes.
+
+```bash
+uv run --python 3.12 --with sentence-transformers==6.0.1 \
+  --with huggingface-hub==1.31.0 --with pyarrow==25.0.1 \
+  --with blake3==1.0.9 --with torch==2.14.0 --with numpy==2.5.3 \
+  python tools/build_msmarco_accuracy_corpus.py --rows 100000 \
+  --output-dir target/accuracy/msmarco-100k-deduplicated
+uv run --python 3.12 --with blake3==1.0.9 python tools/audit_accuracy_dataset.py \
+  corpora/msmarco/msmarco-real-queries-100k-mpnet-768.json
+spherra-bench dataset-oracle \
+  --dataset corpora/msmarco/msmarco-real-queries-100k-mpnet-768.json \
+  --queries 200 --query-split tuning --output target/measure/msmarco-tuning-oracle.json
+spherra-bench index-diagnose \
+  --dataset corpora/msmarco/msmarco-real-queries-100k-mpnet-768.json \
+  --queries 200 --query-split tuning --seed 20260804 --training-rows 4096 \
+  --budgets 200,400,800,1600 --index-dir target/accuracy/msmarco-index-training4096 \
+  --oracle-reference docs/benchmarks/results/2026-09-13-msmarco-tuning-oracle.json \
+  --output target/measure/loss-msmarco-tuning-training4096.json
+```
+
+Use `target/release/spherra-bench` after `cargo build -p spherra-bench --release
+--locked` if it is not on PATH. Builder/index/output paths must be fresh;
+`--reuse true` requires matching build provenance. Re-embedding can differ at
+the floating-point bit level across devices: a changed byte hash is a new
+snapshot requiring its own descriptor and pinned oracles, not interchangeable
+evidence. Do not overwrite existing hash-pinned artifacts.

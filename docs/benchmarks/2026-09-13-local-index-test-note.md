@@ -202,3 +202,8 @@ The index met its measured speed and memory targets while preserving the
 reference implementation's results. Searching 10 million vectors took about
 458 ms at the median and 616 ms at p99. Recall depends on the data; the largest
 quality test was 1 million vectors, with 90.95% recall@10.
+
+The later [accuracy investigation](2026-09-13-local-index-accuracy-results.md)
+adds a real 100k-passage query benchmark, complete neighbor-loss attribution,
+training-size experiments and original-vector reranking costs. It preserves
+the delivery measurements recorded above.
