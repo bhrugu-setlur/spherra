@@ -11,6 +11,13 @@ The [test technical note](docs/benchmarks/2026-09-13-local-index-test-note.md)
 records the delivery test data, setup, provenance and limitations. It consolidates
 existing measurements; no new performance or quality run was made for the note.
 
+## Active accuracy investigation
+
+The user authorized the [accuracy experiments](docs/benchmarks/2026-09-13-local-index-accuracy-experiments.md):
+neighbor-loss diagnosis, representative real queries/documents, then a controlled
+training-size sweep. Production behavior remains the delivered baseline while
+these measurements establish the next change.
+
 ## Acceptance evidence
 
 | Gate | Result |
@@ -58,5 +65,5 @@ README examples compile as doctests. The final CI gate passed 191 tests with
 - Durability evidence covers local APFS fault injection and process death, not
   physical power loss or other filesystems. ASan runtime is unavailable here.
 - No unsafe/NEON kernel, routing, deletes, filters, compaction or server is added.
-- No implementation work remains in the approved plan. Choosing larger real
-  corpora or new features is a new user-directed task.
+- The original delivery plan is complete. The separately authorized accuracy
+  investigation above is now active.

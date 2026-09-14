@@ -1,0 +1,551 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "timestamp",
+    "git_commit",
+    "dirty_worktree",
+    "machine",
+    "command",
+    "source",
+    "corpus_hash",
+    "query_hash",
+    "seed",
+    "vector_count",
+    "query_count",
+    "training_rows",
+    "validation_rows",
+    "model",
+    "index_current_blake3",
+    "build_source_commit",
+    "build_dirty_worktree",
+    "oracle_reference",
+    "trace",
+    "checks_passed",
+    "summaries",
+    "query_results",
+    "elapsed_seconds"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        1
+      ]
+    },
+    "kind": {
+      "enum": [
+        "index-diagnose"
+      ]
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "git_commit": {
+      "type": "string"
+    },
+    "dirty_worktree": {
+      "type": "boolean"
+    },
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "architecture",
+        "cpu",
+        "physical_memory_bytes",
+        "rustc",
+        "cargo_profile"
+      ],
+      "properties": {
+        "os": {
+          "type": "string"
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "physical_memory_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rustc": {
+          "type": "string"
+        },
+        "cargo_profile": {
+          "type": "string"
+        }
+      }
+    },
+    "command": {
+      "type": "string"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generator_version",
+        "kind",
+        "dimension",
+        "vector_count",
+        "chunk_rows",
+        "seed",
+        "correlation",
+        "seed_derivation",
+        "chunk_seeds"
+      ],
+      "properties": {
+        "generator_version": {
+          "enum": [
+            1
+          ]
+        },
+        "kind": {
+          "enum": [
+            "correlated"
+          ]
+        },
+        "dimension": {
+          "enum": [
+            768
+          ]
+        },
+        "vector_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "chunk_rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "correlation": {
+          "enum": [
+            0.85
+          ]
+        },
+        "seed_derivation": {
+          "enum": [
+            "spherra.generated-correlated.chunks.v1"
+          ]
+        },
+        "chunk_seeds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "corpus_hash": {
+      "type": "string"
+    },
+    "query_hash": {
+      "type": "string"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "vector_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "query_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "training_rows": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "validation_rows": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "transform_id",
+        "quantizer_id",
+        "pq_codebook_id",
+        "codec_id",
+        "scorer_version",
+        "layout"
+      ],
+      "properties": {
+        "transform_id": {
+          "type": "string"
+        },
+        "quantizer_id": {
+          "type": "string"
+        },
+        "pq_codebook_id": {
+          "type": "string"
+        },
+        "codec_id": {
+          "type": "string"
+        },
+        "scorer_version": {
+          "enum": [
+            1
+          ]
+        },
+        "layout": {
+          "enum": [
+            "tiled-soa-32"
+          ]
+        }
+      }
+    },
+    "index_current_blake3": {
+      "type": "string"
+    },
+    "build_source_commit": {
+      "type": "string"
+    },
+    "build_dirty_worktree": {
+      "type": "boolean"
+    },
+    "oracle_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "report_path",
+        "report_blake3",
+        "rankings_blake3",
+        "git_commit",
+        "dirty_worktree"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "fresh-streaming",
+            "pinned"
+          ]
+        },
+        "report_path": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "report_blake3": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "rankings_blake3": {
+          "type": "string"
+        },
+        "git_commit": {
+          "type": "string"
+        },
+        "dirty_worktree": {
+          "type": "boolean"
+        }
+      }
+    },
+    "trace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "blake3",
+        "bytes"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "blake3": {
+          "type": "string"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "checks_passed": {
+      "type": "boolean"
+    },
+    "summaries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "budget",
+          "candidate_recall_at_10",
+          "recall_at_10",
+          "floating_recall_at_10",
+          "selection_losses",
+          "ranking_losses",
+          "floating_top10_differences"
+        ],
+        "properties": {
+          "budget": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "candidate_recall_at_10": {
+            "type": "number"
+          },
+          "recall_at_10": {
+            "type": "number"
+          },
+          "floating_recall_at_10": {
+            "type": "number"
+          },
+          "selection_losses": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "ranking_losses": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "floating_top10_differences": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "query_results": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "query",
+          "budgets"
+        ],
+        "properties": {
+          "query": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "budgets": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "budget",
+                "requested_budget",
+                "candidate_count",
+                "candidate_matches",
+                "delivered_matches",
+                "exact_rerank_matches",
+                "floating_matches",
+                "floating_top10_differences",
+                "maximum_fixed_point_error",
+                "selection_losses",
+                "ranking_losses",
+                "neighbors",
+                "hits"
+              ],
+              "properties": {
+                "budget": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "requested_budget": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "candidate_count": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "candidate_matches": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "delivered_matches": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "exact_rerank_matches": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "floating_matches": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "floating_top10_differences": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "maximum_fixed_point_error": {
+                  "type": "number"
+                },
+                "selection_losses": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "ranking_losses": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "neighbors": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "row",
+                      "exact_rank",
+                      "truth",
+                      "primary_rank",
+                      "primary_raw",
+                      "primary_error",
+                      "refined_rank",
+                      "refined_raw",
+                      "refined_error",
+                      "loss"
+                    ],
+                    "properties": {
+                      "row": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "exact_rank": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "truth": {
+                        "type": "number"
+                      },
+                      "primary_rank": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "primary_raw": {
+                        "type": "integer"
+                      },
+                      "primary_error": {
+                        "type": "number"
+                      },
+                      "refined_rank": {
+                        "oneOf": [
+                          {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "refined_raw": {
+                        "oneOf": [
+                          {
+                            "type": "integer"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "refined_error": {
+                        "oneOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "loss": {
+                        "enum": [
+                          "selection",
+                          "ranking",
+                          "returned"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "hits": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "row",
+                      "raw",
+                      "public_raw",
+                      "truth",
+                      "floating",
+                      "lower",
+                      "upper"
+                    ],
+                    "properties": {
+                      "row": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "raw": {
+                        "type": "integer"
+                      },
+                      "public_raw": {
+                        "type": "integer"
+                      },
+                      "truth": {
+                        "type": "number"
+                      },
+                      "floating": {
+                        "type": "number"
+                      },
+                      "lower": {
+                        "type": "number"
+                      },
+                      "upper": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "elapsed_seconds": {
+      "type": "number"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Local index neighbor loss attribution"
+}

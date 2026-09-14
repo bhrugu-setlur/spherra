@@ -1,6 +1,9 @@
 //! Quality through the public Index API. The independent reference uses public
 //! checked format readers, checked scalar scores, and full sorts; it never calls
 //! the serving tile kernel, worker heaps, or private index implementation.
+mod loss;
+pub(super) use loss::run as diagnose;
+
 use crate::local_index::{
     allowed, build_index, finish_revision, hash_file, hash_rows, model_metadata, number,
 };

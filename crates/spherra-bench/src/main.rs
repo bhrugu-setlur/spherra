@@ -58,6 +58,7 @@ fn run(arguments: &[String]) -> Result<(), BenchError> {
         "latency-child" => local_index::latency_child(&options),
         "build-memory-child" => local_index::memory_child(&options),
         "index" => index_quality::run(&options),
+        "index-diagnose" => index_quality::diagnose(&options),
         other => Err(BenchError::UnknownSubcommand(other.to_owned())),
     }
 }
@@ -702,7 +703,7 @@ impl fmt::Display for BenchError {
             Self::MissingSubcommand => {
                 write!(
                     formatter,
-                    "expected a subcommand: codec-format, certify, prune-rate, oracle-reference, index, latency, or build-memory"
+                    "expected a subcommand: codec-format, certify, prune-rate, oracle-reference, index, index-diagnose, latency, or build-memory"
                 )
             }
             Self::UnknownSubcommand(name) => write!(formatter, "unknown subcommand {name}"),

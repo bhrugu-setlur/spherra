@@ -1,0 +1,73 @@
+# Local index accuracy experiments
+
+Status: in progress; authorized after the local-index delivery.
+
+## Questions and order
+
+1. Separate candidate-selection loss from compressed reranking loss on the
+   existing pinned generated 1M corpus at budgets 200/400/800/1600. Preserve
+   exact row ranks, score errors, original-vector reranking, floating-point
+   reconstructed ranking and public/scalar equality evidence per query.
+2. Build a pinned real-document **and real-query** corpus with MPNet-768;
+   start at 100k indexed passages and retain separate calibration, tuning-query
+   and final-query sets. Existing held-out-document SciFact remains a regression.
+3. Compare training input sizes 4096/8192/16384/32768, record actual validation
+   and training counts, keep indexed bytes/query bytes/transform seed fixed,
+   and choose using tuning queries before opening the final query results.
+4. Use measured loss attribution to decide whether a benchmark-only training
+   improvement or original-vector reranking is warranted. Production format,
+   public API, score/certificate contracts and default budget stay fixed during
+   diagnosis; any proposed production change needs a concrete design amendment.
+
+## Measurement rules
+
+- Original-space FP64 exhaustive top10 defines vector-neighbor truth. The
+  existing 1M top100 artifact was pinned before delivery; it is regression
+  evidence, not an untouched final test set for model selection.
+- Candidate recall is exact-top10 membership in the primary top-B pool. Its
+  complement is selection loss. Candidate recall minus delivered recall is
+  ranking loss. Exact reranking of the same pool must recover its membership
+  count exactly, including deterministic row-ID tie breaking.
+- Compare public k=B/B=B finalists and public k=10/B=B hits against an
+  independent checked-scalar ranking. Reconstructed FP64 scoring uses the same
+  prepared transformed FP32 query and restored primary/residual values, without
+  renormalization, to isolate Q24 rounding from reconstruction/transform error.
+- Every excluded exact neighbor records primary rank; pool members additionally
+  record refined rank, exact score and score errors. Record returned competitors
+  and complete candidate rows so summaries can be independently reconstructed.
+- No diagnostic timing is a latency gate. Performance comparisons run separately
+  with the existing public latency protocol after model selection.
+- Pin text/data/model revisions, preprocessing, FP32 bytes and hashes. Real
+  queries are distinct from corpus/calibration rows. Keep held-out query sets
+  fixed and do not train/select on final relevance or exact-neighbor results.
+- The benchmark must fail on wrong provenance, score/rank disagreement, false
+  enclosure or inconsistent loss accounting. Use clean release commits for
+  recorded runs and archive evidence after they complete.
+
+## Progress
+
+- Preregistered the first diagnostic and data/training experiment sequence.
+- `index-diagnose` implements the generated-corpus attribution path and a strict
+  report schema. A compact hash-bound JSONL trace retains each largest-pool
+  candidate once; the main report retains per-budget top10 and true-neighbor
+  records. Traces are local artifacts, like the existing exact oracle binary.
+- Focused tests cover full/partial candidate coverage, loss accounting, all-hit
+  equality/enclosure, trace identities, schema requirements and bad inputs.
+- Focused tests and the full CI gate passed (194 tests, 12 skipped); workspace
+  tests and strict all-target clippy passed. Clean 1M measurements are next.
+- Real-data preparation pins `BeIR/msmarco@a918e0d1`,
+  `BeIR/msmarco-qrels@253fbf8a`, and MPNet `e8c3b32e`. The planned 100k-passage
+  workload retains relevant passages for 400 deterministically chosen dev
+  queries (200 tuning, 200 final), plus sampled distractors, and 32,768 disjoint
+  calibration passages. This is an explicitly constructed subset, not an
+  official full-corpus MS MARCO score. Passage truncation at the model's 384
+  word-piece limit is counted and recorded; raw texts and normalized FP32
+  embeddings are retained locally.
+
+```bash
+cargo run -p spherra-bench --release --locked -- index-diagnose \
+  --rows 1000000 --queries 200 --seed 20260804 --training-rows 4096 \
+  --budgets 200,400,800,1600 --reuse true --index-dir target/local-index-1m \
+  --oracle-reference docs/benchmarks/results/2026-09-13-local-index-oracle-generated-correlated-1m.json \
+  --output target/measure/loss-1m-training4096.json
+```
