@@ -5,8 +5,11 @@ length of its reconstruction, `dot(T(q), p + e) / |p + e|` (times the stored
 length for dot-product search). It needs no stored bytes and only touches the
 refined candidate pool. This is a **benchmark-only** experiment at clean
 `fcaf0a8`; serving search, scores, intervals, defaults and formats are unchanged.
-Adopting it would require a user-approved design change, including new
-certificate intervals for the corrected score.
+The user has now approved serving adoption in the
+[reconstruction-length amendment](../design/2026-09-14-reconstruction-length-amendment.md).
+The earlier expectation that intervals must change is corrected there: retain
+the authenticated raw-score bounds on original truth, rather than rescaling
+them to the displayed estimate. Results below remain the original experiment.
 
 `index-diagnose` and `dot-product` rescore the same budget-200 candidate pool
 in FP64. Earlier evidence showed FP64 and Q24 ranking of the unrenormalized

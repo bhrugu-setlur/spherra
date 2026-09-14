@@ -7,7 +7,8 @@ use crate::{
 use spherra_codec::FixedPointScorer;
 
 /// Approximate original-vector dot product, with an enclosing score interval.
-/// Ranking uses exact integer products; the displayed f64 score may round ties.
+/// Primary ranking uses exact integer products; finalists use length-corrected
+/// FP64 scores. The interval encloses truth, not necessarily the estimate.
 /// ```compile_fail
 /// let hit = spherra::DotProductHit {};
 /// ```
@@ -67,7 +68,7 @@ impl DotProductResult {
 
 // Every finite nonnegative FP16 value is an integer multiple of 2^-24.
 // The largest unit count is <2^40. Multiplying any i64 score is <2^103,
-// so primary and refined comparisons fit i128 without rounding or saturation.
+// so primary comparisons fit i128 without rounding or saturation.
 fn magnitude_units(bits: u16) -> i128 {
     let exponent = (bits >> 10) & 31;
     let fraction = i128::from(bits & 1023);
@@ -83,6 +84,16 @@ impl Ranking for DotProduct {
     #[inline(always)]
     fn key(score: i64, magnitudes: &[u16], local: usize) -> i128 {
         i128::from(score) * magnitude_units(magnitudes[local])
+    }
+    fn refined_key(corrected: f64, magnitudes: &[u16], local: usize) -> f64 {
+        let units = magnitude_units(magnitudes[local]);
+        // Canonical +0 keeps underflowed lengths tied by row ID even when
+        // their directional scores have opposite signs.
+        if units == 0 {
+            0.0
+        } else {
+            corrected * units as f64
+        }
     }
 }
 
@@ -182,6 +193,7 @@ impl Index {
             row,
             segment,
             local,
+            ..
         } in selected
         {
             let s = &self.data.segments[segment];
@@ -192,7 +204,7 @@ impl Index {
             hits.push(DotProductHit {
                 row: RowId(row),
                 segment: segment as u32,
-                score: (key as f64 / scale) * query_norm,
+                score: (key / scale) * query_norm,
                 interval: dot_interval(cosine, bits, query_norm_interval)?,
                 magnitude_bits: bits,
             });
@@ -210,6 +222,15 @@ impl Index {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn zero_magnitude_has_one_tie_key_for_both_score_signs() {
+        for score in [-1.0, 0.0, 1.0] {
+            assert_eq!(
+                DotProduct::refined_key(score, &[0], 0).to_bits(),
+                0.0_f64.to_bits()
+            );
+        }
+    }
     #[test]
     fn every_finite_half_has_exact_units_and_conservative_rounding_cell() {
         for bits in 0..=0x7bff {

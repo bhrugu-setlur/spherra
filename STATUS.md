@@ -138,10 +138,21 @@ remain unmeasured.
 
 At clean `fcaf0a8`, dividing refined candidate scores by reconstruction length
 raised recall@10 from 0.9095 to 0.9255 (generated 1M), 0.9705 to 0.9770 (MS
-MARCO test) and 0.9024 to 0.9235 (DPR 1M dot), with no stored bytes. Serving is
-unchanged; adoption needs user approval, certified intervals and a latency check.
+MARCO test) and 0.9024 to 0.9235 (DPR 1M dot), with no stored bytes. The user subsequently approved adoption; the new checkpoint below supersedes
+this experiment-only serving decision.
 At clean `7a526ab`, simulated option 2 (stored build-time alignment: exact,
 FP16 or one byte) matched option 1 within noise on all three workloads, because
 reconstructions align with their originals to at least 0.994; it is not worth a
 format change.
 [Results](docs/benchmarks/2026-09-14-renormalization-experiment.md).
+
+## Current checkpoint: reconstruction-length correction
+
+The user approved Option 1 in production. Both cosine and dot finalists now use
+Q24 scores divided by the reconstructed compressed length; the primary scan,
+budget and index bytes are unchanged. Raw-score truth certificates are retained.
+Independent scalar and benchmark checks cover the corrected ranking. CI passes
+218 tests with 12 skipped; strict clippy and the release full-corpus scalar
+qualification pass. The separate workspace gate and clean release production
+quality/latency measurements are in progress.
+[Contract](docs/design/2026-09-14-reconstruction-length-amendment.md).

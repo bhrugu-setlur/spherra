@@ -44,7 +44,8 @@
   "properties": {
     "schema_version": {
       "enum": [
-        1
+        1,
+        2
       ]
     },
     "kind": {
@@ -517,46 +518,96 @@
             "type": "array",
             "minItems": 10,
             "items": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "row",
-                "raw",
-                "expected_row",
-                "expected_raw",
-                "score",
-                "lower",
-                "upper",
-                "truth"
-              ],
-              "properties": {
-                "row": {
-                  "type": "integer",
-                  "minimum": 0
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "row",
+                    "raw",
+                    "expected_row",
+                    "expected_raw",
+                    "score",
+                    "lower",
+                    "upper",
+                    "truth"
+                  ],
+                  "properties": {
+                    "row": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "raw": {
+                      "type": "integer"
+                    },
+                    "expected_row": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "expected_raw": {
+                      "type": "integer"
+                    },
+                    "score": {
+                      "type": "number"
+                    },
+                    "lower": {
+                      "type": "number"
+                    },
+                    "upper": {
+                      "type": "number"
+                    },
+                    "truth": {
+                      "type": "number"
+                    }
+                  }
                 },
-                "raw": {
-                  "type": "integer"
-                },
-                "expected_row": {
-                  "type": "integer",
-                  "minimum": 0
-                },
-                "expected_raw": {
-                  "type": "integer"
-                },
-                "score": {
-                  "type": "number"
-                },
-                "lower": {
-                  "type": "number"
-                },
-                "upper": {
-                  "type": "number"
-                },
-                "truth": {
-                  "type": "number"
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "row",
+                    "expected_row",
+                    "expected_raw",
+                    "score",
+                    "lower",
+                    "upper",
+                    "truth",
+                    "expected_score",
+                    "expected_length"
+                  ],
+                  "properties": {
+                    "row": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "expected_row": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "expected_raw": {
+                      "type": "integer"
+                    },
+                    "score": {
+                      "type": "number"
+                    },
+                    "lower": {
+                      "type": "number"
+                    },
+                    "upper": {
+                      "type": "number"
+                    },
+                    "truth": {
+                      "type": "number"
+                    },
+                    "expected_score": {
+                      "type": "number"
+                    },
+                    "expected_length": {
+                      "type": "number"
+                    }
+                  }
                 }
-              }
+              ]
             }
           }
         }

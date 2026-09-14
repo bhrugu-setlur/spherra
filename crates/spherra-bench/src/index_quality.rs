@@ -331,23 +331,15 @@ impl Reference {
             segments,
         })
     }
-    fn search(&self, raw: &Vector, budget: usize) -> Result<Vec<(usize, i64)>, BenchError> {
+    fn search(
+        &self,
+        raw: &Vector,
+        budget: usize,
+    ) -> Result<Vec<(usize, i64, f64, f64)>, BenchError> {
         let scorer = FixedPointScorer::new();
         let query = scorer
             .prepare_query(&self.plan, raw, &self.table, &self.book)
             .map_err(BenchError::harness)?;
-        let scale = query.lookup_scale_measurement();
-        // Hit::score is public; raw is deliberately private. In this measured
-        // range Q24 -> f64 -> Q24 is injective, so comparing recovered integers
-        // proves the same raw-score equality without a benchmark-only Index API.
-        if i128::from(scale.maximum_primary_lookup_entry()) * 768
-            + i128::from(scale.maximum_residual_lookup_entry()) * 96
-            > (1_i128 << 53)
-        {
-            return Err(BenchError::harness(
-                "reference raw scores exceed exact public FP64 conversion range",
-            ));
-        }
         let mut ranked: Vec<_> = self
             .codes
             .iter()
@@ -356,7 +348,8 @@ impl Reference {
             .collect();
         ranked.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
         ranked.truncate(budget.min(ranked.len()));
-        for (row, score) in &mut ranked {
+        let mut refined = Vec::with_capacity(ranked.len());
+        for (row, _) in &ranked {
             let segment = &self.segments[self.segments.partition_point(|s| s.first <= *row) - 1];
             let residual = Pq96Code::from_bytes(
                 segment
@@ -364,13 +357,23 @@ impl Reference {
                     .residual_code((*row - segment.first) as u32)
                     .map_err(BenchError::harness)?,
             );
-            *score = scorer
+            let raw = scorer
                 .score_refined(&query, &self.codes[*row], &residual)
                 .raw();
+            let length = reconstruction_length(
+                &self.table.decode(&self.codes[*row]),
+                &self.book.decode(&residual),
+            );
+            let corrected = if length.is_normal() {
+                raw as f64 / length
+            } else {
+                raw as f64
+            };
+            refined.push((*row, raw, corrected / (1_u64 << 24) as f64, length));
         }
-        ranked.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
-        ranked.truncate(10);
-        Ok(ranked)
+        refined.sort_unstable_by(|a, b| b.2.total_cmp(&a.2).then_with(|| a.0.cmp(&b.0)));
+        refined.truncate(10);
+        Ok(refined)
     }
 }
 
@@ -414,19 +417,15 @@ fn qualify_query(
     let mut matches = 0;
     let mut differences = 0;
     let mut violations = 0;
-    for (hit, (expected_row, expected_raw)) in result.hits().iter().zip(expected) {
+    for (hit, (expected_row, expected_raw, expected_score, expected_length)) in
+        result.hits().iter().zip(expected)
+    {
         let row = usize::try_from(hit.row().get()).map_err(BenchError::harness)?;
         let original = rows.get(row).ok_or_else(|| {
             BenchError::harness("public search returned a row outside the corpus")
         })?;
-        let scaled = hit.score() * FixedPointScorer::new().metadata().comparison_scale() as f64;
-        if !scaled.is_finite() || scaled.abs() > (1_u64 << 53) as f64 || scaled.fract() != 0.0 {
-            return Err(BenchError::harness(
-                "public score is not an exact Q24 integer",
-            ));
-        }
-        let raw = scaled as i64;
-        differences += u64::from(row != expected_row || raw != expected_raw);
+        differences +=
+            u64::from(row != expected_row || hit.score().to_bits() != expected_score.to_bits());
         let truth = dot_f64(
             &normalized,
             &normalize_fp64(original).map_err(BenchError::harness)?,
@@ -435,7 +434,7 @@ fn qualify_query(
         violations +=
             u64::from(!lower.is_finite() || !upper.is_finite() || lower > truth || truth > upper);
         matches += u64::from(exact.iter().take(10).any(|n| n.row as usize == row));
-        hits.push(json!({"row":row,"raw":raw,"expected_row":expected_row,"expected_raw":expected_raw,"score":hit.score(),"lower":lower,"upper":upper,"truth":truth}));
+        hits.push(json!({"row":row,"expected_row":expected_row,"expected_raw":expected_raw,"expected_score":expected_score,"expected_length":expected_length,"score":hit.score(),"lower":lower,"upper":upper,"truth":truth}));
     }
     Ok(QueryOutcome {
         value: json!({"query":ordinal,"exact_matches":matches,"hits":hits}),
@@ -470,7 +469,7 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
     }
     let start = Instant::now();
     let revision = SourceRevision::capture();
-    let mut value = json!({"schema_version":1,"kind":"index","timestamp":timestamp_rfc3339_utc(),"git_commit":revision.commit,"dirty_worktree":revision.dirty,"machine":MachineProfile::capture(),"command":format!("spherra-bench index {}",o.0.iter().map(|(k,v)|format!("--{k} {v}")).collect::<Vec<_>>().join(" ")),"durability_mode":"file-and-directory-sync"});
+    let mut value = json!({"schema_version":2,"kind":"index","timestamp":timestamp_rfc3339_utc(),"git_commit":revision.commit,"dirty_worktree":revision.dirty,"machine":MachineProfile::capture(),"command":format!("spherra-bench index {}",o.0.iter().map(|(k,v)|format!("--{k} {v}")).collect::<Vec<_>>().join(" ")),"durability_mode":"file-and-directory-sync"});
     let dir = Path::new(o.require("index-dir")?);
     let (rows, queries, exact, oracle, mut historical, build) = if let Some(name) = o.get("corpus")
     {

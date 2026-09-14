@@ -76,17 +76,38 @@ fn dot_product_matches_scalar_full_scan_and_encloses_original_dot() {
                     let r = Pq96Code::from_bytes(s.residual.residual_code(local as u32).unwrap());
                     let magnitude = f64::from(half::f16::from_bits(s.magnitudes[local]).to_f32());
                     let units = (magnitude * 16777216.0) as i128;
+                    let decoded = model.quantizer.decode(&p);
+                    let residual = model.codebook.decode(&r);
+                    let length = decoded
+                        .iter()
+                        .zip(residual)
+                        .map(|(&p, e)| {
+                            let v = f64::from(p) + f64::from(e);
+                            v * v
+                        })
+                        .sum::<f64>()
+                        .sqrt();
+                    let raw = scorer.score_refined(&prepared, &p, &r).raw() as f64;
+                    let corrected = if length.is_normal() {
+                        raw / length
+                    } else {
+                        raw
+                    };
                     primary.push((
                         s.entry.first_row + local as u64,
                         i128::from(scorer.score_primary(&prepared, &p).raw()) * units,
-                        i128::from(scorer.score_refined(&prepared, &p, &r).raw()) * units,
+                        if units == 0 {
+                            0.0
+                        } else {
+                            corrected * units as f64
+                        },
                     ));
                 }
             }
             primary.sort_unstable_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
             for (k, budget) in [(1, 1), (10, 20), (10, 65), (100, 200)] {
                 let mut expected = primary[..budget.min(primary.len())].to_vec();
-                expected.sort_unstable_by(|a, b| b.2.cmp(&a.2).then(a.0.cmp(&b.0)));
+                expected.sort_unstable_by(|a, b| b.2.total_cmp(&a.2).then(a.0.cmp(&b.0)));
                 expected.truncate(k);
                 let result = index
                     .search_dot_product(
@@ -104,7 +125,7 @@ fn dot_product_matches_scalar_full_scan_and_encloses_original_dot() {
                 assert_eq!(result.hits().len(), expected.len());
                 for (hit, expected) in result.hits().iter().zip(expected) {
                     assert_eq!(hit.row().get(), expected.0);
-                    assert_eq!(hit.score(), (expected.2 as f64 / 281474976710656.0) * qnorm);
+                    assert_eq!(hit.score(), (expected.2 / 281474976710656.0) * qnorm);
                     assert_eq!(
                         hit.stored_magnitude(),
                         spherra_domain::ValidatedVector::new(f.rows[expected.0 as usize].to_vec())

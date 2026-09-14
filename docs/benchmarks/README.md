@@ -12,6 +12,15 @@ The [local index test technical note](2026-09-13-local-index-test-note.md)
 consolidates September latency, memory, recall, correctness and recovery
 evidence with source revisions, raw data links and limitations.
 
+The [reconstruction-length amendment](../design/2026-09-14-reconstruction-length-amendment.md)
+adopts correction in both serving methods. Quality, loss and dot reports now
+use version 2. `recall_at_10` / `dot_recall_at_k` measure corrected production
+ranking; `renormalized_*` remains the experiment with an FP64 numerator.
+Quality equality checks compare public corrected scores with independent scalar
+scores. Version-2 loss traces append length and corrected score to the six old
+columns. `tools/audit_index_loss.py` supports both versions; historical version-1
+reports retain their original meaning and bytes.
+
 ## Schemas
 
 | Document | Produced by | Shape |

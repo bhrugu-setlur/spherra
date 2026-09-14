@@ -83,7 +83,8 @@ fn check(v: &Value) {
     for query in v["query_results"].as_array().unwrap() {
         for hit in query["hits"].as_array().unwrap() {
             assert_eq!(hit["row"], hit["expected_row"]);
-            assert_eq!(hit["raw"], hit["expected_raw"]);
+            assert_eq!(hit["score"], hit["expected_score"]);
+            assert!(hit["expected_length"].as_f64().unwrap() > 0.0);
             assert!(hit["lower"].as_f64().unwrap() <= hit["truth"].as_f64().unwrap());
             assert!(hit["upper"].as_f64().unwrap() >= hit["truth"].as_f64().unwrap());
         }

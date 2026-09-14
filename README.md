@@ -89,6 +89,12 @@ size. `k` must be positive; an explicit budget below `k` is invalid. If `k`
 exceeds the index size, every row is returned. Ordering is score descending,
 then row ID ascending. Row IDs are dense ordinals scoped to one index.
 
+Both methods divide each refined score by the length of the reconstructed
+compressed vector before final ranking. This reduces compression shrinkage bias
+using existing bytes, with no extra storage or rebuild. It corrects only the
+shortlisted rows; it cannot recover a neighbor missed during candidate selection.
+A zero reconstruction length leaves the uncorrected score unchanged.
+
 `hit.stored_magnitude()` returns the input length rounded to FP16 and promoted
 to FP32. Tiny positive lengths may round to zero. In cosine search it is
 metadata and does not affect ranking or score intervals. Opening retains two bytes per row (20 MB at
@@ -113,8 +119,8 @@ for hit in result.hits() {
 Dot-product search uses stored lengths during the full scan and refinement.
 Its distinct result type reports approximate original-vector dot products,
 including query length, and intervals that account for compression and stored
-length rounding. Exact integer products determine ranking; displayed floating
-scores may round ties. Top-k remains approximate. Very short vectors rank poorly
+length rounding. Primary selection uses exact integer products; finalists use
+FP64 scores corrected for reconstruction length. Displayed scores may round ties. Top-k remains approximate. Very short vectors rank poorly
 among themselves: lengths below about 3e-8 are stored as zero (those rows score
 zero and tie in row-ID order), and below about 1e-5 length rounding exceeds 0.5%.
 Their intervals remain valid. When all stored row lengths equal one, row
@@ -155,7 +161,9 @@ claims. There is no HNSW, routing, or certificate-based pruning.
 A hit's interval encloses its original-space FP64 cosine score for an index
 built by this library whose files remain intact. It does **not** prove that the
 hit is an exact top-k neighbor. Primary and refined intervals are intersected;
-their epsilons are not added. Hashes detect corruption but cannot establish an
+their epsilons are not added. They use the original raw scores and still certify
+truth after length correction; the displayed estimate need not lie inside the
+interval. Hashes detect corruption but cannot establish an
 honest bound in a deliberately rewritten, re-hashed file. Files must not be
 modified outside the library while an `Index` is open.
 

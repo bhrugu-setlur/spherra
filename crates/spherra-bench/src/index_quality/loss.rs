@@ -8,6 +8,8 @@ struct Candidate {
     primary_rank: usize,
     primary_raw: i64,
     raw: i64,
+    length: f64,
+    corrected: f64,
     floating: f64,
     // Experiment only: `floating` divided by the reconstruction length |p + e|.
     renormalized: f64,
@@ -19,15 +21,6 @@ struct Candidate {
 fn overlap(rows: impl Iterator<Item = usize>, exact: &[Neighbor]) -> u64 {
     rows.filter(|row| exact.iter().take(10).any(|n| n.row as usize == *row))
         .count() as u64
-}
-fn raw_score(score: f64) -> Result<i64, BenchError> {
-    let raw = score * (1_u64 << 24) as f64;
-    if !raw.is_finite() || raw.abs() > (1_u64 << 53) as f64 || raw.fract() != 0.0 {
-        return Err(BenchError::harness(
-            "public score is not an exact Q24 integer",
-        ));
-    }
-    Ok(raw as i64)
 }
 /// FP64 length of the reconstruction p + e, as used by the renormalization experiment.
 pub(crate) fn reconstruction_length(p: &[f32; 768], e: &[f32; 768]) -> f64 {
@@ -163,6 +156,12 @@ fn analyze(
             primary_rank: rank + 1,
             primary_raw,
             raw: refined,
+            length,
+            corrected: (if length.is_normal() {
+                refined as f64 / length
+            } else {
+                refined as f64
+            }) / (1_u64 << 24) as f64,
             floating,
             renormalized,
             stored,
@@ -172,13 +171,17 @@ fn analyze(
     }
     // All candidates appear once in a hash-bound compact trace, rather than
     // duplicating a large pool in every budget's human-readable report.
-    let trace = json!({"query":ordinal,"columns":["row","primary_rank","primary_raw","refined_raw","floating_refined","truth"],"candidates":candidates.iter().map(|c|json!([c.row,c.primary_rank,c.primary_raw,c.raw,c.floating,c.truth])).collect::<Vec<_>>()});
+    let trace = json!({"query":ordinal,"columns":["row","primary_rank","primary_raw","refined_raw","floating_refined","truth","reconstruction_length","corrected_score"],"candidates":candidates.iter().map(|c|json!([c.row,c.primary_rank,c.primary_raw,c.raw,c.floating,c.truth,c.length,c.corrected])).collect::<Vec<_>>()});
     let mut reports = Vec::new();
     for &requested in budgets {
         let budget = requested.min(rows.len());
         let pool = &candidates[..budget];
         let mut refined: Vec<_> = pool.iter().collect();
-        refined.sort_unstable_by(|a, b| b.raw.cmp(&a.raw).then_with(|| a.row.cmp(&b.row)));
+        refined.sort_unstable_by(|a, b| {
+            b.corrected
+                .total_cmp(&a.corrected)
+                .then_with(|| a.row.cmp(&b.row))
+        });
         let mut precise = refined.clone();
         precise
             .sort_unstable_by(|a, b| b.truth.total_cmp(&a.truth).then_with(|| a.row.cmp(&b.row)));
@@ -233,7 +236,8 @@ fn analyze(
             )?;
             for (hit, c) in r.hits().iter().zip(&refined) {
                 require(
-                    hit.row().get() == c.row as u64 && raw_score(hit.score())? == c.raw,
+                    hit.row().get() == c.row as u64
+                        && hit.score().to_bits() == c.corrected.to_bits(),
                     "public/scalar candidate row or score disagreement",
                 )?;
                 let (lower, upper) = hit.interval();
@@ -257,7 +261,7 @@ fn analyze(
         }).collect::<Vec<_>>();
         let hits=normal.hits().iter().zip(refined.iter()).map(|(h,c)|{
             let (lower,upper)=h.interval();
-            json!({"row":c.row,"raw":c.raw,"public_raw":raw_score(h.score()).unwrap(),"truth":c.truth,"floating":c.floating,"lower":lower,"upper":upper})
+            json!({"row":c.row,"raw":c.raw,"public_score":h.score(),"reference_score":c.corrected,"reconstruction_length":c.length,"truth":c.truth,"floating":c.floating,"lower":lower,"upper":upper})
         }).collect::<Vec<_>>();
         reports.push(json!({"budget":budget,"requested_budget":requested,"candidate_count":pool.len(),"candidate_matches":covered,"delivered_matches":delivered,"exact_rerank_matches":exact_matches,"floating_matches":overlap(floating.iter().take(10).map(|c|c.row),exact),"renormalized_matches":overlap(renormalized.iter().take(10).map(|c|c.row),exact),"stored_exact_matches":stored_matches[0],"stored_fp16_matches":stored_matches[1],"stored_u8_matches":stored_matches[2],"minimum_alignment":pool.iter().map(|c|c.alignment).fold(f64::INFINITY,f64::min),"floating_top10_differences":floating.iter().take(10).zip(refined.iter()).filter(|(a,b)|a.row!=b.row).count(),"maximum_fixed_point_error":pool.iter().map(|c|(c.raw as f64/(1_u64<<24) as f64-c.floating).abs()).fold(0.0_f64,f64::max),"selection_losses":10-covered,"ranking_losses":covered-delivered,"neighbors":neighbors,"hits":hits}));
     }
@@ -406,7 +410,7 @@ pub(crate) fn run(o: &Options) -> Result<(), BenchError> {
         let total=(queries.len()*10) as f64;
         json!({"budget":budgets[i].min(rows.len()),"candidate_recall_at_10":sum("candidate_matches") as f64/total,"recall_at_10":sum("delivered_matches") as f64/total,"floating_recall_at_10":sum("floating_matches") as f64/total,"renormalized_recall_at_10":sum("renormalized_matches") as f64/total,"stored_exact_recall_at_10":sum("stored_exact_matches") as f64/total,"stored_fp16_recall_at_10":sum("stored_fp16_matches") as f64/total,"stored_u8_recall_at_10":sum("stored_u8_matches") as f64/total,"minimum_alignment":query_results.iter().map(|q|q["budgets"][i]["minimum_alignment"].as_f64().unwrap()).fold(f64::INFINITY,f64::min),"selection_losses":sum("selection_losses"),"ranking_losses":sum("ranking_losses"),"floating_top10_differences":sum("floating_top10_differences")})
     }).collect::<Vec<_>>();
-    let mut value = json!({"schema_version":1,"kind":"index-diagnose","timestamp":timestamp_rfc3339_utc(),"git_commit":revision.commit,"dirty_worktree":revision.dirty,"machine":MachineProfile::capture(),"command":format!("spherra-bench index-diagnose {}",o.0.iter().map(|(k,v)|format!("--{k} {v}")).collect::<Vec<_>>().join(" ")),"source":source_value,"corpus_hash":corpus_hash,"query_hash":hash_rows(&queries),"seed":seed,"vector_count":rows.len(),"query_count":queries.len(),"training_rows":training,"validation_rows":(training/4).min(4096),"model":model_metadata(dir)?,"index_current_blake3":hash_file(&dir.join("CURRENT"))?,"build_source_commit":build["git_commit"],"build_dirty_worktree":build["dirty_worktree"],"oracle_reference":oracle,"trace":{"path":trace_path,"blake3":hash_file(&trace_path)?,"bytes":fs::metadata(&trace_path).map_err(BenchError::harness)?.len()},"checks_passed":true,"summaries":summaries,"query_results":query_results,"elapsed_seconds":start.elapsed().as_secs_f64()});
+    let mut value = json!({"schema_version":2,"kind":"index-diagnose","timestamp":timestamp_rfc3339_utc(),"git_commit":revision.commit,"dirty_worktree":revision.dirty,"machine":MachineProfile::capture(),"command":format!("spherra-bench index-diagnose {}",o.0.iter().map(|(k,v)|format!("--{k} {v}")).collect::<Vec<_>>().join(" ")),"source":source_value,"corpus_hash":corpus_hash,"query_hash":hash_rows(&queries),"seed":seed,"vector_count":rows.len(),"query_count":queries.len(),"training_rows":training,"validation_rows":(training/4).min(4096),"model":model_metadata(dir)?,"index_current_blake3":hash_file(&dir.join("CURRENT"))?,"build_source_commit":build["git_commit"],"build_dirty_worktree":build["dirty_worktree"],"oracle_reference":oracle,"trace":{"path":trace_path,"blake3":hash_file(&trace_path)?,"bytes":fs::metadata(&trace_path).map_err(BenchError::harness)?.len()},"checks_passed":true,"summaries":summaries,"query_results":query_results,"elapsed_seconds":start.elapsed().as_secs_f64()});
     finish_revision(&mut value);
     let schema: Value = serde_json::from_str(include_str!(
         "../../../../docs/benchmarks/local-index-loss.schema.json"

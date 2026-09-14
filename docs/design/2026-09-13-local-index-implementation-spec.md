@@ -1,5 +1,8 @@
 # Spherra local index implementation specification
 
+The user-approved [reconstruction-length amendment](2026-09-14-reconstruction-length-amendment.md) supersedes the original
+final-ranking rule below. Primary Q24 scoring and raw-score certificates remain unchanged.
+
 Status: **approved at revision 4; approved by the user 2026-09-13**
 Date: 2026-09-13
 Governing design: `2026-09-13-local-index-design.md` (cited below as D§n)

@@ -98,7 +98,8 @@ fn loss_diagnostic_accounts_for_every_true_neighbor_and_checks_all_candidates() 
             );
             assert_eq!(b["neighbors"].as_array().unwrap().len(), 10);
             for h in b["hits"].as_array().unwrap() {
-                assert_eq!(h["raw"], h["public_raw"]);
+                assert_eq!(h["reference_score"], h["public_score"]);
+                assert!(h["reconstruction_length"].as_f64().unwrap() > 0.0);
                 assert!(h["lower"].as_f64().unwrap() <= h["truth"].as_f64().unwrap());
                 assert!(h["truth"].as_f64().unwrap() <= h["upper"].as_f64().unwrap());
             }

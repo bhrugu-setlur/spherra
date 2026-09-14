@@ -31,7 +31,8 @@
   "properties": {
     "schema_version": {
       "enum": [
-        1
+        1,
+        2
       ]
     },
     "kind": {
@@ -813,41 +814,90 @@
                   "type": "array",
                   "minItems": 1,
                   "items": {
-                    "type": "object",
-                    "additionalProperties": false,
-                    "required": [
-                      "row",
-                      "raw",
-                      "public_raw",
-                      "truth",
-                      "floating",
-                      "lower",
-                      "upper"
-                    ],
-                    "properties": {
-                      "row": {
-                        "type": "integer",
-                        "minimum": 0
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "row",
+                          "raw",
+                          "public_raw",
+                          "truth",
+                          "floating",
+                          "lower",
+                          "upper"
+                        ],
+                        "properties": {
+                          "row": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "raw": {
+                            "type": "integer"
+                          },
+                          "public_raw": {
+                            "type": "integer"
+                          },
+                          "truth": {
+                            "type": "number"
+                          },
+                          "floating": {
+                            "type": "number"
+                          },
+                          "lower": {
+                            "type": "number"
+                          },
+                          "upper": {
+                            "type": "number"
+                          }
+                        }
                       },
-                      "raw": {
-                        "type": "integer"
-                      },
-                      "public_raw": {
-                        "type": "integer"
-                      },
-                      "truth": {
-                        "type": "number"
-                      },
-                      "floating": {
-                        "type": "number"
-                      },
-                      "lower": {
-                        "type": "number"
-                      },
-                      "upper": {
-                        "type": "number"
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "row",
+                          "raw",
+                          "truth",
+                          "floating",
+                          "lower",
+                          "upper",
+                          "public_score",
+                          "reference_score",
+                          "reconstruction_length"
+                        ],
+                        "properties": {
+                          "row": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "raw": {
+                            "type": "integer"
+                          },
+                          "truth": {
+                            "type": "number"
+                          },
+                          "floating": {
+                            "type": "number"
+                          },
+                          "lower": {
+                            "type": "number"
+                          },
+                          "upper": {
+                            "type": "number"
+                          },
+                          "public_score": {
+                            "type": "number"
+                          },
+                          "reference_score": {
+                            "type": "number"
+                          },
+                          "reconstruction_length": {
+                            "type": "number"
+                          }
+                        }
                       }
-                    }
+                    ]
                   }
                 }
               }

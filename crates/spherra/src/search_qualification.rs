@@ -46,6 +46,7 @@ fn qualify(corpus: spherra_testkit::CorpusSplits) {
         }
     }
     let scorer = FixedPointScorer::new();
+    let mut reordered = false;
     for query in corpus.queries() {
         let prepared = scorer
             .prepare_query(&model.plan, query, &model.quantizer, &model.codebook)
@@ -62,15 +63,32 @@ fn qualify(corpus: spherra_testkit::CorpusSplits) {
             let mut refined: Vec<_> = primary
                 .iter()
                 .map(|(r, _)| {
-                    (
-                        *r,
-                        scorer
-                            .score_refined(&prepared, &codes[*r].0, &codes[*r].1)
-                            .raw(),
-                    )
+                    let p = model.quantizer.decode(&codes[*r].0);
+                    let e = model.codebook.decode(&codes[*r].1);
+                    let length = p
+                        .iter()
+                        .zip(e)
+                        .map(|(&p, e)| {
+                            let v = f64::from(p) + f64::from(e);
+                            v * v
+                        })
+                        .sum::<f64>()
+                        .sqrt();
+                    let raw = scorer
+                        .score_refined(&prepared, &codes[*r].0, &codes[*r].1)
+                        .raw();
+                    let corrected = if length.is_normal() {
+                        raw as f64 / length
+                    } else {
+                        raw as f64
+                    };
+                    (*r, raw, corrected / (1_u64 << 24) as f64)
                 })
                 .collect();
-            refined.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+            let mut legacy = refined.clone();
+            legacy.sort_unstable_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+            refined.sort_unstable_by(|a, b| b.2.total_cmp(&a.2).then_with(|| a.0.cmp(&b.0)));
+            reordered |= refined.iter().take(k).zip(&legacy).any(|(a, b)| a.0 != b.0);
             refined.truncate(k);
             let result = index
                 .search(
@@ -85,11 +103,26 @@ fn qualify(corpus: spherra_testkit::CorpusSplits) {
                 result
                     .hits()
                     .iter()
-                    .map(|h| (h.row().get() as usize, h.raw()))
+                    .map(|h| (h.row().get() as usize, h.raw(), h.score()))
                     .collect::<Vec<_>>(),
                 refined
             );
             for hit in result.hits() {
+                let si = hit.segment() as usize;
+                let row = hit.row().get();
+                let s = &index.data.segments[si];
+                let primary_raw = scorer
+                    .score_primary(&prepared, &codes[row as usize].0)
+                    .raw();
+                // Ranking changed, but the same row's original-space proof is
+                // still authenticated by exactly the uncorrected integer scores.
+                assert_eq!(
+                    hit.interval(),
+                    s.certificate
+                        .interval(index.data.binding(si), row, primary_raw, hit.raw())
+                        .unwrap()
+                );
+                assert_ne!(hit.score(), hit.raw() as f64 / (1_u64 << 24) as f64);
                 let truth = dot_f64(
                     &normalized,
                     &normalize_fp64(&corpus.indexed()[hit.row().get() as usize]).unwrap(),
@@ -103,8 +136,9 @@ fn qualify(corpus: spherra_testkit::CorpusSplits) {
             }
         }
     }
+    assert!(reordered, "fixture must exercise a changed finalist order");
     eprintln!(
-        "{}: {} rows × {} queries, four k/budget combinations; zero integer-score/rank differences and enclosure failures",
+        "{}: {} rows × {} queries, four k/budget combinations; zero raw-score/corrected-score/rank differences and enclosure failures",
         corpus.name(),
         codes.len(),
         corpus.queries().len()

@@ -1,5 +1,8 @@
 # Spherra local index design
 
+The user-approved [reconstruction-length amendment](2026-09-14-reconstruction-length-amendment.md) supersedes the original
+final-ranking rule below. Primary Q24 scoring and raw-score certificates remain unchanged.
+
 Status: **approved at revision 4; approved by the user 2026-09-13**
 Date: 2026-09-13
 Scope: replaces, for local scope, the R7 distributed architecture

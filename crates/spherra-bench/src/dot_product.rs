@@ -113,6 +113,8 @@ fn corrected_rows(
     let scorer = FixedPointScorer::new();
     let mut scored: [Vec<(f64, usize)>; 4] = Default::default();
     let mut minimum = f64::INFINITY;
+    let qnorm = truth(q, q).sqrt();
+    let mut previous: Option<(f64, usize)> = None;
     for hit in pool.hits() {
         let row = hit.row().get() as usize;
         let segment =
@@ -130,6 +132,28 @@ fn corrected_rows(
             .sum::<f64>();
         let length = reconstruction_length(&p, &e);
         let magnitude = f64::from(hit.stored_magnitude());
+        let raw = scorer
+            .score_refined(&prepared, &reference.codes[row], &code)
+            .raw();
+        let corrected = if length.is_normal() {
+            raw as f64 / length
+        } else {
+            raw as f64
+        };
+        let key = if magnitude == 0.0 {
+            0.0
+        } else {
+            corrected * (magnitude * 16777216.0)
+        };
+        let expected = (key / 281474976710656.0) * qnorm;
+        if hit.score().to_bits() != expected.to_bits()
+            || previous.is_some_and(|p| better(&p, &(key, row)).is_gt())
+        {
+            return Err(BenchError::harness(
+                "corrected dot scalar score/order disagreement",
+            ));
+        }
+        previous = Some((key, row));
         let original = scorer
             .prepare_query(
                 &reference.plan,
@@ -329,7 +353,7 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
     }
     let end = SourceRevision::capture();
     let checked = (query_count * k.min(n)) as f64;
-    let mut value = json!({"schema_version":1,"kind":"dot-product","timestamp":timestamp_rfc3339_utc(),
+    let mut value = json!({"schema_version":2,"kind":"dot-product","timestamp":timestamp_rfc3339_utc(),
         "git_commit":source.commit,"dirty_worktree":source.dirty || end.dirty || source.commit!=end.commit,
         "machine":MachineProfile::capture(),"command":format!("spherra-bench dot-product {}",o.0.iter().map(|(k,v)|format!("--{k} {v}")).collect::<Vec<_>>().join(" ")),
         "indexed_blake3":o.require("indexed-blake3")?,"training_blake3":o.require("training-blake3")?,"queries_blake3":o.require("queries-blake3")?,

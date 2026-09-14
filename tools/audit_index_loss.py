@@ -34,11 +34,16 @@ for path in sys.argv[1:]:
         assert len({c[0] for c in cs}) == len(cs)
         assert all(c[1] == i + 1 for i, c in enumerate(cs))
         assert sorted(cs, key=lambda c: (-c[2], c[0])) == cs
+        if d["schema_version"] == 2:
+            assert t["columns"][6:] == ["reconstruction_length", "corrected_score"]
+            for c in cs:
+                assert math.isfinite(c[6]) and c[6] >= 0
+                assert c[7] == (c[3] / c[6] if c[6] > 0 else float(c[3])) / 2**24
         previous = 0
         for i, b in enumerate(q["budgets"]):
             pool = cs[: b["budget"]]
             truth = {n["row"] for n in b["neighbors"]}
-            refined = sorted(pool, key=lambda c: (-c[3], c[0]))
+            refined = sorted(pool, key=lambda c: (-(c[7] if d["schema_version"] == 2 else c[3]), c[0]))
             precise = sorted(pool, key=lambda c: (-c[5], c[0]))
             floating = sorted(pool, key=lambda c: (-c[4], c[0]))
             covered = len(truth & {c[0] for c in pool})
@@ -59,7 +64,12 @@ for path in sys.argv[1:]:
                 a[0] != b[0] for a, b in zip(floating[:10], refined[:10])
             )
             for h, c in zip(b["hits"], refined):
-                assert h["row"] == c[0] and h["raw"] == h["public_raw"] == c[3]
+                assert h["row"] == c[0] and h["raw"] == c[3]
+                if d["schema_version"] == 2:
+                    assert h["public_score"] == h["reference_score"] == c[7]
+                    assert h["reconstruction_length"] == c[6]
+                else:
+                    assert h["public_raw"] == c[3]
                 assert h["truth"] == c[5]
                 assert h["lower"] <= c[5] <= h["upper"]
             for n in b["neighbors"]:
