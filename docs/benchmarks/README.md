@@ -125,8 +125,36 @@ Results and original raw `time -l` logs:
 
 The JSONs preserve their original commands and `target/measure/` output paths;
 the links above archive those exact bytes. The 1M corpus matches the previously
-pinned streaming-oracle reference. The next approved stage is the safe tile
-kernel; the scorer, representation, and default budget stay fixed.
+pinned streaming-oracle reference.
+
+### Local index stage 2 results (2026-09-13)
+
+The safe tile kernel passes every latency gate at clean commit `84065a9`:
+
+| Rows | p50 | p99 | Peak open/search RSS | Retained descriptors |
+|---|---:|---:|---:|---:|
+| 1M | 52.622 ms | 147.278 ms | 399,638,528 B | 17 |
+| 10M | 458.146 ms | 616.475 ms | 3,855,040,512 B | 161 |
+
+Both runs used the same protocol and identical index, corpus, query and model
+identities as stage 1, verified before comparison. Each contains all 1,000 raw
+samples after 50 warmups. Median search improved 11.98x at 1M and 14.05x at 10M.
+The indexes were reused: these RSS measurements cover open/search, whereas the
+stage 1 process also built its index. That difference is not a kernel memory
+improvement. Build throughput and the independent builder-memory gate above
+remain the build evidence.
+
+- [1M JSON](results/2026-09-13-local-index-stage2-latency-1m.json),
+  [raw log](results/2026-09-13-local-index-stage2-latency-1m.time.txt).
+- [10M JSON](results/2026-09-13-local-index-stage2-latency-10m.json),
+  [raw log](results/2026-09-13-local-index-stage2-latency-10m.time.txt).
+
+The release differential qualification compared every primary score on archived
+SciFact (73,760 scores) and generated 100k (2,000,000 scores), over 20 queries
+each, with zero differences. Randomized and boundary tests cover full/partial
+tiles, malformed geometry, and the checked fallback outside the range proof.
+**Stage 3 is skipped.** No NEON or unsafe code is introduced; the scorer,
+representation, certificates and default budget remain unchanged.
 
 ## Running the harness
 
