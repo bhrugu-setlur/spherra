@@ -1,0 +1,221 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "kind",
+    "timestamp",
+    "git_commit",
+    "dirty_worktree",
+    "machine",
+    "command",
+    "indexed_blake3",
+    "training_blake3",
+    "queries_blake3",
+    "index_current_blake3",
+    "rows",
+    "training_rows",
+    "query_count",
+    "seed",
+    "k",
+    "candidate_budget",
+    "enclosure_failures",
+    "build_seconds",
+    "dot_recall_at_k",
+    "cosine_recall_against_dot_at_k",
+    "queries"
+  ],
+  "properties": {
+    "schema_version": {
+      "enum": [
+        1
+      ]
+    },
+    "kind": {
+      "enum": [
+        "dot-product"
+      ]
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "git_commit": {
+      "type": "string"
+    },
+    "dirty_worktree": {
+      "type": "boolean"
+    },
+    "machine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "os",
+        "architecture",
+        "cpu",
+        "physical_memory_bytes",
+        "rustc",
+        "cargo_profile"
+      ],
+      "properties": {
+        "os": {
+          "type": "string"
+        },
+        "architecture": {
+          "type": "string"
+        },
+        "cpu": {
+          "type": "string"
+        },
+        "physical_memory_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rustc": {
+          "type": "string"
+        },
+        "cargo_profile": {
+          "type": "string"
+        }
+      }
+    },
+    "command": {
+      "type": "string"
+    },
+    "indexed_blake3": {
+      "type": "string"
+    },
+    "training_blake3": {
+      "type": "string"
+    },
+    "queries_blake3": {
+      "type": "string"
+    },
+    "index_current_blake3": {
+      "type": "string"
+    },
+    "rows": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "training_rows": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "query_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "k": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "candidate_budget": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "enclosure_failures": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "build_seconds": {
+      "type": "number"
+    },
+    "dot_recall_at_k": {
+      "type": "number"
+    },
+    "cosine_recall_against_dot_at_k": {
+      "type": "number"
+    },
+    "queries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "query",
+          "exact_rows",
+          "dot_hits",
+          "cosine_rows",
+          "dot_matches",
+          "cosine_matches",
+          "dot_ms",
+          "cosine_ms"
+        ],
+        "properties": {
+          "query": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "exact_rows": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "dot_hits": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "score",
+                "lower",
+                "upper",
+                "truth",
+                "stored_magnitude",
+                "row"
+              ],
+              "properties": {
+                "score": {
+                  "type": "number"
+                },
+                "lower": {
+                  "type": "number"
+                },
+                "upper": {
+                  "type": "number"
+                },
+                "truth": {
+                  "type": "number"
+                },
+                "stored_magnitude": {
+                  "type": "number"
+                },
+                "row": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "cosine_rows": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "dot_matches": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cosine_matches": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "dot_ms": {
+            "type": "number"
+          },
+          "cosine_ms": {
+            "type": "number"
+          }
+        }
+      }
+    }
+  }
+}

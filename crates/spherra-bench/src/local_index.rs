@@ -265,6 +265,38 @@ pub(super) fn build_index(
     Ok(value)
 }
 pub(super) fn latency_child(o: &Options) -> Result<(), BenchError> {
+    latency_child_impl(o, false)
+}
+pub(super) fn dot_product_latency_child(o: &Options) -> Result<(), BenchError> {
+    latency_child_impl(o, true)
+}
+enum MeasuredResult {
+    Cosine(spherra::SearchResult),
+    Dot(spherra::DotProductResult),
+}
+impl MeasuredResult {
+    fn counts(&self) -> (u64, u64, usize) {
+        match self {
+            Self::Cosine(r) => (r.rows_scanned(), r.rows_refined(), r.hits().len()),
+            Self::Dot(r) => (r.rows_scanned(), r.rows_refined(), r.hits().len()),
+        }
+    }
+}
+fn measured_search(index: &Index, query: &Vector, dot: bool) -> Result<MeasuredResult, BenchError> {
+    let options = SearchOptions {
+        k: 10,
+        candidate_budget: None,
+    };
+    if dot {
+        index
+            .search_dot_product(query, options)
+            .map(MeasuredResult::Dot)
+    } else {
+        index.search(query, options).map(MeasuredResult::Cosine)
+    }
+    .map_err(BenchError::harness)
+}
+fn latency_child_impl(o: &Options, dot: bool) -> Result<(), BenchError> {
     allowed(
         o,
         &[
@@ -285,7 +317,15 @@ pub(super) fn latency_child(o: &Options) -> Result<(), BenchError> {
     if query_count == 0 || training_rows > MAX_TRAINING_ROWS {
         return Err(BenchError::harness("invalid measurement sizes"));
     }
-    let mut value = base("latency", o, &source);
+    let mut value = base(
+        if dot {
+            "dot-product-latency"
+        } else {
+            "latency"
+        },
+        o,
+        &source,
+    );
     let dir = Path::new(o.require("index-dir")?);
     let build = build_index(o, &source, dir, training_rows)?;
     let queries = source.queries(
@@ -309,32 +349,19 @@ pub(super) fn latency_child(o: &Options) -> Result<(), BenchError> {
     let mut on_ac = ac_power()?;
     eprintln!("query: warming with {warmup} queries");
     for query in &queries[query_count..] {
-        index
-            .search(
-                query,
-                SearchOptions {
-                    k: 10,
-                    candidate_budget: None,
-                },
-            )
-            .map_err(BenchError::harness)?;
+        std::hint::black_box(measured_search(&index, query, dot)?);
     }
     let mut times = Vec::with_capacity(query_count);
     for (i, query) in queries[..query_count].iter().enumerate() {
         let start = Instant::now();
-        let result = index
-            .search(
-                query,
-                SearchOptions {
-                    k: 10,
-                    candidate_budget: None,
-                },
-            )
-            .map_err(BenchError::harness)?;
+        let result = measured_search(&index, query, dot)?;
         let elapsed = start.elapsed().as_secs_f64() * 1000.0;
-        if result.rows_scanned() != index.len()
-            || result.rows_refined() != index.len().min(200)
-            || result.hits().len() != 10_usize.min(index.len() as usize)
+        if result.counts()
+            != (
+                index.len(),
+                index.len().min(200),
+                10_usize.min(index.len() as usize),
+            )
         {
             return Err(BenchError::harness(
                 "search measurement did not execute the declared workload",
@@ -503,10 +530,10 @@ pub(super) fn measured_child(kind: &str, o: &Options) -> Result<(), BenchError> 
     command
         .arg("-l")
         .arg(std::env::current_exe().map_err(BenchError::harness)?)
-        .arg(if kind == "latency" {
-            "latency-child"
-        } else {
-            "build-memory-child"
+        .arg(match kind {
+            "latency" => "latency-child",
+            "dot-product-latency" => "dot-product-latency-child",
+            _ => "build-memory-child",
         });
     for (key, value) in &o.0 {
         command.arg(format!("--{key}")).arg(value);
@@ -545,7 +572,14 @@ pub(super) fn measured_child(kind: &str, o: &Options) -> Result<(), BenchError> 
         eligible && latency_limits_pass(&value, peak)
     };
     value["gate_passed"] = json!(passed);
-    check_schema(kind, &value)?;
+    check_schema(
+        if kind == "dot-product-latency" {
+            "latency"
+        } else {
+            kind
+        },
+        &value,
+    )?;
     write_output(output, &value)?;
     if eligible && !passed {
         return Err(BenchError::harness(format!(

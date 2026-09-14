@@ -103,5 +103,15 @@ README examples compile as doctests. The final CI gate passed 191 tests with
   because of its storage/read tradeoff; compressed-only search and budget 200
   remain the chosen behavior. The prototype is retained as experiment evidence.
 - The separately authorized vector-length audit above is complete; public commit-report integration remains separate work.
-- The stored-magnitude getter checkpoint is complete. Dot-product search remains
-  separate work requiring a score/API design and meaningful varied-length real data.
+- The stored-magnitude getter checkpoint is complete. The additional dot-product
+  method is the separately authorized active checkpoint below.
+
+## Active checkpoint: additional dot-product search
+
+The user requested a length-aware method while preserving current search.
+`search_dot_product()` is implemented with full-scan magnitude weighting,
+exact integer comparisons, distinct result types and original-dot intervals.
+Focused scalar, enclosure, negative-score, scaling and cosine-isolation checks
+pass. Full CI passes 213 tests with 12 skipped; workspace tests and strict clippy
+pass. Real-factor retrieval and clean-release performance qualification follow.
+[Contract](docs/design/2026-09-14-dot-product-search-amendment.md).

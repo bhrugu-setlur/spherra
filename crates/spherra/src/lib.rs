@@ -73,3 +73,9 @@ mod kernel_qualification;
 mod search_qualification;
 #[cfg(test)]
 mod worker_probe;
+
+#[cfg(test)]
+mod dot_product_tests;
+
+mod dot_product;
+pub use dot_product::{DotProductHit, DotProductResult};

@@ -493,3 +493,15 @@ runs. It is an ingestion diagnostic, with no index API or search changes.
 
 [Implementation, test data and resource protocol](2026-09-14-stored-magnitude-results.md)
 cover `Hit::stored_magnitude()` and the compact resident cache.
+
+## Optional dot-product search
+
+The `dot-product` command qualifies external hash-pinned factors against exact
+original-vector dot products; its [schema](dot-product.schema.json) records all
+query results, intervals and the cosine comparison against the dot objective.
+`dot-product-latency` accepts the same options as `latency` and records a distinct
+`kind` in the shared latency schema; `latency` continues to measure cosine.
+[Design and protocol](../design/2026-09-14-dot-product-search-amendment.md).
+
+[Test data and results](2026-09-14-dot-product-search-results.md) record the
+optional dot-product checkpoint, real factor provenance and qualification limits.

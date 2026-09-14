@@ -26,6 +26,7 @@ use spherra_testkit::results::{
     SoakSeedIdentity, validate_against_schema,
 };
 
+mod dot_product;
 mod index_quality;
 mod local_index;
 mod norm_audit;
@@ -55,6 +56,9 @@ fn run(arguments: &[String]) -> Result<(), BenchError> {
         "certify" => certify(&options),
         "prune-rate" => prune_rate(&options),
         "oracle-reference" => local_index::oracle_reference(&options),
+        "dot-product" => dot_product::run(&options),
+        "dot-product-latency" => local_index::measured_child("dot-product-latency", &options),
+        "dot-product-latency-child" => local_index::dot_product_latency_child(&options),
         "latency" => local_index::measured_child("latency", &options),
         "build-memory" => local_index::measured_child("build-memory", &options),
         "latency-child" => local_index::latency_child(&options),

@@ -81,7 +81,9 @@ honest per-hit error intervals and a measured speed target.
 
 ## 3. Product contract
 
-- 768 dimensions; cosine similarity on direction only.
+- 768 dimensions; default `search` uses cosine similarity on direction only.
+  The user-directed [dot-product amendment](2026-09-14-dot-product-search-amendment.md)
+  adds a separate magnitude-aware `search_dot_product` method.
 - Rows are identified by an assigned `RowId(u64)`, a dense ordinal starting at 0
   in commit order. The caller keeps its own mapping. Maximum `2^48 - 1`.
 - A committed generation is immutable, contains at least one row, and is the
@@ -140,6 +142,7 @@ impl Index {
     pub fn generation(&self) -> u64;
     pub fn segment_count(&self) -> u32;
     pub fn search(&self, query: &Vector, options: SearchOptions) -> Result<SearchResult, Error>;
+    pub fn search_dot_product(&self, query: &Vector, options: SearchOptions) -> Result<DotProductResult, Error>;
     pub fn certificates(&self, segment: u32) -> Option<SegmentCertificates>;
 }
 
@@ -158,6 +161,9 @@ Result types have private fields, read-only getters, and no public constructor:
 - `Hit`: `row()`, `segment()`, `score()` (refined), `interval() -> (f64, f64)`,
   `stored_magnitude() -> f32` (stored FP16 input length promoted to FP32;
   [2026-09-14 amendment](2026-09-14-stored-magnitude-amendment.md)).
+- `DotProductResult` and `DotProductHit`: separate count/hit types described in
+  the [dot-product amendment](2026-09-14-dot-product-search-amendment.md); scores
+  and intervals use original dot-product units, not cosine units.
 - `SegmentCertificates`: `first_row()`, `row_count()`, `primary()`, `refined()`,
   each kind exposing its five terms as getters.
 - `DriftReport`: section 10.

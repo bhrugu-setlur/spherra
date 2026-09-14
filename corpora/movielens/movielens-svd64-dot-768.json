@@ -1,0 +1,38 @@
+{
+  "dataset": "MovieLens 100K",
+  "source": "https://grouplens.org/datasets/movielens/100k/",
+  "archive_sha256": "50d2a982c66986937beb9ffb3aa76efe955bf3d5c6b761f4e3a7cd717c6a3229",
+  "ratings_sha256": "06416e597f82b7342361e41163890c81036900f418ad91315590814211dca490",
+  "builder": "tools/build_movielens_dot_corpus.py",
+  "model": "zero-filled ratings rank-64 SVD, symmetric square-root singular-value factors, zero-padded to 768; no normalization",
+  "purpose": "original-factor dot-product retrieval, not held-out recommendation relevance",
+  "split": "512 disjoint item factors for codec calibration, 1170 indexed items, 200 user-factor queries; BLAKE3 ordering v1",
+  "python": "3.12.3",
+  "numpy": "1.26.4",
+  "splits": {
+    "training": {
+      "file": "training.f32",
+      "rows": 512,
+      "blake3": "a0d856012841036a1597a0a160c210f7b90b1fd05148ef5aa23a30696d9fbcfe",
+      "norm_min": 0.0256851665401091,
+      "norm_median": 0.9164029629761976,
+      "norm_max": 6.668761115586841
+    },
+    "indexed": {
+      "file": "indexed.f32",
+      "rows": 1170,
+      "blake3": "d8ef58e78ea13382c7fec68cd91d9b334be64375f8018ea07b50f516e2c5c166",
+      "norm_min": 0.015150682565217692,
+      "norm_median": 0.9419975613369393,
+      "norm_max": 6.665925316710062
+    },
+    "queries": {
+      "file": "queries.f32",
+      "rows": 200,
+      "blake3": "297eaff0af4f03b3f2b30f058be1abfcf0df825a77ef0b6910ba375ddd0042ad",
+      "norm_min": 0.7436565625734823,
+      "norm_median": 2.001953068522069,
+      "norm_max": 6.262024332168467
+    }
+  }
+}

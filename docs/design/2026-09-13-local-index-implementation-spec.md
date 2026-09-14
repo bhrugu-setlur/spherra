@@ -352,3 +352,9 @@ were approved and applied on 2026-09-13.
 The [2026-09-14 amendment](2026-09-14-stored-magnitude-amendment.md) adds
 `Hit::stored_magnitude()` and a compact checked-open cache. It defines the
 additional contract and verification without reopening the completed task plan.
+
+## Subsequent user-directed checkpoint: optional dot-product search
+
+The [2026-09-14 amendment](2026-09-14-dot-product-search-amendment.md) defines the
+separate magnitude-aware method, exact comparison arithmetic, original-dot
+intervals and qualification. The original cosine path remains the default.

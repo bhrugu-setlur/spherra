@@ -179,7 +179,10 @@ impl WorkerPool {
         }
         Ok(pool)
     }
-    fn submit(&self, job: Job) -> Result<(), Error> {
+    pub(crate) fn worker_count(&self) -> usize {
+        self.threads.len()
+    }
+    pub(crate) fn submit(&self, job: Job) -> Result<(), Error> {
         self.sender
             .as_ref()
             .ok_or(Error::Corrupt)?

@@ -94,6 +94,31 @@ to FP32. Tiny positive lengths may round to zero. It is metadata and does not
 affect ranking or score intervals. Opening retains two bytes per row (20 MB at
 10M rows, plus per-segment overhead); existing valid indexes need no rebuild.
 
+For models whose vector length carries meaning, use the separate dot-product
+method on the same index:
+
+```rust,no_run
+# fn example(index: &spherra::Index, query: &spherra::Vector) -> Result<(), spherra::Error> {
+let result = index.search_dot_product(
+    query,
+    spherra::SearchOptions { k: 10, candidate_budget: None },
+)?;
+for hit in result.hits() {
+    println!("row {}: dot {}, interval {:?}",
+        hit.row().get(), hit.score(), hit.interval());
+}
+# Ok(()) }
+```
+
+Dot-product search uses stored lengths during the full scan and refinement.
+Its distinct result type reports approximate original-vector dot products,
+including query length, and intervals that account for compression and stored
+length rounding. Exact integer products determine ranking; displayed floating
+scores may round ties. Top-k remains approximate. Tiny stored lengths can round
+to zero. When all stored row lengths equal one, row ordering matches cosine.
+It uses the existing length cache and needs no index rebuild or original vectors.
+`search()` keeps its existing cosine behavior.
+
 Drop all open `Index` handles before appending; they hold shared locks for their
 lifetime. Builders take a nonblocking exclusive lock and return `IndexBusy` on
 contention. Reopen after a commit to search the new generation.
