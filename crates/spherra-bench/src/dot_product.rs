@@ -2,7 +2,7 @@
 use super::{BenchError, Options, write_output};
 use crate::index_quality::{Reference, reconstruction_length, stored_corrections};
 use crate::local_index::{allowed, number};
-use serde_json::json;
+use serde_json::{Value, json};
 use spherra::{CreateOptions, Index, IndexBuilder, SearchOptions, Vector};
 use spherra_codec::{FixedPointScorer, Pq96Code};
 use spherra_testkit::{
@@ -191,6 +191,74 @@ fn sweep_budgets(o: &Options, k: usize) -> Result<Vec<usize>, BenchError> {
     }
     Ok(budgets)
 }
+// Reuse only explicitly pinned, clean exact-reference evidence for the same
+// physical index and vector bytes. This never treats approximate hits as truth.
+fn reuse_reference(o: &Options, expected: &Value, dir: &Path) -> Result<Option<Value>, BenchError> {
+    let (path, hash) = match (o.get("reuse-reference"), o.get("reference-blake3")) {
+        (None, None) => return Ok(None),
+        (Some(path), Some(hash)) => (path, hash),
+        _ => {
+            return Err(BenchError::harness(
+                "reuse-reference requires reference-blake3",
+            ));
+        }
+    };
+    let mut bytes = Vec::new();
+    fs::File::open(path)
+        .map_err(BenchError::harness)?
+        .take(64 * 1024 * 1024 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(BenchError::harness)?;
+    if bytes.len() > 64 * 1024 * 1024 || blake3::hash(&bytes).to_hex().as_str() != hash {
+        return Err(BenchError::harness("reference hash/size mismatch"));
+    }
+    let value: Value = serde_json::from_slice(&bytes).map_err(BenchError::serialize)?;
+    let schema = serde_json::from_str(include_str!(
+        "../../../docs/benchmarks/dot-product.schema.json"
+    ))
+    .map_err(BenchError::serialize)?;
+    validate_against_schema(&schema, &value).map_err(BenchError::harness)?;
+    if value["dirty_worktree"] != false
+        || value["enclosure_failures"] != 0
+        || !value["git_commit"]
+            .as_str()
+            .is_some_and(|s| s.len() == 40 && s.bytes().all(|b| b.is_ascii_hexdigit()))
+        || expected
+            .as_object()
+            .unwrap()
+            .iter()
+            .any(|(k, v)| value[k] != *v)
+    {
+        return Err(BenchError::harness(
+            "reference provenance/workload mismatch",
+        ));
+    }
+    let current = blake3::hash(&fs::read(dir.join("CURRENT")).map_err(BenchError::harness)?)
+        .to_hex()
+        .to_string();
+    if value["index_current_blake3"] != current {
+        return Err(BenchError::harness("reference CURRENT mismatch"));
+    }
+    let rows = value["rows"].as_u64().unwrap();
+    let k = value["k"].as_u64().unwrap().min(rows) as usize;
+    let queries = value["queries"].as_array().unwrap();
+    if queries.len() != value["query_count"].as_u64().unwrap() as usize {
+        return Err(BenchError::harness("reference query count mismatch"));
+    }
+    for (i, q) in queries.iter().enumerate() {
+        let exact = q["exact_rows"].as_array().unwrap();
+        let mut unique = std::collections::BTreeSet::new();
+        if q["query"] != i
+            || exact.len() != k
+            || exact
+                .iter()
+                .any(|r| !r.as_u64().is_some_and(|r| r < rows && unique.insert(r)))
+        {
+            return Err(BenchError::harness("reference exact rows invalid"));
+        }
+    }
+    Ok(Some(value))
+}
 pub(super) fn run(o: &Options) -> Result<(), BenchError> {
     allowed(
         o,
@@ -210,6 +278,8 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
             "k",
             "candidate-budget",
             "sweep-budgets",
+            "reuse-reference",
+            "reference-blake3",
         ],
     )?;
     let n = number(o, "rows", 0_usize)?;
@@ -233,6 +303,13 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
     if output.exists() {
         return Err(BenchError::harness("output already exists"));
     }
+    let dir = Path::new(o.require("index-dir")?);
+    let reused = reuse_reference(
+        o,
+        &json!({"rows":n,"training_rows":training_count,"query_count":query_count,"seed":seed,"k":k,
+        "indexed_blake3":o.require("indexed-blake3")?,"training_blake3":o.require("training-blake3")?,"queries_blake3":o.require("queries-blake3")?}),
+        dir,
+    )?;
     let source = SourceRevision::capture();
     let indexed = rows(o.require("indexed")?, n, o.require("indexed-blake3")?)?;
     let training = rows(
@@ -245,26 +322,29 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
         query_count,
         o.require("queries-blake3")?,
     )?;
-    let dir = Path::new(o.require("index-dir")?);
-    let build = Instant::now();
-    let mut builder = IndexBuilder::create(
-        dir,
-        &training,
-        CreateOptions {
-            seed,
-            validation_rows: None,
-        },
-    )
-    .map_err(BenchError::harness)?;
-    drop(training);
-    for (i, row) in indexed.iter().enumerate() {
-        builder.push(row).map_err(BenchError::harness)?;
-        if (i + 1) % 65536 == 0 {
-            eprintln!("build: {} rows staged", i + 1);
+    let build_seconds = if reused.is_some() {
+        0.0
+    } else {
+        let build = Instant::now();
+        let mut builder = IndexBuilder::create(
+            dir,
+            &training,
+            CreateOptions {
+                seed,
+                validation_rows: None,
+            },
+        )
+        .map_err(BenchError::harness)?;
+        for (i, row) in indexed.iter().enumerate() {
+            builder.push(row).map_err(BenchError::harness)?;
+            if (i + 1) % 65536 == 0 {
+                eprintln!("build: {} rows staged", i + 1);
+            }
         }
-    }
-    builder.commit().map_err(BenchError::harness)?;
-    let build_seconds = build.elapsed().as_secs_f64();
+        builder.commit().map_err(BenchError::harness)?;
+        build.elapsed().as_secs_f64()
+    };
+    drop(training);
     let index = Index::open(dir).map_err(BenchError::harness)?;
     let current = blake3::hash(&fs::read(dir.join("CURRENT")).map_err(BenchError::harness)?)
         .to_hex()
@@ -276,7 +356,15 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
     let mut corrected_found = [0_usize; 4];
     let mut minimum_alignment = f64::INFINITY;
     for (ordinal, q) in queries.iter().enumerate() {
-        let exact_rows = exact_rows(q, &indexed, k.min(n));
+        let exact_rows = match &reused {
+            Some(reference) => reference["queries"][ordinal]["exact_rows"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|r| r.as_u64().unwrap())
+                .collect(),
+            None => exact_rows(q, &indexed, k.min(n)),
+        };
         let start = Instant::now();
         let dot = index
             .search_dot_product(
@@ -360,6 +448,9 @@ pub(super) fn run(o: &Options) -> Result<(), BenchError> {
         "index_current_blake3":current,"rows":n,"training_rows":training_count,"query_count":query_count,"seed":seed,"k":k,"candidate_budget":budget.min(n),
         "build_seconds":build_seconds,"dot_recall_at_k":dot_found as f64/checked,
         "cosine_recall_against_dot_at_k":cosine_found as f64/checked,"renormalized_dot_recall_at_k":corrected_found[0] as f64/checked,"stored_exact_dot_recall_at_k":corrected_found[1] as f64/checked,"stored_fp16_dot_recall_at_k":corrected_found[2] as f64/checked,"stored_u8_dot_recall_at_k":corrected_found[3] as f64/checked,"minimum_alignment":minimum_alignment,"enclosure_failures":violations,"queries":records});
+    if let Some(reference) = &reused {
+        value["reused_reference"] = json!({"path":o.require("reuse-reference")?,"blake3":o.require("reference-blake3")?,"git_commit":reference["git_commit"],"reused_index":true});
+    }
     if !sweep.is_empty() {
         value["budget_sweep"] = sweep
             .iter()

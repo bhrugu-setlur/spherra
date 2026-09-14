@@ -153,6 +153,8 @@ Q24 scores divided by the reconstructed compressed length; the primary scan,
 budget and index bytes are unchanged. Raw-score truth certificates are retained.
 Independent scalar and benchmark checks cover the corrected ranking. CI passes
 218 tests with 12 skipped; strict clippy and the release full-corpus scalar
-qualification pass. The separate workspace gate and clean release production
-quality/latency measurements are in progress.
+qualification pass. The workspace gate also passes. Clean production cosine recall matches the
+experiment: generated 1M 0.9255, MS MARCO test 0.9770. DPR and latency
+measurements remain in progress. The dot benchmark now supports explicitly
+hash-pinned exact-reference/index reuse to avoid repeating its expensive oracle.
 [Contract](docs/design/2026-09-14-reconstruction-length-amendment.md).

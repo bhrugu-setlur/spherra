@@ -517,3 +517,16 @@ recall; exact references use six threads outside timing.
 
 [Test data and results](2026-09-14-dot-product-search-results.md) record the
 optional dot-product checkpoint, real factor provenance and qualification limits.
+
+### Reusing dot-product exact references
+
+`dot-product --reuse-reference <report.json> --reference-blake3 <hash>` reuses
+both the report's exact neighbor lists and its existing physical index. All
+indexed/training/query bytes are still hash-checked. The report must be clean,
+schema-valid, match the full workload and CURRENT hash, and contain one unique,
+in-range exact top-k list for each query in order. New runs search all queries,
+check corrected scalar candidate scores/order and original-dot enclosures, and
+record `reused_reference` provenance with zero build time. This is reuse of an
+external exact oracle, not an independent recomputation of that oracle. Omit
+both options for a fresh build and exhaustive oracle. Reuse permits a different
+candidate budget because exact answers do not depend on that budget.

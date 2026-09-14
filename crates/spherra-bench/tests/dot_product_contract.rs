@@ -119,6 +119,97 @@ fn dot_product_report_is_complete_reproducible_and_rejects_bad_inputs() {
     assert!(!run(&ih).status.success());
     assert_eq!(std::fs::read(&output).unwrap(), bytes);
 
+    // A synthetic clean report pins exact answers and the existing immutable index.
+    let reference = dir.path().join("reference.json");
+    let mut clean = value.clone();
+    clean["dirty_worktree"] = serde_json::json!(false);
+    clean["git_commit"] = serde_json::json!("a".repeat(40));
+    let reuse = |report: &Value, bad_hash: bool, name: &str| {
+        let bytes = serde_json::to_vec(report).unwrap();
+        std::fs::write(&reference, &bytes).unwrap();
+        let hash = if bad_hash {
+            "0".repeat(64)
+        } else {
+            blake3::hash(&bytes).to_hex().to_string()
+        };
+        Command::new(env!("CARGO_BIN_EXE_spherra-bench"))
+            .arg("dot-product")
+            .arg("--indexed")
+            .arg(&indexed)
+            .args(["--rows", "10", "--indexed-blake3", &ih])
+            .arg("--training")
+            .arg(&training)
+            .args([
+                "--training-rows",
+                &corpus.calibration().len().to_string(),
+                "--training-blake3",
+                &th,
+            ])
+            .arg("--queries")
+            .arg(&queries)
+            .args(["--query-count", "4", "--queries-blake3", &qh])
+            .arg("--index-dir")
+            .arg(&index)
+            .arg("--reuse-reference")
+            .arg(&reference)
+            .args(["--reference-blake3", &hash])
+            .arg("--output")
+            .arg(dir.path().join(format!("{name}.json")))
+            .output()
+            .unwrap()
+    };
+    assert!(!reuse(&clean, true, "bad-hash").status.success());
+    for (name, bad) in [
+        ("dirty", {
+            let mut v = clean.clone();
+            v["dirty_worktree"] = serde_json::json!(true);
+            v
+        }),
+        ("wrong-query", {
+            let mut v = clean.clone();
+            v["queries_blake3"] = serde_json::json!("0".repeat(64));
+            v
+        }),
+        ("wrong-index", {
+            let mut v = clean.clone();
+            v["index_current_blake3"] = serde_json::json!("0".repeat(64));
+            v
+        }),
+        ("duplicate", {
+            let mut v = clean.clone();
+            v["queries"][0]["exact_rows"][1] = v["queries"][0]["exact_rows"][0].clone();
+            v
+        }),
+        ("missing-query", {
+            let mut v = clean.clone();
+            v["queries"].as_array_mut().unwrap().pop();
+            v
+        }),
+    ] {
+        assert!(!reuse(&bad, false, name).status.success(), "{name}");
+        assert!(!dir.path().join(format!("{name}.json")).exists());
+    }
+    let r = reuse(&clean, false, "reused");
+    assert!(r.status.success(), "{}", String::from_utf8_lossy(&r.stderr));
+    let reused: Value =
+        serde_json::from_slice(&std::fs::read(dir.path().join("reused.json")).unwrap()).unwrap();
+    assert_eq!(reused["build_seconds"], 0.0);
+    assert_eq!(reused["reused_reference"]["reused_index"], true);
+    assert_eq!(
+        reused["index_current_blake3"],
+        value["index_current_blake3"]
+    );
+    assert_eq!(reused["dot_recall_at_k"], value["dot_recall_at_k"]);
+    for (a, b) in reused["queries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .zip(value["queries"].as_array().unwrap())
+    {
+        assert_eq!(a["exact_rows"], b["exact_rows"]);
+        assert_eq!(a["dot_hits"], b["dot_hits"]);
+    }
+
     let sweep = |budgets: &str, name: &str| {
         Command::new(env!("CARGO_BIN_EXE_spherra-bench"))
             .arg("dot-product")

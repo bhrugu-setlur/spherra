@@ -252,6 +252,32 @@
           }
         }
       }
+    },
+    "reused_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "blake3",
+        "git_commit",
+        "reused_index"
+      ],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "blake3": {
+          "type": "string"
+        },
+        "git_commit": {
+          "type": "string"
+        },
+        "reused_index": {
+          "enum": [
+            true
+          ]
+        }
+      }
     }
   }
 }
