@@ -1,11 +1,16 @@
 # Local index status
 
-Updated: 2026-09-14. Branch/worktree: `local-index` / `.worktrees/local-index`.
+Updated: 2026-09-14. Branch/worktree: `main` / repository root.
 
 Tasks 1–11, 13 and 14 are complete. Task 12 was skipped because stage 2 met
 every latency gate. Documentation is complete.
 The approved budget-20 factual correction is applied; the algorithm and default
 budget of 200 are preserved.
+
+The local-index implementation and its evidence are now the active project
+direction on `main`. The earlier distributed database design remains historical
+context only. The standalone C++/Python codec prototype was retired once the
+Rust codec and local benchmark harness became the authoritative path.
 
 The [test technical note](docs/benchmarks/2026-09-13-local-index-test-note.md)
 records the delivery test data, setup, provenance and limitations. It consolidates
@@ -166,3 +171,10 @@ Medians are higher than previous separate runs; isolated correction overhead is
 unmeasured. No new 10M recall or full latency claim is made.
 [Technical note and raw evidence](docs/benchmarks/2026-09-14-reconstruction-length-results.md).
 [Contract](docs/design/2026-09-14-reconstruction-length-amendment.md).
+
+## Next work
+
+- Measure corrected serving behavior with cold caches and under memory pressure.
+- Add larger labeled sets before making a new 10M-row recall claim.
+- Revisit dot-product and other metrics only for workloads where vector
+  magnitude carries meaning; cosine search remains the default.

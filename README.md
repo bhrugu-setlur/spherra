@@ -1,64 +1,127 @@
 # Spherra
 
-Spherra is a local, embedded Rust index for 768-dimensional embeddings and
-cosine similarity. It compresses each vector, scans every primary code, refines
-the best candidates from disk, and returns approximate top-k hits with an
-interval around each hit's true score. Rows are added offline in atomic commits.
+I built Spherra as a local, embedded Rust vector index for 768-dimensional
+embeddings. It stores immutable generations on disk, scans compressed primary
+codes, refines the best candidates from their residuals, and returns approximate
+top-k hits with intervals that enclose each hit's original-space score. Rows are
+added offline in atomic commits; there is no server or distributed runtime.
 
-The local library is implemented and passes its measured acceptance gates on
-an Apple M1 Pro with 32 GiB RAM. The earlier distributed database direction is
-stopped. Current authority is the [local index design](docs/design/2026-09-13-local-index-design.md)
-and [implementation specification](docs/design/2026-09-13-local-index-implementation-spec.md).
-See [STATUS.md](STATUS.md) for delivery and verification status.
+> **Project status:** the local index is implemented and its measured acceptance
+> gates pass on an Apple M1 Pro with 32 GiB RAM. The earlier distributed
+> database direction is stopped. The authoritative design is the [local index
+> design](docs/design/2026-09-13-local-index-design.md), with delivery
+> details in the [implementation specification](docs/design/2026-09-13-local-index-implementation-spec.md).
+
+## What I built
+
+| Part | Result |
+|---|---|
+| Public library | `spherra` exposes `IndexBuilder`, `Index`, cosine search, append, and optional length-aware dot-product search |
+| Compression | Two seeded sign/permutation/Hadamard rounds, direct 4-bit direction codes, and PQ96x8 residual refinement |
+| Storage | Checked little-endian model, manifest, segment, `CURRENT`, and per-block integrity data with content identities |
+| Publication | Staged files are verified and synced before `CURRENT` is published; interrupted commits preserve a valid previous generation |
+| Search | A full primary scan keeps a candidate budget, reads residuals only for finalists, and orders by corrected score then row ID |
+| Truth | FP64 original-space scores are used as the reference; returned intervals validate the score of each returned row, not exact top-k membership |
+| Verification | Scalar differential tests, fault-injected recovery tests, pinned corpora, release benchmarks, and checked fuzz targets |
 
 ## Measured results
 
-With reconstruction-length correction, recall@10 is **0.9255** on generated
-1M cosine, **0.9770** on real MS MARCO 100k queries and **0.9234** on native
-DPR 1M dot search. Latest 1M median/p99 latency is **72.31/113.56 ms** for cosine
-and **73.01/108.24 ms** for dot; both pass their gates. No new 10M qualification
-is claimed. [Current test data and limitations](docs/benchmarks/2026-09-14-reconstruction-length-results.md).
+The current serving correction divides finalist scores by the FP64 length of the
+reconstructed compressed vector. It changes no index bytes and requires no
+rebuild.
 
-### Original delivery measurements
+| Workload | Indexed rows | Queries | Recall@10 | Median / p99 |
+|---|---:|---:|---:|---:|
+| Generated correlated cosine | 1,000,000 | 200 | **0.9255** | **72.31 / 113.56 ms** |
+| MS MARCO cosine | 100,000 | 200 | **0.9770** | — |
+| Native DPR dot product | 1,000,000 | 1,000 | **0.9234** | **73.01 / 108.24 ms** |
 
-The evidence below predates reconstruction-length correction.
+An earlier uncorrected 10M release qualification measured 458.15 ms median and
+616.47 ms p99. The corrected serving path has not been rerun for a new 10M
+tail-latency claim. These are held-out vector-neighbor measurements, not
+published BEIR task scores. See the [benchmark protocol and raw
+evidence](docs/benchmarks/README.md) for commands, hashes, and limitations.
 
-Generated correlated 768-dimensional data, six workers, k=10, candidate budget
-200, 50 warmups followed by 1,000 timed public searches, release build on AC:
+## How it works
 
-| Indexed rows | p50 search | p99 search | Peak open/search RSS |
-|---|---:|---:|---:|
-| 1 million | 52.62 ms | 147.28 ms | 0.37 GiB |
-| 10 million | 458.15 ms | 616.47 ms | 3.59 GiB |
+```mermaid
+flowchart LR
+    TRAIN["Training rows"] --> MODEL["Restored model<br/>transform + int4 + PQ"]
+    ROWS["Input rows"] --> BUILD["IndexBuilder"]
+    MODEL --> BUILD
+    BUILD --> SEG["Immutable segments<br/>primary + residual + certificates"]
+    SEG --> CURRENT["Verified generation<br/>CURRENT + manifest"]
 
-Both latency gates pass. The separate builder probe measured about **600 MiB
-of builder-owned memory**, below its 2 GiB gate, excluding caller-owned input
-buffers. Building the generated indexes measured about 11,700–11,900 rows/s.
-Opening took about 1.05 seconds at 1M and 11.75 seconds at 10M.
+    QUERY["Query"] --> SCAN["Scan every primary tile"]
+    CURRENT --> SCAN
+    SCAN --> CANDIDATES["Best candidate budget"]
+    CANDIDATES --> REFINE["Read residuals and refine"]
+    REFINE --> RESULT["Corrected top-k hits<br/>score interval + stored magnitude"]
+```
 
-Quality uses 200 held-out queries per corpus, k=10 and budget 200:
+Creating an index trains a deterministic transform, direct-int4 table, and
+PQ96x8 codebook from a bounded calibration set. The builder validates each input
+vector, stages immutable segments, writes the manifest and model, verifies every
+identity, syncs the files, and publishes `CURRENT` last. A commit is either
+visible as a complete generation or remains unpublished.
 
-| Corpus | Indexed rows | Recall@10 |
-|---|---:|---:|
-| Archived SciFact / MPNet | 3,688 | 0.9750 |
-| Generated correlated 20k | 20,000 | 0.9355 |
-| Chunked generated correlated 1M | 1,000,000 | 0.9095 |
+Opening an index verifies the complete generation before exposing a handle. The
+primary direction tiles and the two-byte-per-row stored-magnitude cache stay in
+memory. Residual files remain candidate-only and are read positionally. A cosine
+query scans every primary row, keeps the best candidate budget using exact Q24
+integer scores, refines those candidates, applies reconstruction-length
+correction, and returns the final top-k rows. `search_dot_product` uses the same
+scan while weighting primary and refined scores by the stored FP16 input length.
 
-All 6,000 returned hits match the independent checked-scalar reference exactly
-and enclose original-space FP64 truth. The two historical recall comparisons
-meet the permitted loss of 0.01. The 1M recall uses an exact reference pinned
-before index measurement. These are vector-neighbor comparisons using held-out
-embedding rows, not published BEIR task scores. Recall at 10M was not measured.
+## How I built it
 
-[Commands, raw samples, per-hit results and provenance](docs/benchmarks/README.md)
-include the original scalar baselines and the final safe tile kernel results.
+1. **Started with a scalar codec oracle.** I implemented the fixed 768-dimensional
+   transform, direct-int4 quantization, PQ96x8 residuals, fixed-point scoring,
+   and conservative score certificates before adding storage or parallelism.
+2. **Made the model restorable.** Quantizer and codebook bytes have stable
+   identities, so a reopened index uses exactly the model that built its rows.
+3. **Added durable local generations.** Checked containers, manifests, locks,
+   atomic publication, bounded descriptors, and fault-injected recovery define
+   the library's filesystem behavior.
+4. **Built the reference search.** Every primary row is visited, candidates are
+   refined from disk, and the result is compared with an independent exact
+   FP64 oracle.
+5. **Qualified the serving path.** A safe tiled scan kernel passed exact scalar
+   differential checks and the M1 latency gates, so a second unsafe SIMD
+   toolchain was not introduced.
+6. **Measured real workloads.** Hash-pinned SciFact, MS MARCO, DPR, MovieLens,
+   and generated corpora cover cosine quality, dot-product quality, memory,
+   recovery, norm handling, and reconstruction drift.
+
+## How I tested it
+
+The normal repository gate is:
+
+```bash
+bash scripts/ci.sh
+cargo test --workspace --locked
+cargo clippy --workspace --all-targets --locked -- -D warnings
+```
+
+| Verification level | What is checked | Status |
+|---|---|---|
+| Codec and format | Explicit bytes, restored identities, paired readers, tile decoding, and certificate enclosure | Passing |
+| Index library | Builder rules, open validation, append, search, dot-product search, and public API contracts | Passing |
+| Durability | Short writes, injected failures, process death, locks, and recovery on local APFS | Passing |
+| Serving kernel | 2,073,760 tile scores compared with the checked scalar scorer | Zero differences |
+| Retrieval quality | 14,000 recorded final hits checked against original-space truth | Zero enclosure failures |
+| Fuzz targets | Checked format, certificate, model, manifest, and `CURRENT` decoders | Builds and bounded no-crash runs; ASan runtime is unavailable on this host |
+
+The full gate currently passes 218 tests with 12 explicitly skipped large
+qualifications. Large corpus runs and raw result files are kept under
+[`docs/benchmarks`](docs/benchmarks/README.md), rather than being hidden behind
+unverifiable headline numbers.
 
 ## Use the library
 
-The workspace pins Rust 1.88.0, edition 2024. The public crate is `spherra`.
-Supply your own finite 768-dimensional vectors. Norms below `1e-12` are rejected
-as unreliable, and stored norms must fit FP16. Training rows are separate from
-indexed rows unless explicitly pushed.
+The workspace pins Rust 1.88.0 and edition 2024. Supply finite 768-dimensional
+vectors; unreliable norms and values outside the stored FP16 range are rejected.
+Training rows are separate from indexed rows unless explicitly pushed.
 
 ```rust
 use std::path::Path;
@@ -76,42 +139,30 @@ fn build_and_search(
         CreateOptions { seed: 20260804, validation_rows: None },
     )?;
     for row in rows {
-        let _row_id = builder.push(row)?;
+        builder.push(row)?;
     }
     let commit = builder.commit()?;
-    println!("generation {}: {} rows added", commit.generation(), commit.rows_added());
 
     let index = Index::open(directory)?;
     let result = index.search(
         query,
         SearchOptions { k: 10, candidate_budget: None },
     )?;
+    println!("generation {}: {} rows added", commit.generation(), commit.rows_added());
     for hit in result.hits() {
-        println!("row {}: score {}, interval {:?}, stored length {}",
-            hit.row().get(), hit.score(), hit.interval(), hit.stored_magnitude());
+        println!("row {}: score {}, interval {:?}",
+            hit.row().get(), hit.score(), hit.interval());
     }
     Ok(())
 }
 ```
 
-`candidate_budget: None` resolves to `max(200, 2*k)`, then clamps to the index
-size. `k` must be positive; an explicit budget below `k` is invalid. If `k`
-exceeds the index size, every row is returned. Ordering is score descending,
-then row ID ascending. Row IDs are dense ordinals scoped to one index.
+`candidate_budget: None` resolves to `max(200, 2*k)`, clamped to the index size.
+Search ordering is score descending, then dense row ID ascending. A returned
+interval encloses the original-space score for that row while its files remain
+intact; it is not a proof that the approximate result is the exact top-k set.
 
-Both methods divide each refined score by the length of the reconstructed
-compressed vector before final ranking. This reduces compression shrinkage bias
-using existing bytes, with no extra storage or rebuild. It corrects only the
-shortlisted rows; it cannot recover a neighbor missed during candidate selection.
-A zero reconstruction length leaves the uncorrected score unchanged.
-
-`hit.stored_magnitude()` returns the input length rounded to FP16 and promoted
-to FP32. Tiny positive lengths may round to zero. In cosine search it is
-metadata and does not affect ranking or score intervals. Opening retains two bytes per row (20 MB at
-10M rows, plus per-segment overhead); existing valid indexes need no rebuild.
-
-For models whose vector length carries meaning, use the separate dot-product
-method on the same index:
+For non-normalized embeddings, the optional method preserves input magnitude:
 
 ```rust,no_run
 # fn example(index: &spherra::Index, query: &spherra::Vector) -> Result<(), spherra::Error> {
@@ -126,107 +177,52 @@ for hit in result.hits() {
 # Ok(()) }
 ```
 
-Dot-product search uses stored lengths during the full scan and refinement.
-Its distinct result type reports approximate original-vector dot products,
-including query length, and intervals that account for compression and stored
-length rounding. Primary selection uses exact integer products; finalists use
-FP64 scores corrected for reconstruction length. Displayed scores may round ties. Top-k remains approximate. Very short vectors rank poorly
-among themselves: lengths below about 3e-8 are stored as zero (those rows score
-zero and tie in row-ID order), and below about 1e-5 length rounding exceeds 0.5%.
-Their intervals remain valid. When all stored row lengths equal one, row
-ordering matches cosine.
-It uses the existing length cache and needs no index rebuild or original vectors.
-`search()` keeps its existing cosine behavior.
+Drop open `Index` handles before appending. Builders take a nonblocking
+exclusive lock, and the commit consumes the builder:
 
-Drop all open `Index` handles before appending; they hold shared locks for their
-lifetime. Builders take a nonblocking exclusive lock and return `IndexBusy` on
-contention. Reopen after a commit to search the new generation.
-
-```rust
-use std::path::Path;
-use spherra::{Error, IndexBuilder, RowId, Vector};
-
-fn append_one(directory: &Path, row: &Vector) -> Result<RowId, Error> {
-    let mut builder = IndexBuilder::append(directory)?;
-    let id = builder.push(row)?;
-    builder.commit()?;
-    Ok(id)
-}
+```rust,no_run
+# fn append_one(directory: &std::path::Path, row: &spherra::Vector)
+#     -> Result<spherra::RowId, spherra::Error> {
+let mut builder = spherra::IndexBuilder::append(directory)?;
+let row_id = builder.push(row)?;
+builder.commit()?;
+# Ok(row_id) }
 ```
 
-## Scoring and intervals
+## Storage limits and boundaries
 
-Each vector has a 384-byte direct-int4 primary code, a four-byte radius/flags
-word, and a 96-byte PQ residual. Two seeded sign/permutation/Hadamard rounds
-condition the direction. Primary tiles stay in owned memory; residuals are
-read positionally only for selected candidates.
+- Training is capped at 32,768 rows; a segment at 65,536 rows; and the index at
+  4,096 segments or `2^48 - 1` total rows.
+- Rows are dense ordinals scoped to one index. Commits report reconstruction
+  drift over a bounded deterministic sample.
+- The first serving index is a full scan. There is no global HNSW, routing,
+  filtering, deletion, compaction, replication, or server API.
+- Original vectors are not retained by the index. Original-vector reranking is
+  preserved only as a benchmark experiment and is not part of serving.
+- Durability is qualified on local APFS with fault injection and process death;
+  physical power loss and other filesystems remain unqualified.
 
-The serving kernel is portable safe Rust on every CPU. It accumulates directly
-from 32-row tiles after proving the integer range, with a checked scalar
-fallback. It returns exactly the original Q24 integer scores. Stage 2 met the
-latency gates, so no NEON kernel or unsafe code was added. Performance was
-qualified on the M1 Pro; other CPUs use the same kernel without those timing
-claims. There is no HNSW, routing, or certificate-based pruning.
+## Repository map
 
-A hit's interval encloses its original-space FP64 cosine score for an index
-built by this library whose files remain intact. It does **not** prove that the
-hit is an exact top-k neighbor. Primary and refined intervals are intersected;
-their epsilons are not added. They use the original raw scores and still certify
-truth after length correction; the displayed estimate need not lie inside the
-interval. Hashes detect corruption but cannot establish an
-honest bound in a deliberately rewritten, re-hashed file. Files must not be
-modified outside the library while an `Index` is open.
-
-## Training, append limits and drift
-
-- At most 32,768 training rows. Default validation size is
-  `min(4096, training.len()/4)`; validation needs at least one row and the
-  remaining training set at least 256. Splits are deterministic and disjoint.
-- Each segment contains at most 65,536 rows; staging retains at most one segment
-  of originals. The format admits at most 4,096 segments and a total-row limit
-  of `2^48 - 1`. The tested local target is 10M rows.
-- An open index retains one residual descriptor per segment plus `LOCK`.
-  Admission also reserves 64 descriptors for the caller. For example, a soft
-  limit of 256 admits 191 segments. The library never raises that limit.
-- Small commits consume segment slots. There are no deletes, filters, caller
-  IDs, compaction, or segment merging in this version.
-- Every commit reports reconstruction drift over a deterministic sample of at
-  most 65,536 rows. It warns when refined p95 exceeds 1.25 times validation p95,
-  or more than 5% of committed rows exceed validation refined p99. Commits below
-  1,000 rows report an insufficient sample instead. This detects reconstruction
-  change; it is not a measurement of recall loss.
-
-## Directory states and durability
-
-A directory without `CURRENT` is **Absent**, even if an interrupted create left
-`LOCK` or unreferenced files. `open` and `append` return `NotFound`; `create`
-cleans owned unreferenced artifacts and can retry. A valid `CURRENT` names one
-committed generation. Corruption is an error, never silent fallback to an older
-one. Unrelated user files and committed predecessor manifests are preserved.
-
-| Commit outcome | Meaning and caller action |
+| Path | Contents |
 |---|---|
-| Error before `CURRENT` publication | Absent or the previous generation remains. |
-| `CommitOutcomeUnknown { generation }` | Publication occurred but the final directory sync failed. Reopen and compare generations before retrying rows. |
-| `Ok(CommitReport)` | The new generation was published and synced. |
-| Success with `cleanup_complete() == false` | The commit succeeded; the next builder retries cleanup. |
+| `crates/spherra/` | Public local index, builder, storage, publication, open, search, and recovery |
+| `crates/spherra-codec/` | Transform, direct-int4, PQ96x8, fixed-point scoring, certificates, and tile kernel |
+| `crates/spherra-format/` | Explicit durable model/segment formats and checked readers |
+| `crates/spherra-domain/` | 768-dimensional validation, IDs, and sequence/domain contracts |
+| `crates/spherra-testkit/` | Deterministic corpora, exact oracles, machine provenance, and measurement support |
+| `crates/spherra-bench/` | Reproducible quality, latency, memory, norm, and dot-product commands |
+| `docs/benchmarks/` | Protocols, schemas, raw results, and limitations |
+| `docs/design/` | Current local-index contracts plus clearly marked historical direction documents |
+| `corpora/` | Hash-pinned corpus descriptors; large vector payloads stay outside Git |
+| `fuzz/` | Nightly-only checked decoder targets |
+| `scripts/` and `tools/` | CI, dependency policy, corpus builders, audits, and result summaries |
 
-New files are reopened and verified, synced, renamed, and followed by a directory
-sync. `CURRENT` publishes last. Staging failures poison the builder. The recovery
-suite covers injected failures, short writes, process kills and aborts on local
-APFS. Physical power loss and other filesystems have not been qualified.
+## Where the project is now
 
-## Development
-
-The normal gates are:
-
-```bash
-bash scripts/ci.sh
-cargo test --workspace --locked
-cargo clippy --workspace --all-targets --locked -- -D warnings
-```
-
-Large corpus and recovery qualifications are explicit ignored tests; commands
-and results are recorded in the [benchmark protocol](docs/benchmarks/README.md)
-and [status](STATUS.md). Existing segment v1 bytes, codec identity, scorer
-version and default candidate budget are unchanged.
+Spherra's active product direction is the embedded local library. The earlier
+PolarLSM/PolarRouter distributed database design is retained as historical
+context, but it is not implemented or part of the current contract. The next
+useful measurements are cold-cache behavior under memory pressure and recall on
+larger labeled sets at 10M rows. Additional distance metrics are a separate
+future decision for workloads whose vector magnitudes carry meaning.

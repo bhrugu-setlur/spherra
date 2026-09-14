@@ -66,7 +66,7 @@ search algorithm and its default budget of 200 are unchanged.
 
 ## Reproduction
 
-Run from the `local-index` worktree with the archive in place:
+Run from the repository root with the archive in place:
 
 ```bash
 cargo run -p spherra-bench --release --locked -- codec-format \
