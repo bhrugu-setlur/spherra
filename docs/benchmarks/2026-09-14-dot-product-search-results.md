@@ -41,7 +41,7 @@ An initial CLI test caught swapped schema/instance arguments in the new benchmar
 writer. It was corrected before any recorded measurement; the focused regression
 passes. The final CI gate passes 213 tests with 12 explicitly skipped large
 qualifications. Workspace tests and strict all-target clippy also pass. Measurement
-source identity and results will be recorded below.
+source identity and results are recorded below.
 Local focused logs: `target/dot-product-focused.log` and
 `target/dot-product-bench-tests.log`.
 
@@ -91,8 +91,11 @@ An exact-rational check of the FP64 error formulas gives a bridge factor
 
 An independent NumPy FP64 exhaustive dot-product ordering was generated from
 these pinned FP32 inputs before measurement. The Rust command separately computes
-FP64 FMA truth outside timing. The final audit will compare every query's exact
-row list, recompute reported recall and check every emitted enclosure.
+FP64 FMA truth outside timing. The final audit compared every query's exact
+row list, recomputed reported recall and checked every emitted enclosure.
+The pinned premeasurement oracle has BLAKE3
+`c1d6aa669c4ce88098764458796e4ec00a679755f5dd7180adeea7620ed8295a`;
+its minimum exact top-10 boundary gap is 0.000984910107732162.
 
 ## Clean-release protocol
 
@@ -115,3 +118,87 @@ All admissible runs must use one clean, unchanged release commit. Initial output
 belongs under ignored `target/measure/`, then JSON and process logs are copied
 unchanged into `results/` after validation. The new method's initial 1M latency
 is checked against the existing numerical targets; this is workload-specific.
+
+## Completed measurements
+
+All four runs used clean release commit
+`12ef3ec9a2f41c29c5419b12cb0c02ebd96d6eed`, with no tracked changes during
+measurement. The 1M/10M latency runs used AC power on the M1 Pro. Final documentation
+updates are subsequent; serving code is the measured code.
+
+| Real-factor retrieval, k10 / budget200 | Result |
+|---|---:|
+| Queries / checked dot hits | 200 / 2000 |
+| Dot search recall against exact original dot | **0.9765 (1953/2000)** |
+| Cosine recall against that dot objective | **0.4230 (846/2000)** |
+| Original-dot enclosure failures | **0** |
+
+This demonstrates why length must enter search when the intended score is a
+dot product. It does not improve cosine reconstruction or show better held-out
+recommendations. The 47 dot-product retrieval misses have not been decomposed
+into selection, direction compression and length-rounding losses in this
+checkpoint. The method remains approximate, and native 768D real dot models
+and larger real corpora remain unqualified.
+
+| Clean release measurement | Cosine 1M | Dot 1M | Dot 10M resource smoke |
+|---|---:|---:|---:|
+| Queries / warmups | 1000 / 50 | 1000 / 50 | 10 / 1 |
+| p50, ms | 58.087916 | 59.534167 | 538.795166 |
+| p99, ms | 156.388958 | 152.338958 | 578.149791 (10 samples only) |
+| Open time, seconds | 1.069821458 | 0.956851542 | 12.148194042 |
+| Peak open/search RSS, bytes | 401,702,912 | 400,834,560 | 3,872,342,016 |
+| Retained descriptors | 17 | 17 | 161 |
+| Latency qualification | Passed | Passed initial targets | Ineligible; resource smoke only |
+
+Both 1M runs meet 150 ms median / 300 ms p99. Their serial timings are not a
+paired overhead experiment: p99 and peak-RSS differences include normal host
+and allocator variation. The 10M memory observation is below 20 GiB; the short
+run deliberately reports `gate_eligible: false`, `gate_passed: false`. It is not
+a failed full gate or a 10M tail-latency claim. All three reused the existing
+unchanged indexes, verified CURRENT/model/build provenance, and retained exactly
+segment count plus one descriptors. No index rebuild was required.
+
+A separate NumPy/Python audit passed after the runs. It checked all three input
+hashes, all 200 exact rankings against the premeasurement oracle, all 2000 hit
+truths and norm roundings, every enclosure, and the recall totals. It recomputed
+all latency percentiles from raw samples, matched RSS to process logs, checked
+clean source/gate/workload flags and compared source, corpus, model, training,
+query and CURRENT identities with the previous stored-magnitude measurements.
+Local audit: `target/audit-dot-product-results.py`, output
+`target/dot-product-audit.json`. The numerical error allowance was also checked
+with exact rational arithmetic as described above. No independent-agent review
+or new fuzz campaign is claimed.
+
+Raw evidence, archived byte-for-byte:
+
+- [Real-factor JSON](results/2026-09-14-dot-product-movielens.json) and
+  [process log](results/2026-09-14-dot-product-movielens.time.txt). This log's RSS
+  covers the whole build/qualification process, not open/search-only memory.
+- [Cosine 1M JSON](results/2026-09-14-dot-product-cosine-latency-1m.json) and
+  [process log](results/2026-09-14-dot-product-cosine-latency-1m.time.txt).
+- [Dot 1M JSON](results/2026-09-14-dot-product-latency-1m.json) and
+  [process log](results/2026-09-14-dot-product-latency-1m.time.txt).
+- [Dot 10M resource JSON](results/2026-09-14-dot-product-resource-10m.json) and
+  [process log](results/2026-09-14-dot-product-resource-10m.time.txt).
+
+## Reproduction
+
+Install NumPy 1.26.4 and blake3 1.0.8 in an isolated Python 3.12 environment.
+Acquire the upstream archive under its terms and use the pinned archive builder:
+
+```bash
+OPENBLAS_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1 python tools/build_movielens_dot_corpus.py \
+  --archive target/dot-product-data/ml-100k.zip \
+  --output-dir target/dot-product-data/movielens-svd64
+cargo build -p spherra-bench --release --locked
+```
+
+Each result JSON records the exact benchmark command, all input hashes and
+workload options. Execute the commands from the measured clean commit, using a
+fresh index/output path for the real-factor command. The descriptor records all
+split bytes and the reconstruction recipe. Existing generated 1M/10M indexes
+must have the recorded build sidecars and CURRENT hashes to pass reuse checks.
+
+The checkpoint is complete: source, tests, guide, status and schemas
+are current. Existing compressed-only cosine behavior is retained, while users
+can opt into length-aware dot-product search on the same saved index.

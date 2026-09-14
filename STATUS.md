@@ -70,7 +70,7 @@ Timing commit: `84065a9`; quality commit: `9a48a77`. Both used clean release
 builds. [Full protocol, raw timing samples and every quality hit](docs/benchmarks/README.md).
 The 1M oracle artifact was pinned at `2ad9a34`, before index measurement.
 
-The latest full quality gate passed 205 tests with 12 explicitly skipped large
+The latest full quality gate passed 213 tests with 12 explicitly skipped large
 qualifications. Workspace tests and strict all-target clippy pass. The release
 kernel qualification passed on archived SciFact and generated 100k. Earlier
 builder, recovery and decoder-fuzz qualifications remain recorded in the task
@@ -104,14 +104,25 @@ README examples compile as doctests. The final CI gate passed 191 tests with
   remain the chosen behavior. The prototype is retained as experiment evidence.
 - The separately authorized vector-length audit above is complete; public commit-report integration remains separate work.
 - The stored-magnitude getter checkpoint is complete. The additional dot-product
-  method is the separately authorized active checkpoint below.
+  method is the separately authorized completed checkpoint below.
 
-## Active checkpoint: additional dot-product search
+## Completed checkpoint: additional dot-product search
 
 The user requested a length-aware method while preserving current search.
 `search_dot_product()` is implemented with full-scan magnitude weighting,
 exact integer comparisons, distinct result types and original-dot intervals.
 Focused scalar, enclosure, negative-score, scaling and cosine-isolation checks
 pass. Full CI passes 213 tests with 12 skipped; workspace tests and strict clippy
-pass. Real-factor retrieval and clean-release performance qualification follow.
+pass. Clean release `12ef3ec` recovers 1953/2000 exact dot neighbors (0.9765)
+on the real MovieLens factor workload, versus 846/2000 (0.4230) for cosine
+against that dot objective; all 2000 original-dot intervals enclose truth.
+The 1M dot run passes initial latency targets at 59.534 ms median / 152.339 ms
+p99; cosine remains qualified at 58.088 / 156.389 ms. A 10-query 10M dot smoke
+uses 3,872,342,016 bytes peak RSS with 161 descriptors, without a tail-latency
+claim. Existing indexes were reused. Independent numerical audits pass and
+[Test data and raw results](docs/benchmarks/2026-09-14-dot-product-search-results.md).
 [Contract](docs/design/2026-09-14-dot-product-search-amendment.md).
+
+Dot search remains approximate. The real workload is rank-64 SVD padded to 768,
+not a native 768D model or held-out recommendation relevance test; larger real
+dot corpora and 10M dot recall remain unmeasured.

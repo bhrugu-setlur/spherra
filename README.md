@@ -90,8 +90,8 @@ exceeds the index size, every row is returned. Ordering is score descending,
 then row ID ascending. Row IDs are dense ordinals scoped to one index.
 
 `hit.stored_magnitude()` returns the input length rounded to FP16 and promoted
-to FP32. Tiny positive lengths may round to zero. It is metadata and does not
-affect ranking or score intervals. Opening retains two bytes per row (20 MB at
+to FP32. Tiny positive lengths may round to zero. In cosine search it is
+metadata and does not affect ranking or score intervals. Opening retains two bytes per row (20 MB at
 10M rows, plus per-segment overhead); existing valid indexes need no rebuild.
 
 For models whose vector length carries meaning, use the separate dot-product

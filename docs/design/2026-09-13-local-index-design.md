@@ -91,9 +91,9 @@ honest per-hit error intervals and a measured speed target.
 - Rows are added only through an offline builder that holds an exclusive lock;
   no `Index` may be open on the same directory meanwhile, in any process that
   uses this library.
-- Search returns `min(k, N)` hits ranked by an approximate score. **Results are
+- Cosine search returns `min(k, N)` hits ranked by an approximate score. **Results are
   not the exact cosine top-k** and are never described as such.
-- Every hit carries an interval certified to contain its true full-precision
+- Every cosine hit carries an interval certified to contain its true full-precision
   cosine score, under the trust boundary in section 7.
 - A row is rejected with its position, never silently dropped, if any component
   is non-finite, its norm exceeds the finite FP16 maximum, or
