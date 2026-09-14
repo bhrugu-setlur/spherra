@@ -30,7 +30,37 @@ reranking, which recovered all neighbors. Not yet measured: serving latency
 cost, a certified interval for the corrected score, 10M rows, and a paired
 interval on DPR.
 
-Raw evidence: [generated 1M](results/2026-09-14-renorm-generated-1m.json),
+## Option 2: stored build-time alignment (clean `7a526ab`)
+
+The builder knows each row's original direction u, so it could store the
+alignment `a = dot(u, p + e)` and serving could divide the refined score by it
+(the RaBitQ-style correction). Simulated three ways on the same pools: exact
+FP64 `a`; `a` rounded to FP16 (2 bytes per row, fits the spare flag bytes); and
+|p + e| times a one-byte code of `a / |p + e|` over [0.5, 1] (1 byte).
+
+| Workload | Baseline | Option 1 (no bytes) | Option 2 exact | Option 2 FP16 | Option 2 one byte |
+|---|---:|---:|---:|---:|---:|
+| Generated 1M, cosine | 0.9095 | 0.9255 | 0.9260 | 0.9260 | 0.9255 |
+| MS MARCO test, cosine | 0.9705 | 0.9770 | 0.9775 | 0.9780 | 0.9775 |
+| DPR 1M, dot | 0.9024 | 0.9235 | 0.9230 | 0.9234 | 0.9231 |
+
+Paired against option 1 (per-query, 10,000 bootstrap resamples), every option 2
+variant is within noise: generated 1M +0 to +1 neighbors (95% intervals span
+zero), MS MARCO +1 to +2 neighbors (0.00 to +0.25 points at best), and DPR −5
+to −1 neighbors of 10,000.
+
+Why: the smallest alignment ratio `a / |p + e|` among all candidates was
+0.9943 (generated), 0.9944 (MS MARCO) and 0.9956 (DPR). Reconstructions point
+almost exactly along their originals, so dividing by `a` is nearly the same as
+dividing by |p + e|. The remaining error is noise perpendicular to the original,
+which one stored number per row cannot remove. Option 2 adds a format change
+and rebuild for no measurable gain; option 1 captures the available benefit.
+
+Option 2 evidence: [generated 1M](results/2026-09-14-opt2-generated-1m.json),
+[MS MARCO test](results/2026-09-14-opt2-msmarco-test.json),
+[DPR 1M](results/2026-09-14-opt2-dpr-1m.json).
+
+Option 1 evidence: [generated 1M](results/2026-09-14-renorm-generated-1m.json),
 [MS MARCO test](results/2026-09-14-renorm-msmarco-test.json),
 [DPR 1M](results/2026-09-14-renorm-dpr-1m.json). Candidate traces remain local
 under `target/measure/`.

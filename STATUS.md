@@ -140,4 +140,8 @@ At clean `fcaf0a8`, dividing refined candidate scores by reconstruction length
 raised recall@10 from 0.9095 to 0.9255 (generated 1M), 0.9705 to 0.9770 (MS
 MARCO test) and 0.9024 to 0.9235 (DPR 1M dot), with no stored bytes. Serving is
 unchanged; adoption needs user approval, certified intervals and a latency check.
+At clean `7a526ab`, simulated option 2 (stored build-time alignment: exact,
+FP16 or one byte) matched option 1 within noise on all three workloads, because
+reconstructions align with their originals to at least 0.994; it is not worth a
+format change.
 [Results](docs/benchmarks/2026-09-14-renormalization-experiment.md).
