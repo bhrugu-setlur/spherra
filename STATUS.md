@@ -37,14 +37,18 @@ an independent calculation verified their statistics, counts and identities.
 No public index API, search path or durable format changes are included.
 [Protocol and results](docs/benchmarks/2026-09-14-vector-length-audit.md).
 
-## Current checkpoint: return stored magnitude
+## Completed checkpoint: return stored magnitude
 
 The user directed continuation to item 2 of the magnitude feature list.
 `Hit::stored_magnitude()` and bounded checked loading of a two-byte-per-row cache
 are implemented. Focused tests cover roundtrip/append, malformed magnitudes,
 exactly unchanged scoring and bounded reads. CI passed 205 tests with 12 skipped;
-workspace tests and strict clippy pass. Clean-release resource measurements are
-in progress.
+workspace tests and strict clippy pass. Clean release `1a4b73d` passes the full
+1M latency gate (54.891 ms median, 187.472 ms p99). A 10-query 10M resource smoke
+opens existing bytes without rebuilding, peaks at 3,874,209,792 bytes RSS and
+retains the expected 161 descriptors; it is not a new 10M tail-latency qualification.
+The cache payload is 20 MB at 10M rows.
+[Test data and raw results](docs/benchmarks/2026-09-14-stored-magnitude-results.md).
 [Contract](docs/design/2026-09-14-stored-magnitude-amendment.md).
 
 ## Acceptance evidence
@@ -66,7 +70,7 @@ Timing commit: `84065a9`; quality commit: `9a48a77`. Both used clean release
 builds. [Full protocol, raw timing samples and every quality hit](docs/benchmarks/README.md).
 The 1M oracle artifact was pinned at `2ad9a34`, before index measurement.
 
-The latest full quality gate passed 201 tests with 12 explicitly skipped large
+The latest full quality gate passed 205 tests with 12 explicitly skipped large
 qualifications. Workspace tests and strict all-target clippy pass. The release
 kernel qualification passed on archived SciFact and generated 100k. Earlier
 builder, recovery and decoder-fuzz qualifications remain recorded in the task
@@ -99,3 +103,5 @@ README examples compile as doctests. The final CI gate passed 191 tests with
   because of its storage/read tradeoff; compressed-only search and budget 200
   remain the chosen behavior. The prototype is retained as experiment evidence.
 - The separately authorized vector-length audit above is complete; public commit-report integration remains separate work.
+- The stored-magnitude getter checkpoint is complete. Dot-product search remains
+  separate work requiring a score/API design and meaningful varied-length real data.
