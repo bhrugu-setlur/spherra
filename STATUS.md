@@ -133,3 +133,11 @@ against exact cosine, and exact-direction/FP16-length ranking reaches 0.9943.
 
 Dot search remains approximate; 10M dot recall and other native dot models
 remain unmeasured.
+
+## Completed experiment: reconstruction renormalization (bench-only)
+
+At clean `fcaf0a8`, dividing refined candidate scores by reconstruction length
+raised recall@10 from 0.9095 to 0.9255 (generated 1M), 0.9705 to 0.9770 (MS
+MARCO test) and 0.9024 to 0.9235 (DPR 1M dot), with no stored bytes. Serving is
+unchanged; adoption needs user approval, certified intervals and a latency check.
+[Results](docs/benchmarks/2026-09-14-renormalization-experiment.md).
