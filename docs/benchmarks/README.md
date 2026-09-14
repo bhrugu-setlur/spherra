@@ -200,6 +200,24 @@ still resolve to the exact recorded bytes. Schema-valid smoke runs remain
 ineligible for full gates. Any equality difference, enclosure failure or
 historical drop above 0.01 writes the result and exits nonzero.
 
+Clean commit `9a48a77` passes all three quality gates, with 200 queries per
+corpus, k=10 and budget 200:
+
+| Corpus | Indexed rows | Index recall@10 | Task 1 recall@10 | Equality differences | Enclosure failures |
+|---|---:|---:|---:|---:|---:|
+| Archived SciFact | 3,688 | 0.9750 | 0.9745 | 0 | 0 |
+| Generated correlated 20k | 20,000 | 0.9355 | 0.9370 | 0 | 0 |
+| Chunked generated correlated 1M | 1,000,000 | 0.9095 | — | 0 | 0 |
+
+The historical changes are +0.0005 and -0.0015, within the permitted loss of
+0.01. The 1M value uses the Task 10 oracle pinned before index measurement;
+there is no historical 1M recall claim. All 6,000 returned hits enclose FP64
+truth and match the independent reference's row and integer score exactly.
+
+Full per-hit evidence: [SciFact](results/2026-09-13-local-index-quality-scifact.json),
+[20k](results/2026-09-13-local-index-quality-20k.json),
+[1M](results/2026-09-13-local-index-quality-1m.json).
+
 ### Codec and certificate measurements
 
 Baseline measurement, one result per candidate budget:
