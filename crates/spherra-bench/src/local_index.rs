@@ -17,7 +17,11 @@ use std::{
 };
 const CHUNK_ROWS: usize = 1_000_000;
 const GIB: u64 = 1024 * 1024 * 1024;
-fn number<T: std::str::FromStr>(o: &Options, key: &str, default: T) -> Result<T, BenchError> {
+pub(super) fn number<T: std::str::FromStr>(
+    o: &Options,
+    key: &str,
+    default: T,
+) -> Result<T, BenchError> {
     match o.get(key) {
         Some(v) => v
             .parse()
@@ -25,7 +29,7 @@ fn number<T: std::str::FromStr>(o: &Options, key: &str, default: T) -> Result<T,
         None => Ok(default),
     }
 }
-fn allowed(o: &Options, names: &[&str]) -> Result<(), BenchError> {
+pub(super) fn allowed(o: &Options, names: &[&str]) -> Result<(), BenchError> {
     for name in o.0.keys() {
         if !names.contains(&name.as_str()) {
             return Err(BenchError::UnexpectedArgument(format!("--{name}")));
@@ -45,18 +49,18 @@ fn base(kind: &str, o: &Options, source: &GeneratedChunks) -> Value {
     let revision = SourceRevision::capture();
     json!({"schema_version":1,"kind":kind,"timestamp":timestamp_rfc3339_utc(),"git_commit":revision.commit,"dirty_worktree":revision.dirty,"machine":MachineProfile::capture(),"command":format!("spherra-bench {kind} {}",o.0.iter().map(|(k,v)|format!("--{k} {v}")).collect::<Vec<_>>().join(" ")),"source":source.descriptor(),"durability_mode":if kind=="oracle-reference" {"not-applicable"} else {"file-and-directory-sync"}})
 }
-fn finish_revision(value: &mut Value) {
+pub(super) fn finish_revision(value: &mut Value) {
     let end = SourceRevision::capture();
     if end.dirty || value["git_commit"] != end.commit {
         value["dirty_worktree"] = json!(true);
     }
 }
-fn hash_rows(rows: &[Vector]) -> String {
+pub(super) fn hash_rows(rows: &[Vector]) -> String {
     let mut h = CanonicalRowHasher::default();
     h.update(rows);
     h.hash()
 }
-fn hash_file(path: &Path) -> Result<String, BenchError> {
+pub(super) fn hash_file(path: &Path) -> Result<String, BenchError> {
     Ok(blake3::hash(&fs::read(path).map_err(BenchError::harness)?)
         .to_hex()
         .to_string())
@@ -160,7 +164,7 @@ fn qualified_machine(value: &Value) -> bool {
         && value["machine"]["cargo_profile"] == "release"
         && value["dirty_worktree"] == false
 }
-fn model_metadata(dir: &Path) -> Result<Value, BenchError> {
+pub(super) fn model_metadata(dir: &Path) -> Result<Value, BenchError> {
     let path = fs::read_dir(dir)
         .map_err(BenchError::harness)?
         .filter_map(Result::ok)
@@ -180,7 +184,7 @@ fn model_metadata(dir: &Path) -> Result<Value, BenchError> {
         json!({"transform_id":hex(&id.transform_id),"quantizer_id":hex(&id.quantizer_id),"pq_codebook_id":hex(&id.pq_codebook_id),"codec_id":hex(&id.codec_id),"scorer_version":id.scorer_version,"layout":"tiled-soa-32"}),
     )
 }
-fn build_index(
+pub(super) fn build_index(
     o: &Options,
     source: &GeneratedChunks,
     dir: &Path,

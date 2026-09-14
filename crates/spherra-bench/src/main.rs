@@ -1,15 +1,6 @@
-//! `spherra-bench` — the reproducible codec/format measurement harness.
-//!
-//! Two subcommands:
-//!
-//! * `codec-format` trains on a disjoint calibration split, encodes a pinned
-//!   corpus, runs the certified primary scan plus bounded residual rerank at
-//!   each candidate budget, and writes one result per budget.
-//! * `certify` runs a deterministic certificate enclosure soak across transform
-//!   seeds.
-//!
-//! Both exit nonzero on any bound violation or identity mismatch. A result file
-//! is still written first, so a failure leaves evidence rather than silence.
+//! Reproducible codec, certificate, local-index quality, latency and memory
+//! measurements. Commands validate their recorded output against embedded
+//! schemas and return failure when their measured gate fails.
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -35,6 +26,7 @@ use spherra_testkit::results::{
     SoakSeedIdentity, validate_against_schema,
 };
 
+mod index_quality;
 mod local_index;
 
 const LAYOUT_TILED_SOA_32: &str = "tiled-soa-32";
@@ -65,6 +57,7 @@ fn run(arguments: &[String]) -> Result<(), BenchError> {
         "build-memory" => local_index::measured_child("build-memory", &options),
         "latency-child" => local_index::latency_child(&options),
         "build-memory-child" => local_index::memory_child(&options),
+        "index" => index_quality::run(&options),
         other => Err(BenchError::UnknownSubcommand(other.to_owned())),
     }
 }
@@ -707,7 +700,10 @@ impl fmt::Display for BenchError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::MissingSubcommand => {
-                write!(formatter, "expected a subcommand: codec-format or certify")
+                write!(
+                    formatter,
+                    "expected a subcommand: codec-format, certify, prune-rate, oracle-reference, index, latency, or build-memory"
+                )
             }
             Self::UnknownSubcommand(name) => write!(formatter, "unknown subcommand {name}"),
             Self::UnexpectedArgument(argument) => {

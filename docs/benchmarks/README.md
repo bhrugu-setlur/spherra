@@ -158,6 +158,50 @@ representation, certificates and default budget remain unchanged.
 
 ## Running the harness
 
+### Public index quality
+
+`index` compares every public hit with a separate checked-scalar, full-sort
+reference over the index's own restored tables and codes. It also checks each
+interval against original-space FP64 truth. Its strict
+[`local-index-quality.schema.json`](local-index-quality.schema.json) records
+every actual/expected row and raw score, interval, truth, and per-query exact
+top-10 overlap. This is quality qualification; its total elapsed time is not a
+search-latency measurement. It permits at most 1M source rows and 1,000 queries.
+
+```bash
+cargo run -p spherra-bench --release --locked -- index \
+  --corpus corpora/archive/scifact-mpnet-768-2026-09-13.json \
+  --queries 200 --seed 20260804 --candidate-budget 200 \
+  --index-dir target/local-index-quality-scifact \
+  --historical-reference docs/benchmarks/results/2026-09-13-local-index-reference-beir-scifact-mpnet-768.json \
+  --output target/measure/local-index-quality-scifact.json
+
+cargo run -p spherra-bench --release --locked -- index \
+  --corpus generated-correlated-768x20000 \
+  --queries 200 --seed 20260804 --candidate-budget 200 \
+  --index-dir target/local-index-quality-20k \
+  --historical-reference docs/benchmarks/results/2026-09-13-local-index-reference-generated-correlated-768x20000.json \
+  --output target/measure/local-index-quality-20k.json
+
+cargo run -p spherra-bench --release --locked -- index \
+  --rows 1000000 --queries 200 --seed 20260804 --candidate-budget 200 \
+  --index-dir target/local-index-1m --reuse true \
+  --oracle-reference docs/benchmarks/results/2026-09-13-local-index-oracle-generated-correlated-1m.json \
+  --output target/measure/local-index-quality-1m.json
+```
+
+Historical runs create fresh indexes using each corpus's calibration split;
+`create` independently holds out validation rows. Their reference JSON must
+match the indexed bytes, queries, seed and budget. The one-percent recall-loss
+floor uses integer hit counts, avoiding rounding at the boundary of the older
+FP64 averages. Chunked 1M uses the already pinned oracle, never a newly generated
+reference after observing the index's result. Its original artifact path must
+still resolve to the exact recorded bytes. Schema-valid smoke runs remain
+ineligible for full gates. Any equality difference, enclosure failure or
+historical drop above 0.01 writes the result and exits nonzero.
+
+### Codec and certificate measurements
+
 Baseline measurement, one result per candidate budget:
 
 ```bash
