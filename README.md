@@ -4,10 +4,11 @@ Spherra is a local, embedded Rust vector index for 768-dimensional embeddings.
 It shrinks each vector to about one sixth of its size, searches the small
 copies, and returns the best matches with a proven range for each score.
 
-This README explains the math by following one small 4D vector through every
-step. Four is the smallest size where the real Hadamard transform exists, so
-nothing here is a stand-in: Spherra does exactly these steps, just with 768
-numbers instead of 4.
+This README explains the math by following one small vector with 4 numbers
+through every step. Spherra runs exactly the same steps on vectors with 768
+numbers; the example is simply smaller so every calculation fits on the page.
+Four is the smallest size where the fast Hadamard transform takes more than one
+pass, so the example shows the real algorithm, not a stand-in.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/transform-animation-dark.svg">
