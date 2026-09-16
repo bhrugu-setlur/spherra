@@ -212,7 +212,7 @@ def bar_chart(c, left, top, values, color, unit, title, outline=None, row_gap=34
 def compression_figure(theme, ex):
     c = Canvas(960, 250, theme)
     unit = 95
-    panels = [
+    panels = [\
         (ex["u"], "blue", "u: direction", None, "largest 0.80, smallest 0.20"),
         (ex["y"], "blue", "y: after one round", None, "sizes 0.1 to 0.7, length 1"),
         (ex["p"], "orange", "p: rounded to grid", ex["y"], f"miss ‖y − p‖ = {norm(ex['e']):.3f}"),
@@ -269,6 +269,122 @@ def fwht_figure(theme, ex):
     for row in range(4):
         c.text(xs[0] - 12, row_y[row] + 22, f"c{SUB[row]}", size=13, color="text2", anchor="end")
     return c.svg("Butterfly diagram of the fast Walsh-Hadamard transform")
+
+
+def hadamard_figure(theme):
+    """Sylvester's construction: doubling rule and resulting H1, H2, H4."""
+    c = Canvas(960, 260, theme)
+    surf = c.t["surface"]
+
+    c.text(24, 34, "Hadamard matrices: Sylvester’s construction", size=16, weight=700)
+    c.text(24, 56, "Starts from H₁ = [+1] and doubles size: H₂ₙ combines two copies of Hₙ and flips the lower-right sign.", size=13, color="text2")
+
+    def draw_bracket(x, y, h, is_left=True, color="text2", width=1.6, tick=7):
+        if is_left:
+            c.raw(
+                f'<path d="M{x + tick:.1f},{y:.1f} H{x:.1f} V{y + h:.1f} H{x + tick:.1f}" '
+                f'fill="none" stroke="{c.t[color]}" stroke-width="{width}" stroke-linecap="round" stroke-linejoin="round"/>'
+            )
+        else:
+            c.raw(
+                f'<path d="M{x - tick:.1f},{y:.1f} H{x:.1f} V{y + h:.1f} H{x - tick:.1f}" '
+                f'fill="none" stroke="{c.t[color]}" stroke-width="{width}" stroke-linecap="round" stroke-linejoin="round"/>'
+            )
+
+    y_mid = 160
+
+    # Panel 1: Sylvester's rule
+    x_rule = 40
+    c.text(x_rule, 92, "Recursive rule", size=13, weight=600, color="text2")
+    c.text(x_rule, y_mid + 6, "H₂ₙ  =", size=16, weight=600)
+
+    bx = x_rule + 62
+    bw, bh = 54, 38
+    gap = 6
+    by = y_mid - bh - gap // 2
+    draw_bracket(bx - 8, by - 6, bh * 2 + gap + 12, is_left=True)
+    draw_bracket(bx + bw * 2 + gap + 8, by - 6, bh * 2 + gap + 12, is_left=False)
+
+    blocks = [
+        (0, 0, "Hₙ", "blue"),
+        (1, 0, "Hₙ", "blue"),
+        (0, 1, "Hₙ", "blue"),
+        (1, 1, "−Hₙ", "orange"),
+    ]
+    for col, row, label, col_color in blocks:
+        px = bx + col * (bw + gap)
+        py = by + row * (bh + gap)
+        c.raw(f'<rect x="{px}" y="{py}" width="{bw}" height="{bh}" rx="6" fill="{surf}" stroke="{c.t[col_color]}" stroke-width="1.8"/>')
+        c.text(px + bw / 2, py + bh / 2 + 5, label, size=15, weight=600, anchor="middle", color=col_color)
+
+    # Panel 2: H1
+    x_h1 = 300
+    c.text(x_h1, 92, "H₁ (1×1)", size=13, weight=600, color="text2")
+    c.text(x_h1, y_mid + 6, "H₁  =", size=16, weight=600)
+    h1_x = x_h1 + 50
+    h1_w, h1_h = 36, 36
+    draw_bracket(h1_x - 8, y_mid - h1_h // 2 - 6, h1_h + 12, is_left=True)
+    draw_bracket(h1_x + h1_w + 8, y_mid - h1_h // 2 - 6, h1_h + 12, is_left=False)
+    c.raw(f'<rect x="{h1_x}" y="{y_mid - h1_h // 2}" width="{h1_w}" height="{h1_h}" rx="6" fill="{surf}" stroke="{c.t["blue"]}" stroke-width="1.8"/>')
+    c.text(h1_x + h1_w / 2, y_mid + 5, "+1", size=13, weight=600, anchor="middle", color="blue")
+
+    # Panel 3: H2
+    x_h2 = 445
+    c.text(x_h2, 92, "H₂ (2×2)", size=13, weight=600, color="text2")
+    c.text(x_h2, y_mid + 6, "H₂  =", size=16, weight=600)
+    h2_x = x_h2 + 50
+    cw, ch = 34, 34
+    h2_gap = 4
+    h2_y = y_mid - ch - h2_gap // 2
+    draw_bracket(h2_x - 8, h2_y - 6, ch * 2 + h2_gap + 12, is_left=True)
+    draw_bracket(h2_x + cw * 2 + h2_gap + 8, h2_y - 6, ch * 2 + h2_gap + 12, is_left=False)
+    h2_vals = [[1, 1], [1, -1]]
+    for r in range(2):
+        for col in range(2):
+            val = h2_vals[r][col]
+            v_color = "blue" if val > 0 else "orange"
+            v_str = "+1" if val > 0 else "−1"
+            px = h2_x + col * (cw + h2_gap)
+            py = h2_y + r * (ch + h2_gap)
+            c.raw(f'<rect x="{px}" y="{py}" width="{cw}" height="{ch}" rx="6" fill="{surf}" stroke="{c.t[v_color]}" stroke-width="1.6"/>')
+            c.text(px + cw / 2, py + ch / 2 + 5, v_str, size=13, weight=600, anchor="middle", color=v_color)
+
+    # Panel 4: H4
+    x_h4 = 660
+    c.text(x_h4, 92, "H₄ (4×4)", size=13, weight=600, color="text2")
+    c.text(x_h4, y_mid + 6, "H₄  =", size=16, weight=600)
+    h4_x = x_h4 + 50
+    h4_cw, h4_ch = 30, 30
+    h4_gap = 4
+    h4_y = y_mid - (h4_ch * 2 + h4_gap * 2) + 6
+    h4_total_w = h4_cw * 4 + h4_gap * 3
+    h4_total_h = h4_ch * 4 + h4_gap * 3
+    draw_bracket(h4_x - 8, h4_y - 6, h4_total_h + 12, is_left=True)
+    draw_bracket(h4_x + h4_total_w + 8, h4_y - 6, h4_total_h + 12, is_left=False)
+
+    # Subtle quadrant boundary lines
+    mid_line_x = h4_x + 2 * h4_cw + h4_gap + h4_gap / 2
+    mid_line_y = h4_y + 2 * h4_ch + h4_gap + h4_gap / 2
+    c.line((mid_line_x, h4_y), (mid_line_x, h4_y + h4_total_h), color="grid", width=1.0, dash="2 2")
+    c.line((h4_x, mid_line_y), (h4_x + h4_total_w, mid_line_y), color="grid", width=1.0, dash="2 2")
+
+    h4_vals = [
+        [1, 1, 1, 1],
+        [1, -1, 1, -1],
+        [1, 1, -1, -1],
+        [1, -1, -1, 1],
+    ]
+    for r in range(4):
+        for col in range(4):
+            val = h4_vals[r][col]
+            v_color = "blue" if val > 0 else "orange"
+            v_str = "+1" if val > 0 else "−1"
+            px = h4_x + col * (h4_cw + h4_gap)
+            py = h4_y + r * (h4_ch + h4_gap)
+            c.raw(f'<rect x="{px}" y="{py}" width="{h4_cw}" height="{h4_ch}" rx="5" fill="{surf}" stroke="{c.t[v_color]}" stroke-width="1.4"/>')
+            c.text(px + h4_cw / 2, py + h4_ch / 2 + 5, v_str, size=12, weight=600, anchor="middle", color=v_color)
+
+    return c.svg("Sylvester construction of Hadamard matrices")
 
 
 def search_figure(theme, ex):
@@ -430,6 +546,7 @@ def main():
     for theme in THEMES:
         (OUT / f"transform-animation-{theme}.svg").write_text(animation_figure(theme, ex))
         (OUT / f"fwht-{theme}.svg").write_text(fwht_figure(theme, ex))
+        (OUT / f"hadamard-matrix-{theme}.svg").write_text(hadamard_figure(theme))
         (OUT / f"compression-{theme}.svg").write_text(compression_figure(theme, ex))
         (OUT / f"search-{theme}.svg").write_text(search_figure(theme, ex))
     for key in ("u", "flipped", "shuffled", "y", "unsigned", "p", "e", "e_hat", "r", "q"):

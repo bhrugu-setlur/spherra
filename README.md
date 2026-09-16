@@ -140,13 +140,10 @@ A Hadamard matrix contains only `+1` and `−1`, and any two different rows agre
 in exactly half of their positions. The standard way to build one (Sylvester's
 construction) starts from `[1]` and doubles the size each time:
 
-```text
-H₁ = [ 1 ]       H₂ = ⎡ 1   1 ⎤       H₄ = ⎡ 1   1   1   1 ⎤
-                      ⎣ 1  -1 ⎦            ⎢ 1  -1   1  -1 ⎥
-                                           ⎢ 1   1  -1  -1 ⎥
-             ⎡ Hₙ   Hₙ ⎤                   ⎣ 1  -1  -1   1 ⎦
-     H₂ₙ =   ⎣ Hₙ  -Hₙ ⎦
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/hadamard-matrix-dark.svg">
+  <img src="docs/images/hadamard-matrix-light.svg" alt="Sylvester's construction of Hadamard matrices: recursive rule H₂ₙ from Hₙ, with resulting H₁, H₂, and H₄.">
+</picture>
 
 The mix is $y = \tfrac{1}{\sqrt{4}} H_4\, w = \tfrac{1}{2} H_4\, w$. Each output
 coordinate is one row of $H_4$ dotted with `w = (0.4, 0.8, −0.4, 0.2)`, then
