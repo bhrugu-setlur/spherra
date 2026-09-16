@@ -140,10 +140,13 @@ A Hadamard matrix contains only `+1` and `−1`, and any two different rows agre
 in exactly half of their positions. The standard way to build one (Sylvester's
 construction) starts from `[1]` and doubles the size each time:
 
-$$H_1 = \begin{pmatrix}1\end{pmatrix}, \qquad H_{2n} = \begin{pmatrix} H_n & H_n \\ H_n & -H_n \end{pmatrix}$$
+$$
+H_1 = \begin{pmatrix}1\end{pmatrix}, \qquad H_{2n} = \begin{pmatrix} H_n & H_n \\\\ H_n & -H_n \end{pmatrix}
+$$
 
-$$H_2 = \begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix}, \qquad
-H_4 = \begin{pmatrix} 1 & 1 & 1 & 1 \\ 1 & -1 & 1 & -1 \\ 1 & 1 & -1 & -1 \\ 1 & -1 & -1 & 1 \end{pmatrix}$$
+$$
+H_2 = \begin{pmatrix} 1 & 1 \\\\ 1 & -1 \end{pmatrix}, \qquad H_4 = \begin{pmatrix} 1 & 1 & 1 & 1 \\\\ 1 & -1 & 1 & -1 \\\\ 1 & 1 & -1 & -1 \\\\ 1 & -1 & -1 & 1 \end{pmatrix}
+$$
 
 The mix is $y = \tfrac{1}{\sqrt{4}} H_4\, w = \tfrac{1}{2} H_4\, w$. Each output
 coordinate is one row of $H_4$ dotted with `w = (0.4, 0.8, −0.4, 0.2)`, then
