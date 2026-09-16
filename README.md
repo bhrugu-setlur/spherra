@@ -140,13 +140,13 @@ A Hadamard matrix contains only `+1` and `−1`, and any two different rows agre
 in exactly half of their positions. The standard way to build one (Sylvester's
 construction) starts from `[1]` and doubles the size each time:
 
-$$
-H_1 = \begin{pmatrix}1\end{pmatrix}, \qquad H_{2n} = \begin{pmatrix} H_n & H_n \\\\ H_n & -H_n \end{pmatrix}
-$$
-
-$$
-H_2 = \begin{pmatrix} 1 & 1 \\\\ 1 & -1 \end{pmatrix}, \qquad H_4 = \begin{pmatrix} 1 & 1 & 1 & 1 \\\\ 1 & -1 & 1 & -1 \\\\ 1 & 1 & -1 & -1 \\\\ 1 & -1 & -1 & 1 \end{pmatrix}
-$$
+```text
+H₁ = [ 1 ]       H₂ = ⎡ 1   1 ⎤       H₄ = ⎡ 1   1   1   1 ⎤
+                      ⎣ 1  -1 ⎦            ⎢ 1  -1   1  -1 ⎥
+                                           ⎢ 1   1  -1  -1 ⎥
+             ⎡ Hₙ   Hₙ ⎤                   ⎣ 1  -1  -1   1 ⎦
+     H₂ₙ =   ⎣ Hₙ  -Hₙ ⎦
+```
 
 The mix is $y = \tfrac{1}{\sqrt{4}} H_4\, w = \tfrac{1}{2} H_4\, w$. Each output
 coordinate is one row of $H_4$ dotted with `w = (0.4, 0.8, −0.4, 0.2)`, then
@@ -159,7 +159,7 @@ halved:
 | y₃ | (+1, +1, −1, −1) | 0.4 + 0.8 + 0.4 − 0.2 = 1.4 | **0.7** |
 | y₄ | (+1, −1, −1, +1) | 0.4 − 0.8 + 0.4 + 0.2 = 0.2 | **0.1** |
 
-$$y = (0.5,\ -0.5,\ 0.7,\ 0.1)$$
+giving the reshaped vector $y = (0.5,\ -0.5,\ 0.7,\ 0.1)$.
 
 Three facts make this a good mixer:
 
@@ -226,18 +226,18 @@ Now the result:
 The largest coordinate dropped and two coordinates reached the middle. But look
 at what happens if we skip Steps 2 and 3 and mix `u` directly:
 
-$$\tfrac{1}{2}H_4\,(0.8,\ 0.4,\ 0.4,\ 0.2) = (0.9,\ 0.3,\ 0.3,\ 0.1)$$
+$\tfrac{1}{2}H_4\,(0.8,\ 0.4,\ 0.4,\ 0.2) = (0.9,\ 0.3,\ 0.3,\ 0.1)$
 
 That is **worse** than `u`. Because the Hadamard transform undoes itself, it
 turns some even vectors into spiky ones just as easily as it turns spiky ones
 into even ones. The extreme cases:
 
-$$\tfrac{1}{2}H_4\,(1,\ 0,\ 0,\ 0) = (0.5,\ 0.5,\ 0.5,\ 0.5) \qquad \tfrac{1}{2}H_4\,(0.5,\ 0.5,\ 0.5,\ 0.5) = (1,\ 0,\ 0,\ 0)$$
+$\tfrac{1}{2}H_4\,(1,\ 0,\ 0,\ 0) = (0.5,\ 0.5,\ 0.5,\ 0.5) \qquad \tfrac{1}{2}H_4\,(0.5,\ 0.5,\ 0.5,\ 0.5) = (1,\ 0,\ 0,\ 0)$
 
 A fixed mixer always has inputs it handles badly. Random signs make sure no
 input is reliably bad. With random signs $s_j = \pm 1$, output coordinate `i` is
 
-$$y_i = \frac{1}{\sqrt n}\sum_j H_{ij}\, s_j\, u_j$$
+$y_i = \frac{1}{\sqrt n}\sum_j H_{ij}\, s_j\, u_j$
 
 a sum whose terms have random coin-flip signs. Its average is `0`, and its
 average square is $\tfrac{1}{n}\sum_j u_j^2 = \tfrac{1}{n}$, **no matter what
@@ -252,7 +252,7 @@ of only four random terms can still land far from average.
 With more coordinates, the sum has more random terms and lands close to its
 average far more reliably. Hoeffding's inequality puts a number on it:
 
-$$P\left(\lvert y_i \rvert > t\right) \le 2\,e^{-n t^2 / 2}$$
+$P\left(\lvert y_i \rvert > t\right) \le 2\,e^{-n t^2 / 2}$
 
 For a 128-coordinate block, a coordinate above `0.3` has a probability of at
 most `0.0063`. For comparison, the average coordinate size is
