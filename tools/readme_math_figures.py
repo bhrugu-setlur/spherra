@@ -292,17 +292,17 @@ def hadamard_figure(theme):
             )
 
     y_mid = 180
-    title_y = 86
+    title_y = 76
 
     # Panel 1: Sylvester's rule
     x_rule = 45
-    c.text(x_rule, title_y, "Sylvester’s rule", size=13, weight=600, color="text2")
     c.text(x_rule, y_mid + 6, "H₂ₙ =", size=16, weight=600)
 
     bx = x_rule + 62
     bw, bh = 50, 38
     gap = 6
     by = y_mid - bh - gap // 2
+    c.text(bx + bw + gap / 2, title_y, "Sylvester’s rule", size=13, weight=600, color="text2", anchor="middle")
     draw_bracket(bx - 8, by - 6, bh * 2 + gap + 12, is_left=True)
     draw_bracket(bx + bw * 2 + gap + 8, by - 6, bh * 2 + gap + 12, is_left=False)
 
@@ -320,10 +320,10 @@ def hadamard_figure(theme):
 
     # Panel 2: H1
     x_h1 = 300
-    c.text(x_h1, title_y, "H₁ (1×1)", size=13, weight=600, color="text2")
     c.text(x_h1, y_mid + 6, "H₁ =", size=16, weight=600)
     h1_x = x_h1 + 52
     h1_w, h1_h = 36, 36
+    c.text(h1_x + h1_w / 2, title_y, "H₁ (1×1)", size=13, weight=600, color="text2", anchor="middle")
     draw_bracket(h1_x - 8, y_mid - h1_h // 2 - 6, h1_h + 12, is_left=True)
     draw_bracket(h1_x + h1_w + 8, y_mid - h1_h // 2 - 6, h1_h + 12, is_left=False)
     c.raw(f'<rect x="{h1_x}" y="{y_mid - h1_h // 2}" width="{h1_w}" height="{h1_h}" rx="6" fill="{surf}" stroke="{c.t["blue"]}" stroke-width="1.8"/>')
@@ -331,12 +331,12 @@ def hadamard_figure(theme):
 
     # Panel 3: H2
     x_h2 = 460
-    c.text(x_h2, title_y, "H₂ (2×2)", size=13, weight=600, color="text2")
     c.text(x_h2, y_mid + 6, "H₂ =", size=16, weight=600)
     h2_x = x_h2 + 52
     cw, ch = 34, 34
     h2_gap = 4
     h2_y = y_mid - ch - h2_gap // 2
+    c.text(h2_x + cw + h2_gap / 2, title_y, "H₂ (2×2)", size=13, weight=600, color="text2", anchor="middle")
     draw_bracket(h2_x - 8, h2_y - 6, ch * 2 + h2_gap + 12, is_left=True)
     draw_bracket(h2_x + cw * 2 + h2_gap + 8, h2_y - 6, ch * 2 + h2_gap + 12, is_left=False)
     h2_vals = [[1, 1], [1, -1]]
@@ -351,17 +351,17 @@ def hadamard_figure(theme):
             c.text(px + cw / 2, py + ch / 2 + 5, v_str, size=13, weight=600, anchor="middle", color=v_color)
 
     # Panel 4: H4
-    x_h4 = 665
-    c.text(x_h4, title_y, "H₄ (4×4)", size=13, weight=600, color="text2")
+    x_h4 = 655
     c.text(x_h4, y_mid + 6, "H₄ =", size=16, weight=600)
     h4_cw, h4_ch = 30, 30
     h4_gap = 4
-    h4_x = x_h4 + 56
+    h4_x = x_h4 + 60
     h4_total_w = h4_cw * 4 + h4_gap * 3
     h4_total_h = h4_ch * 4 + h4_gap * 3
     h4_y = y_mid - h4_total_h // 2
     bracket_top = h4_y - 6
 
+    c.text(h4_x + h4_total_w / 2, title_y, "H₄ (4×4)", size=13, weight=600, color="text2", anchor="middle")
     draw_bracket(h4_x - 8, bracket_top, h4_total_h + 12, is_left=True)
     draw_bracket(h4_x + h4_total_w + 8, bracket_top, h4_total_h + 12, is_left=False)
 
