@@ -273,13 +273,13 @@ def fwht_figure(theme, ex):
 
 def hadamard_figure(theme):
     """Sylvester's construction: doubling rule and resulting H1, H2, H4."""
-    c = Canvas(960, 260, theme)
+    c = Canvas(960, 290, theme)
     surf = c.t["surface"]
 
     c.text(24, 34, "Hadamard matrices: Sylvester’s construction", size=16, weight=700)
     c.text(24, 56, "Starts from H₁ = [+1] and doubles size: H₂ₙ combines two copies of Hₙ and flips the lower-right sign.", size=13, color="text2")
 
-    def draw_bracket(x, y, h, is_left=True, color="text2", width=1.6, tick=7):
+    def draw_bracket(x, y, h, is_left=True, color="text2", width=1.6, tick=6):
         if is_left:
             c.raw(
                 f'<path d="M{x + tick:.1f},{y:.1f} H{x:.1f} V{y + h:.1f} H{x + tick:.1f}" '
@@ -291,15 +291,16 @@ def hadamard_figure(theme):
                 f'fill="none" stroke="{c.t[color]}" stroke-width="{width}" stroke-linecap="round" stroke-linejoin="round"/>'
             )
 
-    y_mid = 160
+    y_mid = 180
+    title_y = 86
 
     # Panel 1: Sylvester's rule
-    x_rule = 40
-    c.text(x_rule, 92, "Recursive rule", size=13, weight=600, color="text2")
-    c.text(x_rule, y_mid + 6, "H₂ₙ  =", size=16, weight=600)
+    x_rule = 45
+    c.text(x_rule, title_y, "Sylvester’s rule", size=13, weight=600, color="text2")
+    c.text(x_rule, y_mid + 6, "H₂ₙ =", size=16, weight=600)
 
     bx = x_rule + 62
-    bw, bh = 54, 38
+    bw, bh = 50, 38
     gap = 6
     by = y_mid - bh - gap // 2
     draw_bracket(bx - 8, by - 6, bh * 2 + gap + 12, is_left=True)
@@ -319,9 +320,9 @@ def hadamard_figure(theme):
 
     # Panel 2: H1
     x_h1 = 300
-    c.text(x_h1, 92, "H₁ (1×1)", size=13, weight=600, color="text2")
-    c.text(x_h1, y_mid + 6, "H₁  =", size=16, weight=600)
-    h1_x = x_h1 + 50
+    c.text(x_h1, title_y, "H₁ (1×1)", size=13, weight=600, color="text2")
+    c.text(x_h1, y_mid + 6, "H₁ =", size=16, weight=600)
+    h1_x = x_h1 + 52
     h1_w, h1_h = 36, 36
     draw_bracket(h1_x - 8, y_mid - h1_h // 2 - 6, h1_h + 12, is_left=True)
     draw_bracket(h1_x + h1_w + 8, y_mid - h1_h // 2 - 6, h1_h + 12, is_left=False)
@@ -329,10 +330,10 @@ def hadamard_figure(theme):
     c.text(h1_x + h1_w / 2, y_mid + 5, "+1", size=13, weight=600, anchor="middle", color="blue")
 
     # Panel 3: H2
-    x_h2 = 445
-    c.text(x_h2, 92, "H₂ (2×2)", size=13, weight=600, color="text2")
-    c.text(x_h2, y_mid + 6, "H₂  =", size=16, weight=600)
-    h2_x = x_h2 + 50
+    x_h2 = 460
+    c.text(x_h2, title_y, "H₂ (2×2)", size=13, weight=600, color="text2")
+    c.text(x_h2, y_mid + 6, "H₂ =", size=16, weight=600)
+    h2_x = x_h2 + 52
     cw, ch = 34, 34
     h2_gap = 4
     h2_y = y_mid - ch - h2_gap // 2
@@ -350,17 +351,19 @@ def hadamard_figure(theme):
             c.text(px + cw / 2, py + ch / 2 + 5, v_str, size=13, weight=600, anchor="middle", color=v_color)
 
     # Panel 4: H4
-    x_h4 = 660
-    c.text(x_h4, 92, "H₄ (4×4)", size=13, weight=600, color="text2")
-    c.text(x_h4, y_mid + 6, "H₄  =", size=16, weight=600)
-    h4_x = x_h4 + 50
+    x_h4 = 665
+    c.text(x_h4, title_y, "H₄ (4×4)", size=13, weight=600, color="text2")
+    c.text(x_h4, y_mid + 6, "H₄ =", size=16, weight=600)
     h4_cw, h4_ch = 30, 30
     h4_gap = 4
-    h4_y = y_mid - (h4_ch * 2 + h4_gap * 2) + 6
+    h4_x = x_h4 + 56
     h4_total_w = h4_cw * 4 + h4_gap * 3
     h4_total_h = h4_ch * 4 + h4_gap * 3
-    draw_bracket(h4_x - 8, h4_y - 6, h4_total_h + 12, is_left=True)
-    draw_bracket(h4_x + h4_total_w + 8, h4_y - 6, h4_total_h + 12, is_left=False)
+    h4_y = y_mid - h4_total_h // 2
+    bracket_top = h4_y - 6
+
+    draw_bracket(h4_x - 8, bracket_top, h4_total_h + 12, is_left=True)
+    draw_bracket(h4_x + h4_total_w + 8, bracket_top, h4_total_h + 12, is_left=False)
 
     # Subtle quadrant boundary lines
     mid_line_x = h4_x + 2 * h4_cw + h4_gap + h4_gap / 2
