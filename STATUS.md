@@ -4,7 +4,7 @@ Updated: 2026-09-23
 
 Spherra's local index is complete: building, appending, crash-safe commits,
 cosine search, optional dot-product search, and proven score ranges all work and
-pass CI (223 tests; 12 large qualifications and one timing diagnostic are
+pass CI (224 tests; 12 large qualifications and one timing diagnostic are
 skipped by default).
 
 An earlier design for a distributed vector database was stopped in favor of this
@@ -40,6 +40,11 @@ Full protocols and raw results: [`docs/benchmarks/`](docs/benchmarks/README.md).
   86.8 ms under background CPU load. Tail-latency improvement is unproven.
   Scalar scores and complete-search results match exactly.
   [Verification and measurements](docs/benchmarks/2026-09-23-scan-loop-results.md).
+  Follow-up paired checks under background load show 11–14% lower 1M median
+  latency with 1–8 callers and about 10% lower latency with cold residual-file
+  pages. Tiny-index overhead is 2–5 microseconds; 8,832 timed searches match
+  across versions. Keep the scan and defer heap/worker changes.
+  [Follow-up results](docs/benchmarks/2026-09-23-search-validation-results.md).
 - **Compressed-only search.** Re-scoring finalists against the original vectors
   recovered every missed neighbor, but it would add 3.07 GB of storage per
   million rows and about 3.2 ms per query. I kept search compressed-only, with a
@@ -75,6 +80,8 @@ Full protocols and raw results: [`docs/benchmarks/`](docs/benchmarks/README.md).
 
 ## Next work
 
-- Repeat scan comparisons on an idle machine; measure cold caches and memory pressure.
+- Idle-machine scan comparison remains pending at the user's request; loaded
+  small-index, concurrent and cold-residual checks are complete. Controlled
+  memory-pressure tests remain unmeasured.
 - Build larger labeled query sets before claiming 10M-row recall.
 - Compare against an established library such as FAISS on the same data.

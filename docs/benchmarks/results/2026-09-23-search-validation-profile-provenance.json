@@ -1,0 +1,104 @@
+{
+  "ready": {
+    "build": {
+      "build_rows_per_second": 11729.02187421813,
+      "build_seconds": 85.258601333,
+      "corpus_hash": "ade3b24e88e3bb1e744557fb10319f4078afacce713448d30fb02096e5f6d7cf",
+      "dirty_worktree": false,
+      "drift_warnings": 0,
+      "git_commit": "76408df13d7bfbb58a3b7c4bafb3d6b65b376a34",
+      "index_current_blake3": "7e9121a3104b3372f396757b2907100c20fb0586ffc4ce90ba5c815c922fb9b3",
+      "source": {
+        "chunk_rows": 1000000,
+        "chunk_seeds": [
+          254657558119675395
+        ],
+        "correlation": 0.85,
+        "dimension": 768,
+        "generator_version": 1,
+        "kind": "correlated",
+        "seed": 20260804,
+        "seed_derivation": "spherra.generated-correlated.chunks.v1",
+        "vector_count": 1000000
+      },
+      "training_rows": 4096
+    },
+    "command": [
+      "${SPHERRA_ROOT}/.worktrees/scan-loop/target/release/spherra-bench",
+      "search-probe",
+      "--index-dir",
+      "${SPHERRA_ROOT}/.worktrees/local-index/target/local-index-1m",
+      "--rows",
+      "1000000",
+      "--queries",
+      "256",
+      "--seed",
+      "20260804",
+      "--training-rows",
+      "4096",
+      "--reuse",
+      "true"
+    ],
+    "generation": 1,
+    "kind": "ready",
+    "machine": {
+      "architecture": "aarch64",
+      "cargo_profile": "release",
+      "cpu": "Apple M1 Pro",
+      "os": "Darwin 26.6.2",
+      "physical_memory_bytes": 34359738368,
+      "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)"
+    },
+    "model": {
+      "codec_id": "0ceb4208a53bf92938a513426e8a0528c429a9f91ca345ce9ad679df6114df73",
+      "layout": "tiled-soa-32",
+      "pq_codebook_id": "8d53c76dbc0d9dc193c87d6b3f786fb91beb66f9eb45d8f1579bccbccb94fd5c",
+      "quantizer_id": "3cd7dcac387a36dc18002dc1130070f0a9d3d829e067e88f78d019ca9050c61c",
+      "scorer_version": 1,
+      "transform_id": "a31dde8b998cd3d57494c6298300720bb90d9f0bbc831724aff14011d2b73a3b"
+    },
+    "pid": 49046,
+    "query_count": 256,
+    "query_hash": "8a2c5e5a2790d7c5bd95c4e3f403ac735e959c8642dfcecbf2f91458bcb2b01e",
+    "revision": {
+      "commit": "4e53aa36ad0210d3a72fac281a167a40544412eb",
+      "dirty": false
+    },
+    "rows": 1000000,
+    "segment_count": 16,
+    "source": {
+      "chunk_rows": 1000000,
+      "chunk_seeds": [
+        254657558119675395
+      ],
+      "correlation": 0.85,
+      "dimension": 768,
+      "generator_version": 1,
+      "kind": "correlated",
+      "seed": 20260804,
+      "seed_derivation": "spherra.generated-correlated.chunks.v1",
+      "vector_count": 1000000
+    },
+    "timestamp": "2026-09-23T23:22:58Z"
+  },
+  "binary_sha256": "f3285009b13b6249010385884896cb9a9a3983d7ec539020241909356444d328",
+  "command": [
+    "/usr/bin/sample",
+    "49046",
+    "5",
+    "1",
+    "-file",
+    "${SPHERRA_ROOT}/.worktrees/scan-loop/target/measure/scan-validation/optimized-profile.txt"
+  ],
+  "queries": 88,
+  "metric": "cosine",
+  "end": {
+    "kind": "end",
+    "revision": {
+      "commit": "4e53aa36ad0210d3a72fac281a167a40544412eb",
+      "dirty": false
+    }
+  },
+  "stdout": "",
+  "stderr": "Sampling process 49046 for 5 seconds with 1 millisecond of run time between samples\nSampling completed, processing symbols...\nSample analysis of process 49046 written to file ${SPHERRA_ROOT}/.worktrees/scan-loop/target/measure/scan-validation/optimized-profile.txt\n"
+}

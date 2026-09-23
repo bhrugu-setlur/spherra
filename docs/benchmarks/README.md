@@ -17,6 +17,9 @@ evidence with source revisions, raw data links and limitations.
 The [safe scan optimization](2026-09-23-scan-loop-results.md) records exact-score
 verification, a paired kernel comparison and 1M/10M search measurements under
 background CPU load. It does not renew isolated latency or 10M recall claims.
+The [follow-up checks](2026-09-23-search-validation-results.md) compare small
+indexes, simultaneous callers and verified cold residual-file pages. The idle
+comparison remains pending at the user's request.
 
 The [reconstruction-length amendment](../design/2026-09-14-reconstruction-length-amendment.md)
 adopts correction in both serving methods. [Production test data](2026-09-14-reconstruction-length-results.md)
@@ -37,6 +40,7 @@ reports retain their original meaning and bytes.
 | [`local-oracle-reference.schema.json`](local-oracle-reference.schema.json) | `spherra-bench oracle-reference` | Streaming exact-reference provenance and artifact hash |
 | [`local-latency.schema.json`](local-latency.schema.json) | `spherra-bench latency` | Build/open timings, 1,000 query samples, RSS and gate result |
 | [`local-build-memory.schema.json`](local-build-memory.schema.json) | `spherra-bench build-memory` | Child-process peak minus baseline and caller inputs |
+| [`search-probe.schema.json`](search-probe.schema.json) | `spherra-bench search-probe` | JSON lines: ready provenance, timed batches and final source revision |
 
 These schemas set `additionalProperties: false` and require every field. An
 omitted identity, corpus, byte-accounting, or bound-soundness field is a
@@ -115,6 +119,30 @@ gate writes its measured result and exits nonzero.
 A separate ignored library `worker_probe` compares 4/6/8 workers on the measured
 1M index (20 queries, five warmups). It is a scaling probe, not a substitute for
 the 1,000-query acceptance runs, and does not add an option to the public API.
+
+### Paired search probes
+
+Build `spherra-bench` in release mode from clean baseline and optimized worktrees
+containing the same `search-probe` driver. The macOS controller alternates versions,
+checks result fingerprints and source/index identities, and refuses to overwrite
+its JSON-line output. Existing indexes require a matching build sidecar; absent
+small indexes are built by the optimized probe before comparison.
+
+```bash
+python3 tools/compare_search.py \
+  --baseline /path/to/baseline --optimized /path/to/optimized \
+  --index /path/to/local-index-1m --rows 1000000 \
+  --output target/measure/paired-concurrent.jsonl \
+  --batches 32 --widths 1 2 4 8
+```
+
+Use `--cold --widths 1 --batches 64` and a different output for warm controls and
+verified cold residual-page trials. This invalidates only the retained residual
+files' cache pages, with read-only mappings in the external controller; it does
+not purge the machine cache or change serving I/O. See the
+[follow-up protocol and limits](2026-09-23-search-validation-results.md).
+Run `python3 -m unittest tools/test_compare_search.py` to check cache control and
+build-identity comparison; macOS-specific tests skip on other systems.
 
 ### Local index stage 1 results (2026-09-13)
 
