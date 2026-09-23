@@ -25,9 +25,10 @@ cargo run -p spherra --example first_search --locked
 
 Cargo uses the pinned Rust 1.88.0 toolchain and downloads dependencies as it
 builds. The [runnable example](crates/spherra/examples/first_search.rs) creates
-a temporary index containing two generated vectors, searches with a separate
-query vector, and prints each match's similarity score. Run it again whenever
-you like; it does not need a dataset or leave an index behind.
+a temporary index containing ten generated vectors, searches with a separate
+query vector, and prints similarity scores spread from positive to negative.
+Run it again whenever you like; it does not need a dataset or leave an index
+behind.
 
 ## Use your own vectors
 
@@ -81,7 +82,7 @@ fn build_and_search(
 An embedding is a list of numbers, called coordinates, that describes a piece of
 text or an image. Two embeddings are "similar" when they point in nearly the
 same direction. That is measured by the **cosine similarity**: 1 means the same
-direction, 0 means unrelated.
+direction, 0 means unrelated, and −1 means opposite directions.
 
 A 768-number embedding stored as normal 32-bit floats takes 3,072 bytes.
 Ten million of them take 30 GB. Spherra's goal is to store each one in far fewer

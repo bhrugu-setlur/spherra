@@ -9,7 +9,8 @@ fn generated_vector(vector_number: usize) -> Vector {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Keep training, indexed, and query vectors separate.
     let training: Vec<Vector> = (3..347).map(generated_vector).collect();
-    let indexed = [generated_vector(1), generated_vector(2)];
+    // These ten inputs span a range of actual cosine similarities to the query.
+    let indexed = [857, 991, 560, 983, 836, 831, 743, 961, 383, 655].map(generated_vector);
     let query = generated_vector(0);
     let directory = tempfile::tempdir()?;
 
@@ -30,12 +31,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let result = index.search(
         &query,
         SearchOptions {
-            k: 2,
+            k: indexed.len(),
             candidate_budget: None,
         },
     )?;
     for hit in result.hits() {
-        // Indexed IDs 0 and 1 correspond to generated vectors 1 and 2.
+        // The index assigns IDs 0 through 9 in insertion order.
         println!(
             "vector {}: similarity score {:.3}",
             hit.row().get() + 1,
