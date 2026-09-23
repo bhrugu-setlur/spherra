@@ -15,11 +15,27 @@ pass, so the example shows the real algorithm, not a stand-in.
   <img src="docs/images/transform-animation-light.svg" alt="Animation of four coordinate bars: x = (4, 2, 2, 1) is normalized, has one sign flipped, is shuffled, goes through two fast Walsh-Hadamard passes and a scale by one half to become y = (0.5, -0.5, 0.7, 0.1), then is rounded to the grid and corrected.">
 </picture>
 
-## Quick start
+## Try it
 
-Rust 1.88.0, edition 2024. Vectors must be finite and 768-dimensional. Training
-vectors teach the index its grid and codebooks; they are not searchable unless
-you also push them.
+With Rust and Cargo installed, run this from the repository root:
+
+```bash
+cargo run -p spherra --example first_search --locked
+```
+
+Cargo uses the pinned Rust 1.88.0 toolchain and downloads dependencies as it
+builds. The [runnable example](crates/spherra/examples/first_search.rs) creates
+a temporary index from generated vectors, searches it, and prints three hits.
+Run it again whenever you like; it does not need a dataset or leave an index
+behind.
+
+## Use your own vectors
+
+Vectors must be finite and 768-dimensional. Training vectors teach the index
+its grid and codebooks; they are not searchable unless you also push them.
+Supply at least 341 representative training vectors with the default validation
+split, plus at least one row to index. The index directory must not already
+contain an index. The example below shows the library calls for your own data:
 
 ```rust
 use std::path::Path;
