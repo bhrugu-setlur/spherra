@@ -45,6 +45,11 @@ proptest! {
         tile in prop::collection::vec(any::<u8>(), TILE_BYTES),
     ) {
         let query = prepared(seed);
+        if let Some(compact) = query.compact_primary_lookup() {
+            for (compact, wide) in compact.iter().flatten().zip(query.primary_lookup.iter().flatten()) {
+                prop_assert_eq!(i64::from(*compact), *wide);
+            }
+        }
         // Exercise the specialized full tile on every case as well as a
         // variable width; a random width alone rarely selects all 32 lanes.
         for width in [lanes, 32] {
@@ -94,6 +99,7 @@ fn invalid_geometry_leaves_the_entire_output_untouched() {
 #[test]
 fn range_proof_uses_i128_and_falls_back_to_checked_reference() {
     let mut query = prepared(42);
+    query.primary_compact = None;
     let limit = i64::MAX / DIMENSION as i64;
     for sign in [-1, 1] {
         query.primary_lookup.fill([sign * limit; 16]);
@@ -117,4 +123,76 @@ fn range_proof_uses_i128_and_falls_back_to_checked_reference() {
     );
     assert_eq!(out, [i64::MAX; 32]);
     assert_eq!(query.primary_lookup_entries()[0][0], i64::MAX);
+}
+
+#[test]
+fn compact_primary_table_requires_a_proof_for_every_partial_sum() {
+    let mut query = prepared(42);
+    let limit = i64::from(i32::MAX) / DIMENSION as i64;
+    for magnitude in [limit, limit + 1] {
+        for sign in [-1, 1] {
+            query.primary_lookup.fill([sign * magnitude; 16]);
+            query.lookup_scale_measurement.maximum_primary_lookup_entry = magnitude;
+            query.primary_compact = super::compact_primary_lookup(&query.primary_lookup, magnitude);
+            assert_eq!(query.primary_compact.is_some(), magnitude == limit);
+            for width in [1, 15, 16, 17, 31, 32] {
+                let mut out = [i64::MIN; 32];
+                assert_eq!(
+                    score_tile_primary(&query, &[0xff; TILE_BYTES], width, &mut out).unwrap(),
+                    KernelPath::SafeTile
+                );
+                assert_eq!(
+                    out[..width],
+                    vec![sign * magnitude * DIMENSION as i64; width]
+                );
+                assert!(out[width..].iter().all(|&v| v == i64::MIN));
+            }
+        }
+    }
+}
+
+#[test]
+#[ignore = "release-only paired scan timing; run without other Spherra tests or benchmarks"]
+fn compare_compact_and_wide_scan_timing() {
+    use std::{hint::black_box, time::Instant};
+    assert!(!cfg!(debug_assertions), "timing requires --release");
+    let compact = prepared(42);
+    assert!(compact.primary_compact.is_some());
+    let mut wide = compact.clone();
+    wide.primary_compact = None;
+    let mut tiles = vec![0_u8; TILE_BYTES * 1024];
+    ChaCha20Rng::seed_from_u64(20260804).fill_bytes(&mut tiles);
+    eprintln!(
+        "scan input: 32768 rows; query seed 42; tiles BLAKE3 {}",
+        blake3::hash(&tiles)
+    );
+    let scan = |query: &PreparedScorerQuery| {
+        let start = Instant::now();
+        let mut checksum = 0_i64;
+        for tile in tiles.chunks_exact(TILE_BYTES) {
+            let mut scores = [0; 32];
+            assert_eq!(
+                score_tile_primary(black_box(query), tile, 32, &mut scores).unwrap(),
+                KernelPath::SafeTile
+            );
+            for score in black_box(scores) {
+                checksum = checksum.wrapping_add(score);
+            }
+        }
+        (start.elapsed().as_nanos(), checksum)
+    };
+    assert_eq!(scan(&compact).1, scan(&wide).1);
+    for trial in 0..20 {
+        let (compact_time, wide_time) = if trial % 2 == 0 {
+            (scan(&compact), scan(&wide))
+        } else {
+            let wide_time = scan(&wide);
+            (scan(&compact), wide_time)
+        };
+        assert_eq!(compact_time.1, wide_time.1);
+        eprintln!(
+            "scan trial {trial}: compact_ns={} wide_ns={}",
+            compact_time.0, wide_time.0
+        );
+    }
 }

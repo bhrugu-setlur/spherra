@@ -264,10 +264,30 @@ impl LookupScaleMeasurement {
     }
 }
 
+// The immutable query caches this smaller table only when every entry and every
+// prefix of a 768-entry score fits i32. The authoritative i64 Q24 table and its
+// comparison scale are unchanged; ineligible queries retain the i64 tile path.
+fn compact_primary_lookup(
+    lookup: &[[i64; PRIMARY_CODES_PER_COORDINATE]; DIMENSION],
+    maximum: i64,
+) -> Option<Box<[[i32; PRIMARY_CODES_PER_COORDINATE]; DIMENSION]>> {
+    if i128::from(maximum) * DIMENSION as i128 > i128::from(i32::MAX) {
+        return None;
+    }
+    let mut compact = Box::new([[0_i32; PRIMARY_CODES_PER_COORDINATE]; DIMENSION]);
+    for (destination, source) in compact.iter_mut().zip(lookup) {
+        for (destination, &source) in destination.iter_mut().zip(source) {
+            *destination = source as i32;
+        }
+    }
+    Some(compact)
+}
+
 #[derive(Clone, Debug)]
 pub struct PreparedScorerQuery {
     transformed: [f32; DIMENSION],
     primary_lookup: Box<[[i64; PRIMARY_CODES_PER_COORDINATE]; DIMENSION]>,
+    primary_compact: Option<Box<[[i32; PRIMARY_CODES_PER_COORDINATE]; DIMENSION]>>,
     residual_lookup: Box<[[i64; Pq96Code::CENTROIDS]; Pq96Code::SUBQUANTIZERS]>,
     primary_score_error: f64,
     refined_score_error: f64,
@@ -276,6 +296,12 @@ pub struct PreparedScorerQuery {
 }
 
 impl PreparedScorerQuery {
+    pub(crate) fn compact_primary_lookup(
+        &self,
+    ) -> Option<&[[i32; PRIMARY_CODES_PER_COORDINATE]; DIMENSION]> {
+        self.primary_compact.as_deref()
+    }
+
     /// Immutable Q24 lookup entries, indexed by coordinate then four-bit code.
     pub fn primary_lookup_entries(&self) -> &[[i64; PRIMARY_CODES_PER_COORDINATE]; DIMENSION] {
         &self.primary_lookup
@@ -418,9 +444,11 @@ impl FixedPointScorer {
             Pq96Code::SUBQUANTIZERS as f64,
             residual_maximum_absolute_product_sum,
         );
+        let primary_compact = compact_primary_lookup(&primary_lookup, maximum_primary_lookup_entry);
         Ok(PreparedScorerQuery {
             transformed,
             primary_lookup,
+            primary_compact,
             residual_lookup,
             primary_score_error: prepared_score_error(PRIMARY_TERMS, primary_absolute_sum, 0.0),
             refined_score_error: prepared_score_error(

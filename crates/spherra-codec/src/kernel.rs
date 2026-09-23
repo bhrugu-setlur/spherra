@@ -53,8 +53,8 @@ pub fn score_tile_primary(
     let path = if i128::from(maximum) * DIMENSION as i128 <= i128::from(i64::MAX) {
         // For every prefix t <= 768, |sum_t| <= t * maximum <= i64::MAX.
         // The immutable query owns both the entries and their measured maximum.
-        if lanes == 32 {
-            score_full_tile(query.primary_lookup_entries(), tile, &mut sums);
+        if let (32, Some(lookup)) = (lanes, query.compact_primary_lookup()) {
+            score_full_tile(lookup, tile, &mut sums);
         } else {
             let pairs = lanes / 2;
             for (lookup, bytes) in query
@@ -87,11 +87,12 @@ pub fn score_tile_primary(
     Ok(path)
 }
 
-// Called only after geometry validation and the i128 range proof. Keeping all
-// eight pairs visible to the compiler lets it unroll the full-tile loop without
-// keeping all 32 accumulators live at once. The two passes reuse the same small
-// tile; each lane still adds its 768 entries in coordinate order.
-fn score_full_tile(lookups: &[[i64; 16]; DIMENSION], tile: &[u8], sums: &mut [i64; 32]) {
+// The prepared query proved that every partial sum fits i32 before making this
+// compact table. Eight fixed pairs let the compiler unroll the loop without
+// keeping all 32 accumulators live. Each lane retains coordinate order, then
+// widens its exact Q24 sum to the public i64 representation.
+fn score_full_tile(lookups: &[[i32; 16]; DIMENSION], tile: &[u8], out: &mut [i64; 32]) {
+    let mut sums = [0_i32; 32];
     for (half, sums) in sums.chunks_exact_mut(16).enumerate() {
         for (lookup, bytes) in lookups.iter().zip(tile.chunks_exact(16)) {
             for (pair, &packed) in sums.chunks_exact_mut(2).zip(&bytes[half * 8..]) {
@@ -99,6 +100,9 @@ fn score_full_tile(lookups: &[[i64; 16]; DIMENSION], tile: &[u8], sums: &mut [i6
                 pair[1] += lookup[usize::from(packed >> 4)];
             }
         }
+    }
+    for (out, sum) in out.iter_mut().zip(sums) {
+        *out = i64::from(sum);
     }
 }
 
@@ -108,10 +112,10 @@ mod tests {
 
     #[test]
     fn full_tile_matches_checked_sums_with_distinct_lanes_and_coordinates() {
-        let limit = i64::MAX / DIMENSION as i64;
+        let limit = i32::MAX / DIMENSION as i32;
         let lookup = Box::new(std::array::from_fn(|coordinate| {
             std::array::from_fn(|code| {
-                let magnitude = limit - (coordinate * 16 + code) as i64;
+                let magnitude = limit - (coordinate * 16 + code) as i32;
                 if (coordinate + code) % 3 == 0 {
                     -magnitude
                 } else {
@@ -131,7 +135,8 @@ mod tests {
         for (lane, actual) in actual.into_iter().enumerate() {
             let expected = lookup.iter().enumerate().fold(0_i64, |sum, (c, entries)| {
                 let code = (tile[c * 16 + lane / 2] >> ((lane % 2) * 4)) & 15;
-                sum.checked_add(entries[usize::from(code)]).unwrap()
+                sum.checked_add(i64::from(entries[usize::from(code)]))
+                    .unwrap()
             });
             assert_eq!(actual, expected, "lane {lane}");
         }
