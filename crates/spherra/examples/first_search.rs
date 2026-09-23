@@ -1,14 +1,16 @@
 use spherra::{CreateOptions, Index, IndexBuilder, SearchOptions, Vector};
 
+fn generated_vector(vector_number: usize) -> Vector {
+    std::array::from_fn(|coordinate| {
+        ((vector_number * 7 + coordinate * 11) % 997) as f32 / 498.0 - 1.0
+    })
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // This small generated set makes the example runnable without an embedding model.
-    let training: Vec<Vector> = (0..344)
-        .map(|row| {
-            std::array::from_fn(|coordinate| {
-                ((row * 7 + coordinate * 11) % 101) as f32 / 50.0 - 1.0
-            })
-        })
-        .collect();
+    // Keep training, indexed, and query vectors separate.
+    let training: Vec<Vector> = (3..347).map(generated_vector).collect();
+    let indexed = [generated_vector(1), generated_vector(2)];
+    let query = generated_vector(0);
     let directory = tempfile::tempdir()?;
 
     let mut builder = IndexBuilder::create(
@@ -19,21 +21,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             validation_rows: None,
         },
     )?;
-    for row in &training[..3] {
-        builder.push(row)?;
+    for vector in &indexed {
+        builder.push(vector)?;
     }
     builder.commit()?;
 
     let index = Index::open(directory.path())?;
     let result = index.search(
-        &training[0],
+        &query,
         SearchOptions {
-            k: 3,
+            k: 2,
             candidate_budget: None,
         },
     )?;
     for hit in result.hits() {
-        println!("row {}: score {:.3}", hit.row().get(), hit.score());
+        // Indexed IDs 0 and 1 correspond to generated vectors 1 and 2.
+        println!(
+            "vector {}: similarity score {:.3}",
+            hit.row().get() + 1,
+            hit.score()
+        );
     }
     Ok(())
 }

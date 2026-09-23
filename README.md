@@ -25,9 +25,9 @@ cargo run -p spherra --example first_search --locked
 
 Cargo uses the pinned Rust 1.88.0 toolchain and downloads dependencies as it
 builds. The [runnable example](crates/spherra/examples/first_search.rs) creates
-a temporary index from generated vectors, searches it, and prints three hits.
-Run it again whenever you like; it does not need a dataset or leave an index
-behind.
+a temporary index containing two generated vectors, searches with a separate
+query vector, and prints each match's similarity score. Run it again whenever
+you like; it does not need a dataset or leave an index behind.
 
 ## Use your own vectors
 
