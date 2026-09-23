@@ -31,6 +31,7 @@ mod index_quality;
 mod local_index;
 mod norm_audit;
 mod original_rerank;
+mod search_probe;
 
 const LAYOUT_TILED_SOA_32: &str = "tiled-soa-32";
 const SOAK_PROGRESS_INTERVAL: u64 = 100_000;
@@ -68,6 +69,7 @@ fn run(arguments: &[String]) -> Result<(), BenchError> {
         "dataset-oracle" => index_quality::dataset_oracle(&options),
         "original-rerank" => original_rerank::run(&options),
         "norm-audit" => norm_audit::run(&options),
+        "search-probe" => search_probe::run(&options),
         other => Err(BenchError::UnknownSubcommand(other.to_owned())),
     }
 }

@@ -1,0 +1,190 @@
+{
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "ready"
+          ]
+        },
+        "timestamp": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "object",
+          "properties": {
+            "commit": {
+              "type": "string"
+            },
+            "dirty": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "commit",
+            "dirty"
+          ],
+          "additionalProperties": false
+        },
+        "machine": {
+          "type": "object"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source": {
+          "type": "object"
+        },
+        "build": {
+          "type": "object"
+        },
+        "model": {
+          "type": "object"
+        },
+        "query_hash": {
+          "type": "string"
+        },
+        "query_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "segment_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pid": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "kind",
+        "timestamp",
+        "revision",
+        "machine",
+        "command",
+        "source",
+        "build",
+        "model",
+        "query_hash",
+        "query_count",
+        "rows",
+        "generation",
+        "segment_count",
+        "pid"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "batch"
+          ]
+        },
+        "metric": {
+          "enum": [
+            "cosine",
+            "dot"
+          ]
+        },
+        "batch_ns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "results": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "elapsed_ns": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "rows_scanned": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "rows_refined": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "hits": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "fingerprint": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "query",
+              "elapsed_ns",
+              "rows_scanned",
+              "rows_refined",
+              "hits",
+              "fingerprint"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "kind",
+        "metric",
+        "batch_ns",
+        "results"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "end"
+          ]
+        },
+        "revision": {
+          "type": "object",
+          "properties": {
+            "commit": {
+              "type": "string"
+            },
+            "dirty": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "commit",
+            "dirty"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "kind",
+        "revision"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

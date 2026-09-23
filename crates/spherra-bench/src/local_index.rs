@@ -270,19 +270,23 @@ pub(super) fn latency_child(o: &Options) -> Result<(), BenchError> {
 pub(super) fn dot_product_latency_child(o: &Options) -> Result<(), BenchError> {
     latency_child_impl(o, true)
 }
-enum MeasuredResult {
+pub(super) enum MeasuredResult {
     Cosine(spherra::SearchResult),
     Dot(spherra::DotProductResult),
 }
 impl MeasuredResult {
-    fn counts(&self) -> (u64, u64, usize) {
+    pub(super) fn counts(&self) -> (u64, u64, usize) {
         match self {
             Self::Cosine(r) => (r.rows_scanned(), r.rows_refined(), r.hits().len()),
             Self::Dot(r) => (r.rows_scanned(), r.rows_refined(), r.hits().len()),
         }
     }
 }
-fn measured_search(index: &Index, query: &Vector, dot: bool) -> Result<MeasuredResult, BenchError> {
+pub(super) fn measured_search(
+    index: &Index,
+    query: &Vector,
+    dot: bool,
+) -> Result<MeasuredResult, BenchError> {
     let options = SearchOptions {
         k: 10,
         candidate_budget: None,
