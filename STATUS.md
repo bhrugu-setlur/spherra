@@ -4,7 +4,8 @@ Updated: 2026-09-23
 
 Spherra's local index is complete: building, appending, crash-safe commits,
 cosine search, optional dot-product search, and proven score ranges all work and
-pass CI (221 tests; 12 large qualification tests are skipped by default).
+pass CI (223 tests; 12 large qualifications and one timing diagnostic are
+skipped by default).
 
 An earlier design for a distributed vector database was stopped in favor of this
 local library. Its documents are kept in [`docs/design/archive/`](docs/design/archive/)
@@ -33,6 +34,12 @@ Full protocols and raw results: [`docs/benchmarks/`](docs/benchmarks/README.md).
 
 ## Design decisions
 
+- **Faster primary scan.** Eligible queries use an exact compact lookup table
+  and fixed full-tile loops, adding 48 KiB per query and no stored bytes.
+  Paired scan timing falls 14%; 1M search median falls from 94.7 / 101.7 ms to
+  86.8 ms under background CPU load. Tail-latency improvement is unproven.
+  Scalar scores and complete-search results match exactly.
+  [Verification and measurements](docs/benchmarks/2026-09-23-scan-loop-results.md).
 - **Compressed-only search.** Re-scoring finalists against the original vectors
   recovered every missed neighbor, but it would add 3.07 GB of storage per
   million rows and about 3.2 ms per query. I kept search compressed-only, with a
@@ -68,9 +75,6 @@ Full protocols and raw results: [`docs/benchmarks/`](docs/benchmarks/README.md).
 
 ## Next work
 
-- In progress on `scan-loop`: specialize full 32-row scoring blocks while
-  preserving exact integer scores, partial blocks and checked fallback. Verify
-  against scalar scoring, then compare clean release runs on the same indexes.
-- Measure search with cold caches and under memory pressure.
+- Repeat scan comparisons on an idle machine; measure cold caches and memory pressure.
 - Build larger labeled query sets before claiming 10M-row recall.
 - Compare against an established library such as FAISS on the same data.

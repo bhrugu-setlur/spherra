@@ -1,0 +1,39 @@
+query: warming with 10 queries
+query: 5/100 complete, last 710.162 ms
+query: 10/100 complete, last 749.048 ms
+query: 15/100 complete, last 763.228 ms
+query: 20/100 complete, last 702.270 ms
+query: 25/100 complete, last 772.272 ms
+query: 30/100 complete, last 703.431 ms
+query: 35/100 complete, last 691.147 ms
+query: 40/100 complete, last 709.193 ms
+query: 45/100 complete, last 696.396 ms
+query: 50/100 complete, last 688.258 ms
+query: 55/100 complete, last 731.332 ms
+query: 60/100 complete, last 710.831 ms
+query: 65/100 complete, last 749.564 ms
+query: 70/100 complete, last 690.881 ms
+query: 75/100 complete, last 860.918 ms
+query: 80/100 complete, last 748.350 ms
+query: 85/100 complete, last 755.076 ms
+query: 90/100 complete, last 694.631 ms
+query: 95/100 complete, last 706.912 ms
+query: 100/100 complete, last 740.988 ms
+       98.31 real       250.29 user         5.81 sys
+          3868852224  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              409012  page reclaims
+                  49  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                1459  voluntary context switches
+              214770  involuntary context switches
+       4174530026811  instructions retired
+        748723609728  cycles elapsed
+          3871427752  peak memory footprint

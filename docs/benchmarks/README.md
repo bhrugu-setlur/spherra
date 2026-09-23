@@ -14,6 +14,10 @@ The [local index test technical note](2026-09-13-local-index-test-note.md)
 consolidates September latency, memory, recall, correctness and recovery
 evidence with source revisions, raw data links and limitations.
 
+The [safe scan optimization](2026-09-23-scan-loop-results.md) records exact-score
+verification, a paired kernel comparison and 1M/10M search measurements under
+background CPU load. It does not renew isolated latency or 10M recall claims.
+
 The [reconstruction-length amendment](../design/2026-09-14-reconstruction-length-amendment.md)
 adopts correction in both serving methods. [Production test data](2026-09-14-reconstruction-length-results.md)
 records the accuracy gains, unchanged bounds and measured latency. Quality, loss and dot reports now

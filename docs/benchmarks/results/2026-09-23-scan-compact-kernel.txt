@@ -1,0 +1,29 @@
+    Finished `release` profile [optimized] target(s) in 0.03s
+     Running unittests src/lib.rs (target/release/deps/spherra_codec-afbfdd1b0699b0d2)
+
+running 1 test
+scan input: 32768 rows; query seed 42; tiles BLAKE3 4c8f730b77f31ed12638c46a9e6956cb5ec6d0fc425950da23ecfd886edc943b
+scan trial 0: compact_ns=6643083 wide_ns=7793917
+scan trial 1: compact_ns=18172250 wide_ns=7787500
+scan trial 2: compact_ns=8533250 wide_ns=10763833
+scan trial 3: compact_ns=6686208 wide_ns=7724250
+scan trial 4: compact_ns=6656959 wide_ns=7751292
+scan trial 5: compact_ns=7885250 wide_ns=7729750
+scan trial 6: compact_ns=6991834 wide_ns=7765000
+scan trial 7: compact_ns=6648541 wide_ns=7734750
+scan trial 8: compact_ns=6635750 wide_ns=7708792
+scan trial 9: compact_ns=6632417 wide_ns=7717125
+scan trial 10: compact_ns=6634000 wide_ns=7718292
+scan trial 11: compact_ns=6630708 wide_ns=7719333
+scan trial 12: compact_ns=6631083 wide_ns=7725583
+scan trial 13: compact_ns=6628792 wide_ns=7724083
+scan trial 14: compact_ns=6631500 wide_ns=7720791
+scan trial 15: compact_ns=6619416 wide_ns=7717917
+scan trial 16: compact_ns=6631292 wide_ns=7722916
+scan trial 17: compact_ns=6625291 wide_ns=7723084
+scan trial 18: compact_ns=6628583 wide_ns=23663083
+scan trial 19: compact_ns=15947875 wide_ns=20595333
+test scorer::kernel_tests::compare_compact_and_wide_scan_timing ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.40s
+
