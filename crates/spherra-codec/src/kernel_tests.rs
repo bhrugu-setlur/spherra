@@ -45,12 +45,16 @@ proptest! {
         tile in prop::collection::vec(any::<u8>(), TILE_BYTES),
     ) {
         let query = prepared(seed);
-        let mut out = [i64::MIN; 32];
-        prop_assert_eq!(score_tile_primary(&query, &tile, lanes, &mut out).unwrap(), KernelPath::SafeTile);
-        for (lane, actual) in out[..lanes].iter().enumerate() {
-            prop_assert_eq!(*actual, reference(&query, &tile, lane));
+        // Exercise the specialized full tile on every case as well as a
+        // variable width; a random width alone rarely selects all 32 lanes.
+        for width in [lanes, 32] {
+            let mut out = [i64::MIN; 32];
+            prop_assert_eq!(score_tile_primary(&query, &tile, width, &mut out).unwrap(), KernelPath::SafeTile);
+            for (lane, actual) in out[..width].iter().enumerate() {
+                prop_assert_eq!(*actual, reference(&query, &tile, lane));
+            }
+            prop_assert!(out[width..].iter().all(|v| *v == i64::MIN));
         }
-        prop_assert!(out[lanes..].iter().all(|v| *v == i64::MIN));
     }
 }
 

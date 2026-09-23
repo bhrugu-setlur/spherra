@@ -68,6 +68,9 @@ Full protocols and raw results: [`docs/benchmarks/`](docs/benchmarks/README.md).
 
 ## Next work
 
+- In progress on `scan-loop`: specialize full 32-row scoring blocks while
+  preserving exact integer scores, partial blocks and checked fallback. Verify
+  against scalar scoring, then compare clean release runs on the same indexes.
 - Measure search with cold caches and under memory pressure.
 - Build larger labeled query sets before claiming 10M-row recall.
 - Compare against an established library such as FAISS on the same data.
