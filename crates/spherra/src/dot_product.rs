@@ -181,8 +181,26 @@ impl Index {
         query: &Vector,
         options: SearchOptions,
     ) -> Result<DotProductResult, Error> {
+        self.search_dot_product_with_exclusion(query, options, None)
+    }
+    /// Dot-product search that excludes one indexed vector by its ID.
+    /// Other vectors with identical values remain eligible.
+    pub fn search_dot_product_excluding(
+        &self,
+        query: &Vector,
+        excluded: RowId,
+        options: SearchOptions,
+    ) -> Result<DotProductResult, Error> {
+        self.search_dot_product_with_exclusion(query, options, Some(excluded))
+    }
+    fn search_dot_product_with_exclusion(
+        &self,
+        query: &Vector,
+        options: SearchOptions,
+        excluded: Option<RowId>,
+    ) -> Result<DotProductResult, Error> {
         // Validation happens in `select` before the query norm is trusted.
-        let (budget, selected) = self.select::<DotProduct>(query, options)?;
+        let (budget, selected) = self.select::<DotProduct>(query, options, excluded)?;
         let (query_norm, query_norm_interval) = query_length(query);
         let scale = FixedPointScorer::new().metadata().comparison_scale() as f64 * 16777216.0;
         let mut hits = Vec::with_capacity(selected.len());

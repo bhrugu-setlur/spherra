@@ -2,6 +2,8 @@
 
 The [reconstruction-length amendment](2026-09-14-reconstruction-length-amendment.md) supersedes the original
 final-ranking rule below. Primary Q24 scoring and raw-score certificates remain unchanged.
+The [query-vector exclusion amendment](2026-09-23-query-vector-exclusion-amendment.md)
+adds methods that omit a caller-identified indexed query vector.
 
 Status: **approved at revision 4 on 2026-09-13**
 Date: 2026-09-13

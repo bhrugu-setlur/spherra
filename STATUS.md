@@ -1,10 +1,10 @@
 # Project status
 
-Updated: 2026-09-14
+Updated: 2026-09-23
 
 Spherra's local index is complete: building, appending, crash-safe commits,
 cosine search, optional dot-product search, and proven score ranges all work and
-pass CI (218 tests; 12 large qualification tests are skipped by default).
+pass CI (221 tests; 12 large qualification tests are skipped by default).
 
 An earlier design for a distributed vector database was stopped in favor of this
 local library. Its documents are kept in [`docs/design/archive/`](docs/design/archive/)
@@ -49,11 +49,18 @@ Full protocols and raw results: [`docs/benchmarks/`](docs/benchmarks/README.md).
   [design](docs/design/2026-09-14-dot-product-search-amendment.md).
 - **No unsafe SIMD kernel.** The safe tiled scan kernel met every latency limit,
   so the planned unsafe NEON kernel was not needed.
+- **Indexed-query exclusion.** The caller can pass the index-assigned ID to
+  `search_excluding` or `search_dot_product_excluding` so the query vector does
+  not take a result or candidate slot. Other vectors with identical values
+  remain eligible. The [design amendment](docs/design/2026-09-23-query-vector-exclusion-amendment.md)
+  changes no stored bytes or ordinary search behavior.
 
 ## Limits
 
 - 10M-row recall has not been measured, and 10M latency has not been re-measured
   since the length correction.
+- Latency of the new indexed-query exclusion methods has not been measured on
+  the 1M or 10M benchmark workloads.
 - Durability is tested on local APFS with injected faults and killed processes,
   not physical power loss or other filesystems. AddressSanitizer does not run on
   this macOS host, so fuzzing ran without it.

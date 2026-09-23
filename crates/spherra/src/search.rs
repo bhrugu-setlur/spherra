@@ -159,12 +159,13 @@ fn admit<K: Ord>(
         heap.push(Reverse(candidate));
     }
 }
-fn scan<R: Ranking>(
+fn scan<R: Ranking, const EXCLUDING: bool>(
     data: &Data,
     query: &PreparedScorerQuery,
     begin: usize,
     end: usize,
     budget: usize,
+    excluded: u64,
 ) -> Vec<Candidate<R::Key>> {
     let mut heap = BinaryHeap::new();
     for (segment, s) in data.segments.iter().enumerate() {
@@ -179,12 +180,16 @@ fn scan<R: Ranking>(
             score_tile_primary(query, tile, lanes, &mut scores).expect("opened tile geometry");
             for (lane, &score) in scores[..lanes].iter().enumerate() {
                 let local = (ordinal * 32 + lane) as u32;
+                let row = s.entry.first_row + u64::from(local);
+                if EXCLUDING && excluded == row {
+                    continue;
+                }
                 admit(
                     &mut heap,
                     Candidate {
                         key: R::key(score, &s.magnitudes, local as usize),
                         primary: score,
-                        row: s.entry.first_row + u64::from(local),
+                        row,
                         segment,
                         local,
                     },
@@ -265,6 +270,7 @@ impl Index {
         &self,
         query: &Vector,
         options: SearchOptions,
+        excluded: Option<RowId>,
     ) -> Result<Selection, Error> {
         if options.k == 0 {
             return Err(Error::InvalidOptions);
@@ -280,7 +286,10 @@ impl Index {
         if budget < options.k {
             return Err(Error::InvalidOptions);
         }
-        let budget = budget.min(self.len() as usize);
+        if excluded.is_some_and(|id| id.get() >= self.len()) {
+            return Err(Error::InvalidOptions);
+        }
+        let budget = budget.min(self.len() as usize - usize::from(excluded.is_some()));
         validate(query, 0)?;
         let scorer = FixedPointScorer::new();
         let model = &self.data.model;
@@ -298,8 +307,13 @@ impl Index {
             let query = query.clone();
             let sender = sender.clone();
             let end = (begin + width).min(data.tiles);
+            let excluded = excluded.map(RowId::get);
             self.pool.submit(Box::new(move || {
-                let _ = sender.send(scan::<R>(&data, &query, begin, end, budget));
+                let candidates = match excluded {
+                    Some(id) => scan::<R, true>(&data, &query, begin, end, budget, id),
+                    None => scan::<R, false>(&data, &query, begin, end, budget, 0),
+                };
+                let _ = sender.send(candidates);
             }))?;
             submitted += 1;
         }
@@ -336,7 +350,26 @@ impl Index {
         Ok((budget, refined))
     }
     pub fn search(&self, query: &Vector, options: SearchOptions) -> Result<SearchResult, Error> {
-        let (budget, selected) = self.select::<Cosine>(query, options)?;
+        self.search_with_exclusion(query, options, None)
+    }
+    /// Search while excluding one indexed vector identified by the ID returned
+    /// by `IndexBuilder::push`. Other vectors with identical values remain
+    /// eligible. An ID outside this index returns `InvalidOptions`.
+    pub fn search_excluding(
+        &self,
+        query: &Vector,
+        excluded: RowId,
+        options: SearchOptions,
+    ) -> Result<SearchResult, Error> {
+        self.search_with_exclusion(query, options, Some(excluded))
+    }
+    fn search_with_exclusion(
+        &self,
+        query: &Vector,
+        options: SearchOptions,
+        excluded: Option<RowId>,
+    ) -> Result<SearchResult, Error> {
+        let (budget, selected) = self.select::<Cosine>(query, options, excluded)?;
         let mut hits = Vec::with_capacity(selected.len());
         for c in selected {
             let s = &self.data.segments[c.segment];

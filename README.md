@@ -67,6 +67,11 @@ fn build_and_search(
 ```
 
 - `index.search_dot_product(query, options)` also uses each vector's length.
+- If the query is already indexed, save the ID returned by `builder.push(query)`
+  and call `index.search_excluding(query, id, options)` to omit that vector.
+  `index.search_dot_product_excluding(query, id, options)` does the same for dot
+  product. Other vectors with identical values remain eligible. A plain `search`
+  has no query ID, so it cannot know which indexed vector to exclude.
 - `IndexBuilder::append(directory)` adds rows later. Drop open `Index` handles
   first.
 - Commits are atomic: a crash leaves the previous version readable.

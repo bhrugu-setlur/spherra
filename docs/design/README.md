@@ -9,6 +9,7 @@
 | [Stored-magnitude amendment](2026-09-14-stored-magnitude-amendment.md) | Keeping each vector's FP16 length |
 | [Dot-product search amendment](2026-09-14-dot-product-search-amendment.md) | Length-aware search and its score ranges |
 | [Reconstruction-length amendment](2026-09-14-reconstruction-length-amendment.md) | Dividing refined scores by the rebuilt vector's length |
+| [Query-vector exclusion amendment](2026-09-23-query-vector-exclusion-amendment.md) | Omitting an indexed query vector by its ID |
 
 ## Archive
 
