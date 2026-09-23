@@ -17,6 +17,15 @@ import sys
 import time
 
 
+def same_build(left, right):
+    # A freshly built index returns in-memory timings; reuse parses the sidecar.
+    # JSON float round trips can change their last bit. These are historical
+    # timings, not index identity. Compare every other field exactly.
+    timings = {'build_seconds', 'build_rows_per_second'}
+    return ({k: v for k, v in left.items() if k not in timings}
+            == {k: v for k, v in right.items() if k not in timings})
+
+
 def residual_pages(paths, evict=False):
     """Inspect/evict clean file pages with a read-only mapping; never touch data.
 
@@ -140,7 +149,8 @@ def main():
             probes['optimized'] = Probe(args.optimized, args, args.index.exists())
             probes['baseline'] = Probe(args.baseline, args, True)
             for field in ['source', 'build', 'query_hash', 'query_count', 'model', 'rows', 'generation', 'segment_count']:
-                if probes['baseline'].ready[field] != probes['optimized'].ready[field]:
+                left, right = probes['baseline'].ready[field], probes['optimized'].ready[field]
+                if not (same_build(left, right) if field == 'build' else left == right):
                     raise RuntimeError(f'paired provenance mismatch: {field}')
             if probes['optimized'].ready['build']['dirty_worktree']:
                 raise RuntimeError('index build provenance is dirty')

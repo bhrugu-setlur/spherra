@@ -6,7 +6,20 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).parent))
-from compare_search import residual_pages
+from compare_search import residual_pages, same_build
+
+
+class BuildIdentityTests(unittest.TestCase):
+    def test_build_timing_roundtrip_does_not_change_identity(self):
+        original = dict(corpus_hash='corpus', index_current_blake3='current',
+                        source={'seed': 7}, training_rows=344, dirty_worktree=False,
+                        build_seconds=0.12345678901234567, build_rows_per_second=123.4)
+        rounded = original | dict(build_seconds=0.12345678901234566)
+        self.assertTrue(same_build(original, rounded))
+        for key, value in [('corpus_hash', 'other'), ('index_current_blake3', 'other'),
+                           ('source', {'seed': 8}), ('training_rows', 345),
+                           ('dirty_worktree', True)]:
+            self.assertFalse(same_build(original, rounded | {key: value}))
 
 
 @unittest.skipUnless(sys.platform == 'darwin', 'macOS cache control')
